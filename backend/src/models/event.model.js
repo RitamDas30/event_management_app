@@ -49,6 +49,13 @@ const eventSchema = new mongoose.Schema(
       type: Number,
       required: true,
       min: 0,
+      // Validator to ensure seatsAvailable never exceeds capacity
+      validate: {
+        validator: function(v) {
+          return v <= this.capacity;
+        },
+        message: props => `${props.value} must not exceed the event capacity (${props.instance.capacity})`
+      }
     },
     price: {
       type: Number,
@@ -72,6 +79,9 @@ const eventSchema = new mongoose.Schema(
 );
 
 // 📊 Index for search/filter performance
-eventSchema.index({ title: "text", category: 1, venue: 1 });
+// Combined index is great for complex queries
+eventSchema.index({ category: 1, venue: 1 });
+// Added a separate text index for full-text searching
+eventSchema.index({ title: "text", description: "text" });
 
 export default mongoose.model("Event", eventSchema);
