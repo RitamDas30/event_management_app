@@ -13,10 +13,15 @@ dotenv.config();
 connectDB();  
  
 const app = express();
+const clientOrigin = process.env.CLIENT_ORIGIN;
 
 // Middlewares
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+    origin: clientOrigin,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true, // Crucial for sending JWT/cookies
+}));
 app.use(morgan("dev"));
 
 // Routes
