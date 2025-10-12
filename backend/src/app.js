@@ -1,27 +1,32 @@
 import express from "express";
-import dotenv from "dotenv";
 import cors from "cors";
 import morgan from "morgan";
-import { connectDB } from "./config/db.js";
   
 import authRoutes from "./routes/auth.routes.js";
 import eventRoutes from "./routes/event.routes.js";
 import registrationRoutes from "./routes/registration.routes.js";
+import User from "./models/user.model.js"; 
 // import analyticsRoutes from "./routes/analytics.routes.js";
-   
-dotenv.config();
-connectDB();  
+
+// ❌ REMOVED: dotenv.config() - this is handled in server.js
+// ❌ REMOVED: connectDB() - this is handled in server.js
  
 const app = express();
-const clientOrigin = process.env.CLIENT_ORIGIN;
+
+const isProduction = process.env.NODE_ENV === 'production';
+const allowedOrigin = isProduction 
+    ? process.env.CLIENT_ORIGIN 
+    : 'http://localhost:5173'; 
 
 // Middlewares
 app.use(express.json());
+
 app.use(cors({
-    origin: clientOrigin,
+    origin: allowedOrigin,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    credentials: true, // Crucial for sending JWT/cookies
+    credentials: true,
 }));
+
 app.use(morgan("dev"));
 
 // Routes

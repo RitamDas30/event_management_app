@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
+import toast from "react-hot-toast";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -11,11 +12,10 @@ export default function Register() {
     name: "",
     email: "",
     password: "",
-    role: "student",
+    role: "student", // Default role
   });
-
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -28,8 +28,11 @@ export default function Register() {
 
     try {
       const res = await api.post("/auth/register", formData);
+      toast.success(res.data.message || "Registration successful!");
+      
+      // Log in immediately upon successful registration
       login(res.data.user, res.data.token);
-      navigate("/dashboard");
+      navigate("/");
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed");
     } finally {
@@ -43,9 +46,7 @@ export default function Register() {
         onSubmit={handleSubmit}
         className="bg-white p-6 shadow-lg rounded-xl w-96"
       >
-        <h2 className="text-2xl font-semibold mb-4 text-center">
-          Create Account
-        </h2>
+        <h2 className="text-2xl font-semibold mb-4 text-center">Register</h2>
 
         {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
 
@@ -79,6 +80,7 @@ export default function Register() {
           className="border w-full p-2 mb-3 rounded"
         />
 
+        {/* 🛑 FIX: Role Selection with Admin Option */}
         <select
           name="role"
           value={formData.role}
@@ -87,8 +89,10 @@ export default function Register() {
         >
           <option value="student">Student</option>
           <option value="organizer">Organizer</option>
+          <option value="admin">Admin (SETUP ONLY)</option>
         </select>
-
+        {/* 🛑 IMPORTANT: REMOVE the "Admin" option after creating your first Admin account! */}
+        
         <button
           type="submit"
           disabled={loading}
@@ -99,7 +103,7 @@ export default function Register() {
 
         <p className="text-sm text-center mt-3">
           Already have an account?{" "}
-          <a href="/login" className="text-blue-600">Login</a>
+          <Link to="/login" className="text-blue-600">Login</Link>
         </p>
       </form>
     </div>

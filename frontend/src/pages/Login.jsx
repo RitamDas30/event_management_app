@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+// 🛑 FIX: Ensure 'Link' is imported from 'react-router-dom'
+import { useNavigate, Link } from "react-router-dom"; 
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 
@@ -18,6 +19,7 @@ export default function Login() {
     setError("");
 
     try {
+      // Note: Endpoint is '/api/auth/login' via global baseURL config
       const res = await api.post("/auth/login", { email, password });
       login(res.data.user, res.data.token);
       navigate("/");
@@ -63,6 +65,12 @@ export default function Login() {
         >
           {loading ? "Logging in..." : "Login"}
         </button>
+
+        <div className="text-center mt-4">
+          <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline">
+            Forgot Password?
+          </Link>
+        </div>
 
         <p className="text-sm text-center mt-3">
           Don’t have an account?{" "}
