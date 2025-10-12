@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema({
         type: String, 
         required: true, 
     },
+
     email: {
         type: String, 
         required: true, 
@@ -29,6 +30,8 @@ const userSchema = new mongoose.Schema({
         type: [String], 
         default: [],
     }, 
+    passwordResetToken: String,
+    passwordResetExpires: Date,
     
 }, { timestamps: true }) // Correct way to enable Mongoose timestamps
 

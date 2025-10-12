@@ -21,6 +21,7 @@ router.delete("/:eventId", protect, restrictTo("student"), cancelRegistration);
 // @route   GET /api/registrations/me
 // @desc    Get my registrations
 // @access  Private (students)
-router.get("/me", protect, restrictTo("student"), getMyRegistrations);
-
+// router.get("/me", protect, restrictTo("student"), getMyRegistrations);
+router.get("/me", protect, getMyRegistrations); 
+// router.get("/me", protect, restrictTo("student", "admin"), getMyRegistrations); 
 export default router;
