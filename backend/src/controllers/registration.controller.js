@@ -117,22 +117,22 @@ export const registerForEvent = async (req, res) => {
             qrCode,
         });
 
-        // 5. SEND CONFIRMATION EMAIL
-        try {
-            const student = await UserModel.findById(studentId).select('email'); 
-            
+        // 5. SEND CONFIRMATION EMAIL (Non-blocking)
+        UserModel.findById(studentId).select('email').then(student => {
             if (student && student.email) {
-                await sendEventEmail(student.email, {
+                sendEventEmail(student.email, {
                     eventName: event.title, 
                     eventTime: event.startTime, 
                     venue: event.venue,
                     status: registration.status, 
                     qrCodeBase64: registration.qrCode,
-                }, 'confirmation'); 
+                }, 'confirmation').catch(err => {
+                    console.error("Failed to send confirmation email (non-fatal):", err.message);
+                });
             }
-        } catch (emailError) {
-            console.error("Failed to send confirmation email (non-fatal):", emailError.message); 
-        }
+        }).catch(err => {
+            console.error("Failed to fetch user for email:", err.message);
+        });
 
         // 6. Socket Emit
         try {
