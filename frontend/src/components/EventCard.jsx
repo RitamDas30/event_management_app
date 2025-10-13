@@ -1,15 +1,13 @@
-// src/components/EventCard.jsx
-
-// Trailing line: // Start of file: src/components/EventCard.jsx
 import React, { useState, useEffect } from "react"; 
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 import toast from "react-hot-toast"; 
-import { CheckCircle, Clock, Share2 } from 'lucide-react'; 
+// import { CheckCircle, Clock, Share2, MapPin } from 'lucide-react'; // 🟢 Ensure MapPin is imported
+import { CheckCircle, Clock, Share2, Calendar, DollarSign, MapPin } from 'lucide-react'; 
 
 export default function EventCard({ event, refresh }) {
-  const { user } = useAuth(); // Access user object (which holds token status)
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false); 
   const [registrationStatus, setRegistrationStatus] = useState(null); 
   const [localWaitlistCount, setLocalWaitlistCount] = useState(0); 
@@ -17,12 +15,17 @@ export default function EventCard({ event, refresh }) {
   
   const isWaitlistActive = event.seatsAvailable <= 0;
 
-  // 1. Initial Status Check (Runs only when user object is confirmed logged in)
+  // Date/Time Formatting Variables
+  const startTime = new Date(event.startTime);
+  const endTime = new Date(event.endTime);
+  const formattedDate = startTime.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  const formattedTime = `${startTime.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })} – ${endTime.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
+
+  // 1. Initial Status Check (omitted for brevity)
   useEffect(() => {
     const checkUserRegistration = async () => {
-      // 🛑 CRITICAL FIX: Only proceed if the user object is NOT null
       if (!user || !event._id) {
-          setRegistrationStatus(null); // Ensure status is clear if logged out
+          setRegistrationStatus(null); 
           return;
       }
       
@@ -32,21 +35,17 @@ export default function EventCard({ event, refresh }) {
         
         if (currentReg) {
           setRegistrationStatus(currentReg.status);
-          if (currentReg.status === 'waitlisted') {
-              // NOTE: Since the registration/me endpoint doesn't return the rank/count,
-              // we can't show it here, but we set the status correctly.
-          }
         } else {
           setRegistrationStatus(null); 
         }
         
       } catch (error) {
-        // We expect 401/403 if the token is expired, so we catch it gracefully.
-        console.error("Failed to check user registration status:", error.message);
+        if (error.response?.status !== 403 && error.response?.status !== 401) {
+            console.error("Failed to check user registration status:", error.message);
+        }
       }
     };
     
-    // 🛑 CRITICAL: The dependency array must include 'user' to re-run on login/logout.
     checkUserRegistration();
   }, [user, event._id, refresh]); 
 
@@ -60,12 +59,11 @@ export default function EventCard({ event, refresh }) {
     try {
       setLoading(true);
       
-      const res = await api.post(`/registrations/${event._id}`);
+      const res = await api.post(`/api/registrations/${event._id}`);
       const statusMessage = res.data.message || "Registration successful!";
       
       const isWaitlistedResponse = statusMessage.toLowerCase().includes("waitlisted");
       
-      // Update local state with status and count from the successful response
       setRegistrationStatus(isWaitlistedResponse ? "waitlisted" : "registered"); 
       if (isWaitlistedResponse && res.data.waitlistCount) {
           setLocalWaitlistCount(res.data.waitlistCount);
@@ -99,7 +97,7 @@ export default function EventCard({ event, refresh }) {
     }
   };
   
-  // Share Handler Function
+  // Share Handler Function (omitted for brevity)
   const handleShare = async () => {
     const shareUrl = `${window.location.origin}/events/${event._id}`; 
     const shareTitle = `Join me at ${event.title}!`;
@@ -130,12 +128,12 @@ export default function EventCard({ event, refresh }) {
 
 
   const renderStatusBlock = () => {
+    // ... (omitted status rendering logic) ...
     const status = registrationStatus;
     
-    // Only render status if not null (not registered or already checked)
     if (status === "registered" || status === "waitlisted") {
         const isRegistered = status === "registered";
-        const isWaiting = status === "waitlisted";
+        // const isWaiting = status === "waitlisted";
         
         return (
             <div className={`mt-3 p-3 rounded-lg flex flex-col items-center border ${
@@ -155,7 +153,7 @@ export default function EventCard({ event, refresh }) {
                     </p>
                 </div>
                 
-                {isWaiting && localWaitlistCount > 0 && (
+                {registrationStatus === "waitlisted" && localWaitlistCount > 0 && (
                     <p className="text-xs text-yellow-700 mt-1">
                         There are {localWaitlistCount} people ahead of you.
                     </p>
@@ -197,17 +195,53 @@ export default function EventCard({ event, refresh }) {
         </div>
         
         <h3 className="text-lg font-semibold">{event.title}</h3>
-        <p className="text-gray-600 text-sm mb-1">
-          {new Date(event.startTime).toLocaleString()} –{" "}
-          {new Date(event.endTime).toLocaleTimeString()}
-        </p>
-        <p className="text-gray-500 text-sm mb-2">📍 {event.venue}</p>
-        <p className="text-sm text-gray-700 mb-2">
-          Category: <span className="font-medium">{event.category}</span>
-        </p>
-        <p className="text-sm">
-          Seats left: <span className="font-semibold">{event.seatsAvailable}</span>
-        </p>
+        
+        {/* 🟢 UI FIX: Redesigned Date/Time/Price Section */}
+        <div className="space-y-1 mt-2 text-sm text-gray-700">
+            {/* Date and Time Block */}
+            <div className="flex items-center gap-2">
+                <Calendar size={14} className="text-blue-500" />
+                <span className="font-semibold text-gray-800">{formattedDate}</span>
+            </div>
+            <div className="flex items-center gap-2">
+                <Clock size={14} className="text-blue-500" />
+                <span className="text-gray-600">{formattedTime}</span>
+            </div>
+            
+            {/* 🛑 NEW: Venue Link Integration */}
+            <p className="text-gray-500 text-sm pt-1 flex items-center gap-1">
+                <MapPin size={14} className="text-gray-500 flex-shrink-0" />
+                {/* Encode the venue string for use in a Google Maps query */}
+                <a 
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.venue)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline text-blue-600 hover:text-blue-700 transition cursor-pointer"
+                >
+                    {event.venue}
+                </a>
+            </p>
+
+            {/* Category */}
+            <p className="text-sm">
+                Category: <span className="font-medium">{event.category}</span>
+            </p>
+
+            {/* Price Block */}
+            <div className="flex items-center gap-2 pt-1">
+                {/* <DollarSign size={14} className={event.price > 0 ? "text-green-600" : "text-gray-500"} /> */}
+                <p className="font-semibold">
+                    {event.price > 0 ? `Price: ₹${event.price}` : 'Free'}
+                </p>
+            </div>
+            
+            {/* Seats Left */}
+            <p className="text-sm pt-2">
+                Seats left: <span className="font-semibold">{event.seatsAvailable}</span>
+            </p>
+        </div>
+
+        
       </div>
 
       {user && user.role === "student" && (

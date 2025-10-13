@@ -82,7 +82,7 @@ export default function Navbar() {
           className="text-xl font-bold text-blue-600 hover:text-blue-800 transition duration-150"
           onClick={closeMenu}
         >
-          Smart Campus
+          Evently
         </Link>
         
         {/* --- Desktop Links --- */}

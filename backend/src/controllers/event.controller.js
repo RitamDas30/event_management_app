@@ -36,7 +36,7 @@ export const createEvent = async (req, res) => {
 };
 
 // ---------------------------------------------------------
-// 📋 Get all events (with optional filters)
+// Get all events (with optional filters)
 // ---------------------------------------------------------
 export const getEvents = async (req, res) => {
   try {
@@ -55,9 +55,9 @@ export const getEvents = async (req, res) => {
   }
 };
 
-// ---------------------------------------------------------
-// 🔍 Get a single event
-// ---------------------------------------------------------
+
+// Get a single event
+
 export const getEventById = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id).populate("organizer", "name email role");
@@ -69,9 +69,9 @@ export const getEventById = async (req, res) => {
   }
 };
 
-// ---------------------------------------------------------
-// ✏️ Update event (Organizer or Admin)
-// ---------------------------------------------------------
+
+// Update event (Organizer or Admin)
+
 export const updateEvent = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
@@ -122,7 +122,7 @@ export const updateEvent = async (req, res) => {
 };
 
 // ---------------------------------------------------------
-// ❌ Delete event (Organizer or Admin)
+//  Delete event (Organizer or Admin)
 // ---------------------------------------------------------
 export const deleteEvent = async (req, res) => {
   try {
