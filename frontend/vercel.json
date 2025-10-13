@@ -7,6 +7,10 @@
     {
       "source": "/uploads/:path*",
       "destination": "https://event-management-app-dkoz.onrender.com/uploads/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
