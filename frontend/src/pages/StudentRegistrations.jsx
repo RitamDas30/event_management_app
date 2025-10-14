@@ -11,7 +11,6 @@ export default function StudentRegistrations() {
   const fetchRegistrations = async () => {
     setLoading(true);
     try {
-      // Endpoint is '/api/registrations/me' via global axios config
       const res = await api.get("/registrations/me"); 
       // Access data directly from res.data
       setRegistrations(res.data || []); 

@@ -14,7 +14,7 @@ export default function StudentCalendar() {
   const fetchCalendarData = async () => {
     try {
       // Fetches all user registrations (which includes populated event data)
-      const res = await api.get("/api/registrations/me");
+      const res = await api.get("/registrations/me");
       
       const events = res.data
         .filter(r => r.event) // Filter out null events
