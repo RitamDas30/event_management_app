@@ -3,10 +3,9 @@ import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast"; 
 
-// 🛑 CORE COMPONENTS
+
 import Navbar from "./components/Navbar";
 
-// 🛑 PAGES (Ensure ALL pages are imported correctly)
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -18,12 +17,12 @@ import NotFound from "./pages/NotFound";
 import StudentCalendar from "./pages/StudentCalendar"; 
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
-import EventDetails from "./pages/EventDetails"; // Required for public sharing
+import EventDetails from "./pages/EventDetails"; 
 
-// 🛑 AUTH CONTEXT
+
 import { AuthProvider, useAuth } from "./context/AuthContext"; 
 
-// 1. Protected Route (Requires any authenticated user)
+//  Protected Route 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   
@@ -32,13 +31,13 @@ function ProtectedRoute({ children }) {
   return user ? children : <Navigate to="/login" replace />;
 }
 
-// 2. Organizer Route (Requires organizer or admin role)
+// Organizer Route 
 function OrganizerRoute({ children }) {
   const { user, loading } = useAuth();
   
   if (loading) return null;
   
-  // Logic: Allow access if role is organizer OR admin
+  // Allow access if role is organizer OR admin
   if (user && (user.role === 'organizer' || user.role === 'admin')) {
     return children;
   }
@@ -47,12 +46,12 @@ function OrganizerRoute({ children }) {
   return <Navigate to="/" replace />; 
 }
 
-// 3. Admin Dashboard Placeholder (Needed for the route)
+// Admin Dashboard 
 function AdminDashboard() {
     return (
         <div className="text-center mt-12 p-8 bg-gray-50 rounded-xl">
             <h1 className="text-3xl font-bold text-red-700">Admin Control Panel</h1>
-            <p className="mt-3 text-gray-600">You have global superpowers. This panel is currently reserved for future User/System Management features.</p>
+            <p className="mt-3 text-gray-600"> This panel is currently reserved for future User/System Management features.</p>
         </div>
     );
 }

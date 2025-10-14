@@ -59,7 +59,7 @@ export default function EventCard({ event, refresh }) {
     try {
       setLoading(true);
       
-      const res = await api.post(`/api/registrations/${event._id}`);
+      const res = await api.post(`/registrations/${event._id}`);
       const statusMessage = res.data.message || "Registration successful!";
       
       const isWaitlistedResponse = statusMessage.toLowerCase().includes("waitlisted");
