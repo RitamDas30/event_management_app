@@ -9,7 +9,8 @@ export default function CreateEvent() {
     title: "",
     description: "",
     category: "Technical", 
-    venue: "",
+    fullAddress: "", 
+    venueName: "",
     startTime: "",
     endTime: "",
     capacity: 50, 
@@ -66,14 +67,13 @@ export default function CreateEvent() {
     <div className="flex justify-center items-center py-10">
       <form
         onSubmit={handleSubmit}
-        // 🟢 UI IMPROVEMENT 1: Increased max-width to lg, added subtle box shadow
         className="bg-white shadow-xl rounded-2xl p-8 w-full max-w-lg"
       >
         <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">
           Create New Event
         </h2>
 
-        {/* --- Text and Description Fields --- */}
+        {/* Text and Description Fields */}
         <div className="space-y-4">
           
           <div>
@@ -105,7 +105,7 @@ export default function CreateEvent() {
           </div>
         </div>
 
-        {/* --- Category and Venue --- */}
+        {/* Category and Venue */}
         <div className="grid grid-cols-2 gap-4 mt-4">
             <div>
                 <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">Category</label>
@@ -125,21 +125,36 @@ export default function CreateEvent() {
             </div>
             
             <div>
-                <label htmlFor="venue" className="block text-sm font-medium text-gray-700 mb-1">Venue</label>
+                <label htmlFor="venueName" className="block text-sm font-medium text-gray-700 mb-1">Local Venue Name (e.g., Hall 1)</label>
                 <input
-                type="text"
-                name="venue"
-                id="venue"
-                placeholder="e.g., Main Hall, Zoom Link"
-                value={form.venue}
-                onChange={handleChange}
+                type="text" 
+                name="venueName" 
+                id="venueName" 
+                placeholder="Specific Location Name"
+                value={form.venueName}
+                onChange={handleChange} 
                 required
                 className="border w-full p-3 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                 />
             </div>
         </div>
         
-        {/* --- 🟢 UI IMPROVEMENT 2: Date and Time Grouping --- */}
+        {/* Full Address Field */}
+        <div className="mt-4">
+            <label htmlFor="fullAddress" className="block text-sm font-medium text-gray-700 mb-1">Full Address (for Map Accuracy)</label>
+            <input
+                type="text" 
+                name="fullAddress" 
+                id="fullAddress" 
+                placeholder="e.g., University Street Address, City, State"
+                value={form.fullAddress}
+                onChange={handleChange} 
+                required
+                className="border w-full p-3 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+            />
+        </div>
+        
+        {/* Date and Time Grouping */}
         <div className="mt-4 grid grid-cols-2 gap-4">
           <div>
             <label htmlFor="startTime" className="block text-sm font-medium text-gray-700 mb-1">Start Date & Time</label>
@@ -167,7 +182,7 @@ export default function CreateEvent() {
           </div>
         </div>
 
-        {/* --- Capacity and Price --- */}
+        {/* Capacity and Price */}
         <div className="grid grid-cols-2 gap-4 mt-4">
             <div>
                 <label htmlFor="capacity" className="block text-sm font-medium text-gray-700 mb-1">Capacity</label>
@@ -199,7 +214,7 @@ export default function CreateEvent() {
             </div>
         </div>
         
-        {/* --- Image Upload --- */}
+        {/* Image Upload */}
         <div className="mt-4">
             <label htmlFor="imageFile" className="block text-sm font-medium text-gray-700 mb-1">
                 Event Image (JPG, PNG, WEBP)
@@ -210,7 +225,6 @@ export default function CreateEvent() {
                 id="imageFile"
                 accept="image/jpeg,image/png,image/webp"
                 onChange={handleChange}
-                // 🟢 Added padding and styled for a cleaner file input look
                 className="w-full border p-3 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 rounded-lg bg-gray-50"
             />
         </div>

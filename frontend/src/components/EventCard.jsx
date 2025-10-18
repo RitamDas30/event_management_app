@@ -3,8 +3,48 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 import toast from "react-hot-toast"; 
-// import { CheckCircle, Clock, Share2, MapPin } from 'lucide-react'; // 🟢 Ensure MapPin is imported
-import { CheckCircle, Clock, Share2, Calendar, DollarSign, MapPin } from 'lucide-react'; 
+import { CheckCircle, Clock, Share2, Calendar, MapPin } from 'lucide-react'; 
+
+// ✅ Helper function to generate a professional placeholder image
+const generatePlaceholderUrl = (category, width = 400, height = 200) => {
+    let color = '2563EB'; // Default: Blue
+    let textColor = 'FFFFFF';
+    
+    // Using placehold.co (reliable external placeholder service)
+    switch (category) {
+        case 'Technical':
+            color = '10B981'; // Teal/Green
+            break;
+        case 'Cultural':
+            color = 'F59E0B'; // Amber
+            break;
+        case 'Sports':
+            color = 'EF4444'; // Red
+            break;
+        case 'Academic':
+            color = '6366F1'; // Indigo
+            break;
+        case 'Social':
+            color = 'EC4899'; // Pink
+            break;
+        case 'Workshop':
+            color = '8B5CF6'; // Purple
+            break;
+        case 'Seminar':
+            color = '06B6D4'; // Cyan
+            break;
+        case 'Conference':
+            color = '14B8A6'; // Teal
+            break;
+        default:
+            color = '4B5563'; // Gray
+    }
+    
+    const text = encodeURIComponent(category.toUpperCase());
+    
+    // Construct the URL (placehold.co format)
+    return `https://placehold.co/${width}x${height}/${color}/${textColor}?text=${text}`;
+};
 
 export default function EventCard({ event, refresh }) {
   const { user } = useAuth();
@@ -21,7 +61,10 @@ export default function EventCard({ event, refresh }) {
   const formattedDate = startTime.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
   const formattedTime = `${startTime.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })} – ${endTime.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
 
-  // 1. Initial Status Check (omitted for brevity)
+  // ✅ Get appropriate placeholder image
+  const eventImage = event.imageUrl || generatePlaceholderUrl(event.category);
+
+  // Initial Status Check
   useEffect(() => {
     const checkUserRegistration = async () => {
       if (!user || !event._id) {
@@ -31,7 +74,7 @@ export default function EventCard({ event, refresh }) {
       
       try {
         const res = await api.get("/registrations/me");
-        const currentReg = res.data.find(reg => reg.event._id === event._id);
+        const currentReg = res.data.find(reg => reg.event && reg.event._id === event._id);
         
         if (currentReg) {
           setRegistrationStatus(currentReg.status);
@@ -48,7 +91,6 @@ export default function EventCard({ event, refresh }) {
     
     checkUserRegistration();
   }, [user, event._id, refresh]); 
-
 
   const handleRegister = async () => {
     if (!user) {
@@ -97,11 +139,11 @@ export default function EventCard({ event, refresh }) {
     }
   };
   
-  // Share Handler Function (omitted for brevity)
+  // Share Handler Function
   const handleShare = async () => {
     const shareUrl = `${window.location.origin}/events/${event._id}`; 
     const shareTitle = `Join me at ${event.title}!`;
-    const shareText = `Check out this awesome event: ${event.title} happening at ${event.venue}.`;
+    const shareText = `Check out this awesome event: ${event.title} happening at ${event.venueName || 'TBD'}.`;
 
     if (navigator.share) {
       try {
@@ -126,14 +168,11 @@ export default function EventCard({ event, refresh }) {
     }
   };
 
-
   const renderStatusBlock = () => {
-    // ... (omitted status rendering logic) ...
     const status = registrationStatus;
     
     if (status === "registered" || status === "waitlisted") {
         const isRegistered = status === "registered";
-        // const isWaiting = status === "waitlisted";
         
         return (
             <div className={`mt-3 p-3 rounded-lg flex flex-col items-center border ${
@@ -171,19 +210,21 @@ export default function EventCard({ event, refresh }) {
     return null;
   };
 
-
   return (
     <div className="bg-white shadow-md rounded-lg p-4 flex flex-col justify-between border">
       
-      {/* 🛑 CORE CONTENT BLOCK 🛑 */}
       <div>
         
-        {/* 🟢 SHARE BUTTON INTEGRATION */}
+        {/* Share Button with Image */}
         <div className="relative">
             <img
-                src={event.imageUrl || "https://via.placeholder.com/400x200"}
+                src={eventImage}
                 alt={event.title}
                 className="rounded-md w-full h-40 object-cover mb-3"
+                onError={(e) => {
+                    // Fallback if placehold.co also fails
+                    e.target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200'%3E%3Crect fill='%234B5563' width='400' height='200'/%3E%3Ctext fill='%23FFF' font-size='24' font-family='Arial' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3E${event.category || 'EVENT'}%3C/text%3E%3C/svg%3E`;
+                }}
             />
             <button 
                 onClick={handleShare}
@@ -196,61 +237,57 @@ export default function EventCard({ event, refresh }) {
         
         <h3 className="text-lg font-semibold">{event.title}</h3>
         
-        {/* 🟢 UI FIX: Redesigned Date/Time/Price Section */}
+        {/* Date/Time/Venue Section */}
         <div className="space-y-1 mt-2 text-sm text-gray-700">
-            {/* Date and Time Block */}
+            {/* Date */}
             <div className="flex items-center gap-2">
                 <Calendar size={14} className="text-blue-500" />
                 <span className="font-semibold text-gray-800">{formattedDate}</span>
             </div>
+            
+            {/* Time */}
             <div className="flex items-center gap-2">
                 <Clock size={14} className="text-blue-500" />
                 <span className="text-gray-600">{formattedTime}</span>
             </div>
             
-            {/* 🛑 NEW: Venue Link Integration */}
-            <p className="text-gray-500 text-sm pt-1 flex items-center gap-1">
+            {/* Venue with Google Maps Link */}
+            <div className="flex items-center gap-1 pt-1">
                 <MapPin size={14} className="text-gray-500 flex-shrink-0" />
-                {/* Encode the venue string for use in a Google Maps query */}
                 <a 
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.venue)}`}
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.fullAddress || event.venueName)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="underline text-blue-600 hover:text-blue-700 transition cursor-pointer"
+                    className="underline text-blue-600 hover:text-blue-700 transition cursor-pointer text-sm"
+                    title="View on Google Maps"
                 >
-                    {event.venue}
+                    {event.venueName || event.fullAddress || 'Venue TBD'}
                 </a>
-            </p>
+            </div>
 
             {/* Category */}
-            <p className="text-sm">
+            <p className="text-sm pt-1">
                 Category: <span className="font-medium">{event.category}</span>
             </p>
 
-            {/* Price Block */}
-            <div className="flex items-center gap-2 pt-1">
-                {/* <DollarSign size={14} className={event.price > 0 ? "text-green-600" : "text-gray-500"} /> */}
-                <p className="font-semibold">
-                    {event.price > 0 ? `Price: ₹${event.price}` : 'Free'}
-                </p>
-            </div>
+            {/* Price */}
+            <p className="font-semibold pt-1">
+                {event.price > 0 ? `Price: ₹${event.price}` : 'Free'}
+            </p>
             
             {/* Seats Left */}
             <p className="text-sm pt-2">
                 Seats left: <span className="font-semibold">{event.seatsAvailable}</span>
             </p>
         </div>
-
-        
       </div>
 
       {user && user.role === "student" && (
-        // Renders EITHER the Status Block OR the Register Button.
         renderStatusBlock() || ( 
             <button
               disabled={loading} 
               onClick={handleRegister}
-              className={`mt-3 py-1 rounded transition text-white font-semibold 
+              className={`mt-3 py-2 rounded transition text-white font-semibold 
                 ${loading 
                     ? 'bg-gray-400 cursor-wait' 
                     : isWaitlistActive 

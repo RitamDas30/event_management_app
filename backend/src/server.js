@@ -10,11 +10,11 @@ import app from "./app.js";
 import { connectDB } from "./config/db.js";
 import { initSocket } from "./config/socket.js";
 import { startCronJobs } from "./services/cron.service.js"; 
-
+ 
 const PORT = process.env.PORT || 5000;
  
 // Connect to the database
-connectDB();
+connectDB(); 
   
 // 1. Create the HTTP server using the Express app
 const server = http.createServer(app);
@@ -23,7 +23,7 @@ const server = http.createServer(app);
 initSocket(server);
 
 // Start the scheduled tasks after DB connection
-startCronJobs();
+startCronJobs();  
 
 // 3. Start the server (handles both HTTP and Socket.io traffic)
 server.listen(PORT, () => {

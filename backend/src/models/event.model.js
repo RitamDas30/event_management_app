@@ -28,9 +28,13 @@ const eventSchema = new mongoose.Schema(
       ref: "User",
       required: [true, "Organizer reference is required"],
     },
-    venue: {
-      type: String,
-      required: [true, "Venue is required"],
+  fullAddress: {
+        type: String,
+        required: true, 
+    },
+    venueName: {
+        type: String,
+        required: true, 
     },
     startTime: {
       type: Date,
@@ -78,8 +82,7 @@ const eventSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// 📊 Index for search/filter performance
-// Combined index is great for complex queries
+
 eventSchema.index({ category: 1, venue: 1 });
 // Added a separate text index for full-text searching
 eventSchema.index({ title: "text", description: "text" });

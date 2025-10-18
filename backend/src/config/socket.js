@@ -39,11 +39,6 @@ export const initSocket = (server) => {
   return io;
 };
 
-/**
- * getIO()
- * - Use this inside controllers at runtime (after initSocket has been called).
- * - If not initialized, it throws — controllers should catch and handle that.
- */
 export const getIO = () => {
   if (!io) {
     throw new Error("Socket.io not initialized. Call initSocket(server) first.");
