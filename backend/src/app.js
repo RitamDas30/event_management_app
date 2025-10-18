@@ -8,8 +8,14 @@ import registrationRoutes from "./routes/registration.routes.js";
 import User from "./models/user.model.js"; 
 // import analyticsRoutes from "./routes/analytics.routes.js";
 
-// ❌ REMOVED: dotenv.config() - this is handled in server.js
-// ❌ REMOVED: connectDB() - this is handled in server.js
+import swaggerUi from 'swagger-ui-express';
+import YAML from 'yamljs';
+import path from 'path';
+
+const swaggerSpecPath = path.join(path.resolve(), 'swagger.yaml');
+const swaggerDocument = YAML.load(swaggerSpecPath);
+
+
  
 const app = express();
 
@@ -20,29 +26,21 @@ const app = express();
 
 const allowedOrigins = [
     'https://eventmanagementapp-ritam.vercel.app', // Production
-    'http://localhost:5173', // Local development
+    'http://localhost:5173', 
 ];
 
 // Middlewares
 app.use(express.json());
-
-// app.use(cors({
-//     origin: allowedOrigin,
-//     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-//     credentials: true,
-// }));
-
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument)); 
 app.use(cors({
     origin: function (origin, callback) {
-        // Allow requests with no origin (mobile apps, Postman, etc.)
+
         if (!origin) return callback(null, true);
-        
-        // Allow all Vercel preview deployments
+
         if (origin.includes('vercel.app')) {
             return callback(null, true);
         }
-        
-        // Allow specific origins
+
         if (allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
@@ -65,7 +63,7 @@ app.use("/uploads", express.static("uploads"));
 
 // Default route
 app.get("/", (req, res) => {
-  res.send("APP is running...");
+  res.send("APP is running... View documentation at /api-docs"); 
 });
 
 export default app;

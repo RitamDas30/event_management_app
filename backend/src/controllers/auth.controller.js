@@ -4,10 +4,8 @@ import bcrypt from 'bcrypt';
 import { sendEventEmail } from '../services/email.service.js';
 import crypto from 'crypto'; 
 
-
 // Helper function to Generate JWT Token
 const generateToken = (user) => {
-  // Ensure JWT_SECRET is available via process.env
   return jwt.sign(
     { id: user._id, role: user.role },
     process.env.JWT_SECRET,
@@ -97,58 +95,64 @@ export const getProfile = async (req, res) => {
 // 4. FORGOT PASSWORD (Send Reset Link)
 // =========================================================
 export const forgotPassword = async (req, res) => {
-    
-    const email = req.body.email;
-    console.log(`[AUTH] Forgot Password requested for: ${email}`);
-
-    // 1. Find the user
-    const user = await User.findOne({ email: email });
-    if (!user) {
-        console.log(`[AUTH] User not found, returning 404.`);
-        return res.status(404).json({ message: "No user found with that email address." });
-    }
-    
-    console.log(`[AUTH] User found: ${user._id}. Generating token.`);
-
-    // 2. Generate token and expiry time
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const tokenExpires = new Date(Date.now() + 3600000); // 1 hour
-
-    // 3. Save the token and expiry time to the database
-    user.passwordResetToken = resetToken;
-    user.passwordResetExpires = tokenExpires;
-    await user.save({ validateBeforeSave: false }); 
-    
-    // 4. Construct the reset URL 
-    const resetURL = `${process.env.CLIENT_ORIGIN}/reset-password?token=${resetToken}&email=${user.email}`;
-    
-    console.log(`[AUTH] Token saved. Attempting to send email to ${user.email}`);
-    console.log(`[AUTH] Reset URL generated: ${resetURL}`);
-
-    // 5. Send the email
     try {
-        // 🛑 This line will now correctly THROW the network error if the email service fails.
-        await sendEventEmail(user.email, {
-            eventName: "Password Reset",
-            resetUrl: resetURL,
-        }, 'reset'); 
+        const { email } = req.body;
         
-        console.log(`[AUTH] Password reset email successfully SENT to ${user.email}.`);
+        // ✅ FIX 1: Add validation
+        if (!email) {
+            return res.status(400).json({ message: "Email is required" });
+        }
+        
+        console.log(`[AUTH] Forgot Password requested for: ${email}`);
 
-        res.status(200).json({ message: 'Password reset email sent successfully.' });
-    } catch (err) {
-        // 🛑 CATCH BLOCK: Executes only if sendEventEmail THROWs a connection or auth error.
+        // 1. Find the user
+        const user = await User.findOne({ email });
+        if (!user) {
+            console.log(`[AUTH] User not found, returning 404.`);
+            return res.status(404).json({ message: "No user found with that email address." });
+        }
         
-        // Clean up token first (since the email failed)
-        user.passwordResetToken = undefined;
-        user.passwordResetExpires = undefined;
-        await user.save({ validateBeforeSave: false });
-        
-        // Log the specific error message from the failed transporter connection
-        console.error(`[AUTH ERROR] Failed to send reset email:`, err.message); 
+        console.log(`[AUTH] User found: ${user._id}. Generating token.`);
 
-        // Return a 500 status to the client, triggering the RED toast
-        res.status(500).json({ message: 'Error sending reset email. Please try again later.' });
+        // 2. Generate token and expiry time
+        const resetToken = crypto.randomBytes(32).toString('hex');
+        const tokenExpires = new Date(Date.now() + 3600000); // 1 hour
+
+        // 3. Save the token and expiry time to the database
+        user.passwordResetToken = resetToken;
+        user.passwordResetExpires = tokenExpires;
+        await user.save({ validateBeforeSave: false }); 
+        
+        // ✅ FIX 2: Use consistent env variable name with fallback
+        const frontendURL = process.env.FRONTEND_URL || process.env.CLIENT_ORIGIN || 'http://localhost:5173';
+        const resetURL = `${frontendURL}/reset-password?token=${resetToken}&email=${user.email}`;
+        
+        console.log(`[AUTH] Token saved. Attempting to send email to ${user.email}`);
+        console.log(`[AUTH] Reset URL generated: ${resetURL}`);
+
+        // 4. Send the email
+        try {
+            await sendEventEmail(user.email, {
+                resetUrl: resetURL,
+            }, 'reset'); 
+            
+            console.log(`[AUTH] ✅ Password reset email successfully SENT to ${user.email}.`);
+
+            res.status(200).json({ message: 'Password reset email sent successfully.' });
+        } catch (emailError) {
+            // Email failed - clean up token
+            user.passwordResetToken = undefined;
+            user.passwordResetExpires = undefined;
+            await user.save({ validateBeforeSave: false });
+            
+            console.error(`[AUTH ERROR] ❌ Failed to send reset email:`, emailError.message); 
+
+            res.status(500).json({ message: 'Error sending reset email. Please try again later.' });
+        }
+    } catch (error) {
+        // ✅ FIX 3: Add outer try-catch for database errors
+        console.error(`[AUTH ERROR] ❌ Forgot password process failed:`, error);
+        res.status(500).json({ message: 'Server error during password reset process.' });
     }
 };
 
@@ -156,30 +160,40 @@ export const forgotPassword = async (req, res) => {
 // 5. RESET PASSWORD (Apply New Password)
 // =========================================================
 export const resetPassword = async (req, res) => {
-    const { token, email } = req.query;
-    const { password } = req.body;
-    
-    console.log(`[AUTH] Reset Password attempt for: ${email}`);
+    try {
+        const { token, email } = req.query;
+        const { password } = req.body;
+        
+        // ✅ FIX 4: Add validation
+        if (!token || !email || !password) {
+            return res.status(400).json({ message: 'Missing required fields' });
+        }
+        
+        console.log(`[AUTH] Reset Password attempt for: ${email}`);
 
-    // 1. Find the user based on the valid, non-expired token
-    const user = await User.findOne({
-        email,
-        passwordResetToken: token,
-        passwordResetExpires: { $gt: Date.now() } // Check if token is not expired
-    });
+        // 1. Find the user based on the valid, non-expired token
+        const user = await User.findOne({
+            email,
+            passwordResetToken: token,
+            passwordResetExpires: { $gt: Date.now() }
+        });
 
-    if (!user) {
-        console.log(`[AUTH] Token invalid or expired for ${email}.`);
-        return res.status(400).json({ message: 'Token is invalid or has expired.' });
+        if (!user) {
+            console.log(`[AUTH] Token invalid or expired for ${email}.`);
+            return res.status(400).json({ message: 'Token is invalid or has expired.' });
+        }
+
+        // 2. Update the password
+        user.password = password; 
+        user.passwordResetToken = undefined;
+        user.passwordResetExpires = undefined;
+        await user.save(); 
+        
+        console.log(`[AUTH] ✅ Password successfully reset for user ID ${user._id}.`);
+
+        res.status(200).json({ message: 'Password reset successfully. Please log in.' });
+    } catch (error) {
+        console.error(`[AUTH ERROR] ❌ Reset password failed:`, error);
+        res.status(500).json({ message: 'Server error during password reset.' });
     }
-
-    // 2. Update the password
-    user.password = password; 
-    user.passwordResetToken = undefined;
-    user.passwordResetExpires = undefined;
-    await user.save(); 
-    
-    console.log(`[AUTH] Password successfully reset for user ID ${user._id}.`);
-
-    res.status(200).json({ message: 'Password reset successfully. Please log in.' });
 };

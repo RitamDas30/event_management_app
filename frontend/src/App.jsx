@@ -18,6 +18,7 @@ import StudentCalendar from "./pages/StudentCalendar";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import EventDetails from "./pages/EventDetails"; 
+import EditEvent from "./pages/EditEvent";
 
 
 import { AuthProvider, useAuth } from "./context/AuthContext"; 
@@ -97,6 +98,8 @@ export default function App() {
             <Route path="/my-registrations" element={<ProtectedRoute><StudentRegistrations /></ProtectedRoute>} />
             <Route path="/calendar" element={<ProtectedRoute><StudentCalendar /></ProtectedRoute>} />
 
+            {/* event edit  */}
+            <Route path="/edit-event/:id" element={<OrganizerRoute><EditEvent /></OrganizerRoute>} />
             {/* CATCH ALL */}
             <Route path="*" element={<NotFound />} />
           </Routes>

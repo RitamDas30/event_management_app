@@ -1,14 +1,14 @@
 import Event from "../models/event.model.js";
+import Registration from "../models/registration.model.js";
+import { sendEventEmail } from '../services/email.service.js';
 
 // ➕ Create a new event (organizer only)
 export const createEvent = async (req, res) => {
   try {
-    const { title, description, category, venue, startTime, endTime, capacity, price } = req.body;
+    const { title, description, category, fullAddress, venueName, startTime, endTime, capacity, price } = req.body;
     
-    // Cloudinary URL/Path from Multer
     const imagePath = req.file ? req.file.path : null; 
     
-    // Set initial seatsAvailable and isPaid
     const isPaid = price > 0;
     const seatsAvailable = capacity; 
 
@@ -16,7 +16,8 @@ export const createEvent = async (req, res) => {
       title,
       description,
       category,
-      venue,
+      fullAddress,
+      venueName,
       startTime,
       endTime,
       capacity,
@@ -30,7 +31,6 @@ export const createEvent = async (req, res) => {
     res.status(201).json({ message: "Event created successfully", event });
   } catch (error) {
     console.error("Create Event Error:", error);
-    // Note: The specific error message is hidden for security in production
     res.status(500).json({ message: "Failed to create event" }); 
   }
 };
@@ -55,9 +55,9 @@ export const getEvents = async (req, res) => {
   }
 };
 
-
+// ---------------------------------------------------------
 // Get a single event
-
+// ---------------------------------------------------------
 export const getEventById = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id).populate("organizer", "name email role");
@@ -69,9 +69,9 @@ export const getEventById = async (req, res) => {
   }
 };
 
-
+// ---------------------------------------------------------
 // Update event (Organizer or Admin)
-
+// ---------------------------------------------------------
 export const updateEvent = async (req, res) => {
   try {
     const event = await Event.findById(req.params.id);
@@ -91,9 +91,16 @@ export const updateEvent = async (req, res) => {
     }
 
     // 2. CRITICAL LOGIC: Handle Capacity Change
-    if (req.body.capacity) {
+    const newCapacityValue = req.body.capacity;
+    
+    if (newCapacityValue !== undefined && newCapacityValue !== null) { 
+        const newCapacity = Number(newCapacityValue); 
+        
+        if (isNaN(newCapacity) || newCapacity < 0) {
+             return res.status(400).json({ message: "Capacity must be a non-negative number." });
+        }
+        
         const oldCapacity = event.capacity;
-        const newCapacity = req.body.capacity;
         const occupiedSeats = oldCapacity - event.seatsAvailable;
 
         if (newCapacity < occupiedSeats) {
@@ -101,7 +108,7 @@ export const updateEvent = async (req, res) => {
         }
         
         const capacityDifference = newCapacity - oldCapacity;
-        req.body.seatsAvailable = event.seatsAvailable + capacityDifference;
+        req.body.seatsAvailable = event.seatsAvailable + capacityDifference; 
     }
 
     // 3. Update fields and save
@@ -116,13 +123,23 @@ export const updateEvent = async (req, res) => {
 
     res.json({ message: "Event updated successfully", event });
   } catch (error) {
-    console.error("Update Event Error:", error);
-    res.status(500).json({ message: error.message });
+    console.error("Update Event Error:", error); 
+    
+    let errorMessage = "Event update failed.";
+    
+    if (error.name === 'ValidationError') {
+        errorMessage = Object.values(error.errors).map(val => val.message).join('; ');
+        return res.status(400).json({ message: `Validation Error: ${errorMessage}` }); 
+    } else {
+        errorMessage = error.message;
+    }
+    
+    res.status(500).json({ message: errorMessage });
   }
 };
 
 // ---------------------------------------------------------
-//  Delete event (Organizer or Admin)
+// ❌ Delete event (Organizer or Admin) - ENHANCED VERSION
 // ---------------------------------------------------------
 export const deleteEvent = async (req, res) => {
   try {
@@ -137,10 +154,47 @@ export const deleteEvent = async (req, res) => {
       return res.status(403).json({ message: "Unauthorized: You are not the event organizer or an administrator." });
     }
 
+    // 🟢 NEW: Capture deletion reason from the request body
+    const { reason, otherDetails } = req.body;
+    const finalReason = reason === 'Other' ? otherDetails : reason; 
+    
+    // 2. 🟢 NOTIFY ALL REGISTERED STUDENTS (CRITICAL)
+    const registeredAttendees = await Registration.find({
+        event: req.params.id,
+        status: 'registered' 
+    }).populate('student', 'email');
+    
+    if (registeredAttendees.length > 0) {
+        console.log(`[Event Delete] Notifying ${registeredAttendees.length} attendees about cancellation.`);
+        
+        // Send email concurrently to all registered students
+        const emailPromises = registeredAttendees.map(async (reg) => {
+            if (reg.student && reg.student.email) {
+                try {
+                    await sendEventEmail(reg.student.email, {
+                        eventName: event.title,
+                        cancellationReason: finalReason || 'No reason provided',
+                        eventTime: event.startTime,
+                        venue: event.venueName,
+                    }, 'cancellation');
+                } catch (emailError) {
+                    console.error(`Failed to send cancellation email to ${reg.student.email}:`, emailError);
+                }
+            }
+        });
+        
+        await Promise.all(emailPromises);
+    }
+    
+    // 3. Delete event and all related registration records
     await Event.findByIdAndDelete(req.params.id);
-    res.json({ message: "Event deleted successfully" });
+    await Registration.deleteMany({ event: req.params.id });
+    
+    res.json({ 
+        message: `Event '${event.title}' and all ${registeredAttendees.length} registrations were successfully cancelled and deleted.` 
+    });
   } catch (error) {
     console.error("Delete Event Error:", error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: "Event deletion failed: " + error.message });
   }
 };

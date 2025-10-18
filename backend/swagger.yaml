@@ -1,0 +1,266 @@
+openapi: 3.0.0
+info:
+  title: Smart Campus Event Management System (SCEMS) API
+  version: 1.0.0
+  description: |
+    RESTful API for managing campus events, registrations, and user authentication within the Smart Campus system.
+    This documentation details the required endpoints, parameters, and security requirements.
+  contact:
+    name: [Your Name]
+    email: [Your Email]
+servers:
+  - url: /api
+    description: Production/Local Server Base Path
+
+tags:
+  - name: Authentication
+    description: User login, registration, password reset, and profile access.
+  - name: Events
+    description: Public viewing and Organizer/Admin management of events.
+  - name: Registration
+    description: Student event registration, cancellation, and waitlist management.
+
+paths:
+  # ======================= AUTHENTICATION ROUTES =======================
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register a New User
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, example: Alex Student }
+                email: { type: string, format: email, example: student@test.com }
+                password: { type: string, format: password, example: password123 }
+                role: { type: string, enum: [student, organizer, admin], default: student }
+      responses:
+        '201':
+          description: User successfully registered and logged in (returns token).
+        '400':
+          description: User already exists or validation error.
+  
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Log in a User
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        '200':
+          description: Login successful, returns JWT token.
+        '401':
+          description: Invalid credentials.
+
+  /auth/forgotPassword:
+    post:
+      tags: [Authentication]
+      summary: Initiate Password Reset
+      description: Sends a password reset link to the user's email.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: { type: string, format: email }
+      responses:
+        '200':
+          description: Password reset email sent successfully.
+        '404':
+          description: User not found with that email.
+
+  /auth/resetPassword:
+    patch:
+      tags: [Authentication]
+      summary: Finalize Password Reset
+      security: [] # This endpoint uses URL query params for auth, not Bearer token
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema: { type: string }
+        - name: email
+          in: query
+          required: true
+          schema: { type: string, format: email }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password: { type: string, format: password }
+      responses:
+        '200':
+          description: Password reset successfully.
+        '400':
+          description: Invalid or expired token.
+
+  # ======================= EVENT ROUTES =======================
+  /events:
+    get:
+      tags: [Events]
+      summary: Get All Events (Public Access)
+      parameters:
+        - name: search
+          in: query
+          description: Search term for event title (case-insensitive).
+          schema: { type: string }
+        - name: category
+          in: query
+          description: Filter by event category.
+          schema: { type: string }
+      responses:
+        '200':
+          description: Returns a list of all events.
+    post:
+      tags: [Events]
+      summary: Create a New Event
+      security:
+        - bearerAuth: []
+      description: Requires Organizer or Admin role. Handles file upload via multipart/form-data.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EventCreateInput'
+      responses:
+        '201':
+          description: Event created successfully.
+        '403':
+          description: Forbidden (Role not Organizer/Admin).
+
+  /events/{id}:
+    get:
+      tags: [Events]
+      summary: Get Event Details by ID (Public Access)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, example: 6539300e65693b6cd153da12 }
+      responses:
+        '200':
+          description: Returns the single event object.
+        '404':
+          description: Event not found.
+    put:
+      tags: [Events]
+      summary: Update Event Details
+      security:
+        - bearerAuth: []
+      description: Requires Organizer (if owner) or Admin role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventUpdateInput'
+      responses:
+        '200':
+          description: Event updated successfully.
+        '403':
+          description: Forbidden (Not owner or Admin).
+    delete:
+      tags: [Events]
+      summary: Delete an Event
+      security:
+        - bearerAuth: []
+      description: Requires Organizer (if owner) or Admin role.
+      responses:
+        '200':
+          description: Event deleted successfully.
+        '403':
+          description: Forbidden (Not owner or Admin).
+
+  # ======================= REGISTRATION ROUTES =======================
+  /registrations/me:
+    get:
+      tags: [Registration]
+      summary: Get My Registrations (History)
+      security:
+        - bearerAuth: []
+      description: Returns a list of all events the user is registered for (Requires Student or Admin role).
+      responses:
+        '200':
+          description: Returns array of populated registration objects.
+        '401':
+          description: Not authorized (Missing token).
+
+  /registrations/{eventId}:
+    post:
+      tags: [Registration]
+      summary: Register for an Event
+      security:
+        - bearerAuth: []
+      description: Creates a new registration record (requires Student role). Handles waitlist logic if capacity is full.
+      responses:
+        '201':
+          description: Registration successful or Waitlist entry created.
+        '400':
+          description: Already registered or waitlisted.
+        '409':
+          description:  "Schedule Conflict: Time overlap detected." 
+        '403':
+          description: Forbidden (15-minute ban is active).
+    delete:
+      tags: [Registration]
+      summary: Cancel Registration (Unenroll)
+      security:
+        - bearerAuth: []
+      description: Cancels the student's registration. Triggers waitlist promotion and sets 15-minute ban.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason: { type: string, example: "Registered by Mistake" }
+                otherDetails: { type: string, example: "Could not find venue." }
+      responses:
+        '200':
+          description: Cancellation successful. Promoted candidate details included in message.
+        '404':
+          description: Registration not found.
+
+components:
+  schemas:
+    EventCreateInput:
+      type: object
+      properties:
+        title: { type: string, example: SRM Code-a-Thon 2026 }
+        description: { type: string }
+        category: { type: string, enum: [Technical, Cultural, Sports, Academic, Social] }
+        fullAddress: { type: string, description: Global, verifiable street address for mapping (IP). }
+        venueName: { type: string, description: Specific location name (MAC), e.g., Hall 1. }
+        startTime: { type: string, format: date-time }
+        endTime: { type: string, format: date-time }
+        capacity: { type: integer, example: 100 }
+        price: { type: number, example: 0 }
+        image: { type: string, format: binary, description: Event banner image file. }
+    EventUpdateInput:
+      allOf:
+        - $ref: '#/components/schemas/EventCreateInput'
+        - type: object
+          properties:
+            seatsAvailable: { type: integer, description: Can be adjusted only if capacity increases. }
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
