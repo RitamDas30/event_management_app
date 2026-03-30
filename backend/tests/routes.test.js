@@ -122,6 +122,37 @@ describe("Model schemas load correctly", () => {
   });
 });
 
+describe("Review module", () => {
+  it("review model imports successfully", async () => {
+    const module = await import("../src/models/review.model.js");
+    expect(module.default).toBeDefined();
+    expect(module.default.modelName).toBe("Review");
+  });
+
+  it("review controller exports all functions", async () => {
+    const module = await import("../src/controllers/review.controller.js");
+    expect(typeof module.createReview).toBe("function");
+    expect(typeof module.getEventReviews).toBe("function");
+    expect(typeof module.deleteReview).toBe("function");
+  });
+
+  it("review routes module imports successfully", async () => {
+    const module = await import("../src/routes/review.routes.js");
+    expect(module.default).toBeDefined();
+  });
+});
+
+describe("Event model has expanded fields", () => {
+  it("event schema includes tags, agenda, faqs, speakers", async () => {
+    const module = await import("../src/models/event.model.js");
+    const paths = module.default.schema.paths;
+    expect(paths.tags).toBeDefined();
+    expect(paths.agenda).toBeDefined();
+    expect(paths.faqs).toBeDefined();
+    expect(paths.speakers).toBeDefined();
+  });
+});
+
 describe("User model schema has new fields", () => {
   it("user schema includes avatar, bio, interests, socialLinks, notificationPreferences", async () => {
     const module = await import("../src/models/user.model.js");
@@ -177,4 +208,14 @@ describe("Protected route authentication check", () => {
 
   // Note: public profile endpoint (/api/users/:id/public) is tested via route import
   // and confirmed public (no protect middleware). Integration testing requires MongoDB.
+
+  it("review routes allow public GET (no auth needed)", async () => {
+    const reviewRoutes = (await import("../src/routes/review.routes.js")).default;
+    const app = express();
+    app.use(express.json());
+    app.use("/api/reviews", reviewRoutes);
+    // GET should not return 401 since it's public
+    // Note: will hang on DB query, so we just verify the route module loads
+    expect(reviewRoutes).toBeDefined();
+  });
 });

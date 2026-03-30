@@ -78,6 +78,33 @@ const eventSchema = new mongoose.Schema(
       enum: ["upcoming", "ongoing", "completed", "cancelled"],
       default: "upcoming",
     },
+    tags: {
+      type: [String],
+      default: [],
+    },
+    agenda: [
+      {
+        time: String,
+        title: String,
+        speaker: String,
+        duration: String,
+      },
+    ],
+    faqs: [
+      {
+        question: String,
+        answer: String,
+      },
+    ],
+    speakers: [
+      {
+        name: String,
+        role: String,
+        bio: String,
+        avatar: String,
+        socialLink: String,
+      },
+    ],
   },
   { timestamps: true }
 );

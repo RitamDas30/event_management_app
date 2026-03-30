@@ -7,10 +7,25 @@ import logger from "../config/logger.js";
 export const createEvent = async (req, res) => {
   try {
     const { title, description, category, fullAddress, venueName, startTime, endTime, capacity, price } = req.body;
-    
-    const imagePath = req.file ? req.file.path : null; 
+
+    const imagePath = req.file ? req.file.path : null;
     const isPaid = price > 0;
-    const seatsAvailable = capacity; 
+    const seatsAvailable = capacity;
+
+    // Parse JSON array fields from FormData
+    let tags = [];
+    let agenda = [];
+    let faqs = [];
+    let speakers = [];
+
+    try {
+      if (req.body.tags) tags = JSON.parse(req.body.tags);
+      if (req.body.agenda) agenda = JSON.parse(req.body.agenda);
+      if (req.body.faqs) faqs = JSON.parse(req.body.faqs);
+      if (req.body.speakers) speakers = JSON.parse(req.body.speakers);
+    } catch (parseErr) {
+      logger.warn({ err: parseErr }, "Failed to parse JSON fields, using defaults");
+    }
 
     const event = await Event.create({
       title,
@@ -22,10 +37,14 @@ export const createEvent = async (req, res) => {
       endTime,
       capacity,
       price,
-      seatsAvailable: seatsAvailable, 
+      seatsAvailable: seatsAvailable,
       imageUrl: imagePath,
-      isPaid: isPaid, 
-      organizer: req.user.id, 
+      isPaid: isPaid,
+      organizer: req.user.id,
+      tags,
+      agenda,
+      faqs,
+      speakers,
     });
 
     res.status(201).json({ message: "Event created successfully", event });

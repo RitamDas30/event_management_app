@@ -1,242 +1,520 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
-import toast from "react-hot-toast"; 
+import toast from "react-hot-toast";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Check,
+  Plus,
+  X,
+  Calendar,
+  MapPin,
+  Users,
+  Image,
+  FileText,
+  Tag,
+  HelpCircle,
+  Mic,
+} from "lucide-react";
+
+const steps = [
+  { id: 1, name: "Basic Info", icon: FileText },
+  { id: 2, name: "Schedule & Venue", icon: Calendar },
+  { id: 3, name: "Details", icon: Tag },
+  { id: 4, name: "Media & Review", icon: Image },
+];
+
+const categories = ["Technical", "Cultural", "Sports", "Academic", "Social"];
 
 export default function CreateEvent() {
   const navigate = useNavigate();
+  const [currentStep, setCurrentStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+
   const [form, setForm] = useState({
     title: "",
     description: "",
-    category: "Technical", 
-    fullAddress: "", 
+    category: "Technical",
+    fullAddress: "",
     venueName: "",
     startTime: "",
     endTime: "",
-    capacity: 50, 
-    price: 0,    
-    imageFile: null, 
+    capacity: 50,
+    price: 0,
+    imageFile: null,
+    tags: [],
+    agenda: [],
+    faqs: [],
+    speakers: [],
   });
 
-  const [loading, setLoading] = useState(false); 
+  const [tagInput, setTagInput] = useState("");
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-    
-    if (name === "imageFile" && files.length > 0) {
+    if (name === "imageFile" && files?.length > 0) {
       setForm({ ...form, imageFile: files[0] });
     } else {
-      const finalValue = (name === 'capacity' || name === 'price') ? (value === '' ? '' : Number(value)) : value;
+      const finalValue =
+        name === "capacity" || name === "price"
+          ? value === ""
+            ? ""
+            : Number(value)
+          : value;
       setForm({ ...form, [name]: finalValue });
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  // Tag management
+  const addTag = () => {
+    const tag = tagInput.trim();
+    if (tag && !form.tags.includes(tag) && form.tags.length < 10) {
+      setForm({ ...form, tags: [...form.tags, tag] });
+      setTagInput("");
+    }
+  };
 
+  const removeTag = (tag) => {
+    setForm({ ...form, tags: form.tags.filter((t) => t !== tag) });
+  };
+
+  // Agenda management
+  const addAgendaItem = () => {
+    setForm({
+      ...form,
+      agenda: [...form.agenda, { time: "", title: "", speaker: "", duration: "" }],
+    });
+  };
+
+  const updateAgendaItem = (index, field, value) => {
+    const updated = [...form.agenda];
+    updated[index][field] = value;
+    setForm({ ...form, agenda: updated });
+  };
+
+  const removeAgendaItem = (index) => {
+    setForm({ ...form, agenda: form.agenda.filter((_, i) => i !== index) });
+  };
+
+  // FAQ management
+  const addFaq = () => {
+    setForm({ ...form, faqs: [...form.faqs, { question: "", answer: "" }] });
+  };
+
+  const updateFaq = (index, field, value) => {
+    const updated = [...form.faqs];
+    updated[index][field] = value;
+    setForm({ ...form, faqs: updated });
+  };
+
+  const removeFaq = (index) => {
+    setForm({ ...form, faqs: form.faqs.filter((_, i) => i !== index) });
+  };
+
+  // Speaker management
+  const addSpeaker = () => {
+    setForm({
+      ...form,
+      speakers: [...form.speakers, { name: "", role: "", bio: "", socialLink: "" }],
+    });
+  };
+
+  const updateSpeaker = (index, field, value) => {
+    const updated = [...form.speakers];
+    updated[index][field] = value;
+    setForm({ ...form, speakers: updated });
+  };
+
+  const removeSpeaker = (index) => {
+    setForm({ ...form, speakers: form.speakers.filter((_, i) => i !== index) });
+  };
+
+  const validateStep = () => {
+    switch (currentStep) {
+      case 1:
+        if (!form.title || !form.description || !form.category) {
+          toast.error("Please fill in all required fields");
+          return false;
+        }
+        return true;
+      case 2:
+        if (!form.venueName || !form.fullAddress || !form.startTime || !form.endTime) {
+          toast.error("Please fill in venue and time details");
+          return false;
+        }
+        if (new Date(form.endTime) <= new Date(form.startTime)) {
+          toast.error("End time must be after start time");
+          return false;
+        }
+        return true;
+      case 3:
+        return true; // Optional fields
+      case 4:
+        return true;
+      default:
+        return true;
+    }
+  };
+
+  const nextStep = () => {
+    if (validateStep()) setCurrentStep((s) => Math.min(s + 1, 4));
+  };
+
+  const prevStep = () => setCurrentStep((s) => Math.max(s - 1, 1));
+
+  const handleSubmit = async () => {
+    setLoading(true);
     try {
       const formData = new FormData();
-      
-      if (form.imageFile) {
-        formData.append("image", form.imageFile);
-      }
-      
-      Object.entries(form).forEach(([key, value]) => {
-          if (key !== 'imageFile' && value !== null) { 
-              formData.append(key, value);
-          }
+
+      if (form.imageFile) formData.append("image", form.imageFile);
+
+      // Basic fields
+      const basicFields = [
+        "title", "description", "category", "fullAddress", "venueName",
+        "startTime", "endTime", "capacity", "price",
+      ];
+      basicFields.forEach((key) => {
+        if (form[key] !== null && form[key] !== undefined) {
+          formData.append(key, form[key]);
+        }
       });
-      
+
+      // Array/JSON fields
+      if (form.tags.length > 0) formData.append("tags", JSON.stringify(form.tags));
+      if (form.agenda.length > 0) formData.append("agenda", JSON.stringify(form.agenda));
+      if (form.faqs.length > 0) formData.append("faqs", JSON.stringify(form.faqs));
+      if (form.speakers.length > 0) formData.append("speakers", JSON.stringify(form.speakers));
+
       await api.post("/events", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      toast.success("Event created successfully! 🎉");
-      navigate("/dashboard");
+      toast.success("Event created successfully!");
+      navigate("/organizer/events");
     } catch (err) {
-      const errorMessage = err.response?.data?.message || "Event creation failed. Please check inputs.";
-      console.error(err);
-      toast.error(errorMessage);
+      toast.error(err.response?.data?.message || "Event creation failed");
     } finally {
       setLoading(false);
     }
   };
 
+  const inputClass =
+    "w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none";
+
   return (
-    <div className="flex justify-center items-center py-10">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white shadow-xl rounded-2xl p-8 w-full max-w-lg"
-      >
-        <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">
-          Create New Event
-        </h2>
+    <div className="max-w-3xl mx-auto">
+      {/* Step Indicator */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          {steps.map((step, idx) => {
+            const Icon = step.icon;
+            const isActive = currentStep === step.id;
+            const isCompleted = currentStep > step.id;
 
-        {/* Text and Description Fields */}
-        <div className="space-y-4">
-          
-          <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">Event Title</label>
-            <input
-              type="text"
-              name="title"
-              id="title"
-              placeholder="e.g., Annual Tech Fest 2026"
-              value={form.title}
-              onChange={handleChange}
-              required
-              className="border w-full p-3 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <textarea
-              name="description"
-              id="description"
-              placeholder="Describe the event details, activities, and purpose..."
-              value={form.description}
-              onChange={handleChange}
-              required
-              rows="4"
-              className="border w-full p-3 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
+            return (
+              <div key={step.id} className="flex items-center flex-1">
+                <div className="flex flex-col items-center flex-shrink-0">
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all ${
+                      isCompleted
+                        ? "bg-green-500 text-white"
+                        : isActive
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-200 text-gray-500"
+                    }`}
+                  >
+                    {isCompleted ? <Check className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
+                  </div>
+                  <span
+                    className={`text-xs mt-1 font-medium ${
+                      isActive ? "text-blue-600" : "text-gray-500"
+                    }`}
+                  >
+                    {step.name}
+                  </span>
+                </div>
+                {idx < steps.length - 1 && (
+                  <div
+                    className={`flex-1 h-0.5 mx-2 mt-[-12px] ${
+                      currentStep > step.id ? "bg-green-500" : "bg-gray-200"
+                    }`}
+                  />
+                )}
+              </div>
+            );
+          })}
         </div>
+      </div>
 
-        {/* Category and Venue */}
-        <div className="grid grid-cols-2 gap-4 mt-4">
+      <div className="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
+        {/* Step 1: Basic Info */}
+        {currentStep === 1 && (
+          <div className="space-y-5">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Basic Information</h2>
+
             <div>
-                <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                <select
-                name="category"
-                id="category"
-                value={form.category}
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Event Title *
+              </label>
+              <input
+                type="text"
+                name="title"
+                value={form.title}
                 onChange={handleChange}
-                className="border w-full p-3 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500"
-                >
-                <option value="Technical">Technical</option>
-                <option value="Cultural">Cultural</option>
-                <option value="Sports">Sports</option>
-                <option value="Academic">Academic</option>
-                <option value="Social">Social</option>
-                </select>
-            </div>
-            
-            <div>
-                <label htmlFor="venueName" className="block text-sm font-medium text-gray-700 mb-1">Local Venue Name (e.g., Hall 1)</label>
-                <input
-                type="text" 
-                name="venueName" 
-                id="venueName" 
-                placeholder="Specific Location Name"
-                value={form.venueName}
-                onChange={handleChange} 
+                placeholder="e.g., Annual Tech Fest 2026"
                 required
-                className="border w-full p-3 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                />
+                className={inputClass}
+              />
             </div>
-        </div>
-        
-        {/* Full Address Field */}
-        <div className="mt-4">
-            <label htmlFor="fullAddress" className="block text-sm font-medium text-gray-700 mb-1">Full Address (for Map Accuracy)</label>
-            <input
-                type="text" 
-                name="fullAddress" 
-                id="fullAddress" 
-                placeholder="e.g., University Street Address, City, State"
-                value={form.fullAddress}
-                onChange={handleChange} 
-                required
-                className="border w-full p-3 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-            />
-        </div>
-        
-        {/* Date and Time Grouping */}
-        <div className="mt-4 grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="startTime" className="block text-sm font-medium text-gray-700 mb-1">Start Date & Time</label>
-            <input
-              type="datetime-local"
-              name="startTime"
-              id="startTime"
-              value={form.startTime}
-              onChange={handleChange}
-              required
-              className="border p-3 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-          <div>
-            <label htmlFor="endTime" className="block text-sm font-medium text-gray-700 mb-1">End Date & Time</label>
-            <input
-              type="datetime-local"
-              name="endTime"
-              id="endTime"
-              value={form.endTime}
-              onChange={handleChange}
-              required
-              className="border p-3 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-        </div>
 
-        {/* Capacity and Price */}
-        <div className="grid grid-cols-2 gap-4 mt-4">
             <div>
-                <label htmlFor="capacity" className="block text-sm font-medium text-gray-700 mb-1">Capacity</label>
-                <input
-                    type="number"
-                    name="capacity"
-                    id="capacity"
-                    placeholder="Min 1"
-                    value={form.capacity}
-                    onChange={handleChange}
-                    required
-                    min="1"
-                    className="border w-full p-3 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                />
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Description *
+              </label>
+              <textarea
+                name="description"
+                value={form.description}
+                onChange={handleChange}
+                placeholder="Describe the event..."
+                rows={4}
+                required
+                className={inputClass + " resize-none"}
+              />
+              <p className="text-xs text-gray-400 mt-1">{form.description.length}/2000</p>
             </div>
-            
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                <select name="category" value={form.category} onChange={handleChange} className={inputClass}>
+                  {categories.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹)</label>
+                <input
+                  type="number"
+                  name="price"
+                  value={form.price}
+                  onChange={handleChange}
+                  min="0"
+                  placeholder="0 for free"
+                  className={inputClass}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Step 2: Schedule & Venue */}
+        {currentStep === 2 && (
+          <div className="space-y-5">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Schedule & Venue</h2>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Start Time *</label>
+                <input type="datetime-local" name="startTime" value={form.startTime} onChange={handleChange} required className={inputClass} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">End Time *</label>
+                <input type="datetime-local" name="endTime" value={form.endTime} onChange={handleChange} required className={inputClass} />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Venue Name *</label>
+                <input type="text" name="venueName" value={form.venueName} onChange={handleChange} placeholder="e.g., Main Auditorium" required className={inputClass} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Capacity *</label>
+                <input type="number" name="capacity" value={form.capacity} onChange={handleChange} min="1" required className={inputClass} />
+              </div>
+            </div>
+
             <div>
-                <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">Ticket Price (₹)</label>
-                <input
-                    type="number"
-                    name="price"
-                    id="price"
-                    placeholder="0 for free"
-                    value={form.price}
-                    onChange={handleChange}
-                    min="0"
-                    className="border w-full p-3 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Full Address *</label>
+              <input type="text" name="fullAddress" value={form.fullAddress} onChange={handleChange} placeholder="e.g., 123 University Road, City, State" required className={inputClass} />
             </div>
-        </div>
-        
-        {/* Image Upload */}
-        <div className="mt-4">
-            <label htmlFor="imageFile" className="block text-sm font-medium text-gray-700 mb-1">
-                Event Image (JPG, PNG, WEBP)
-            </label>
-            <input
+
+            {/* Agenda Builder */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-gray-700">Agenda / Schedule</label>
+                <button type="button" onClick={addAgendaItem} className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
+                  <Plus className="w-4 h-4" /> Add Item
+                </button>
+              </div>
+              {form.agenda.map((item, idx) => (
+                <div key={idx} className="flex gap-2 mb-2 items-start">
+                  <input type="text" value={item.time} onChange={(e) => updateAgendaItem(idx, "time", e.target.value)} placeholder="10:00 AM" className="w-24 px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                  <input type="text" value={item.title} onChange={(e) => updateAgendaItem(idx, "title", e.target.value)} placeholder="Session title" className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                  <input type="text" value={item.speaker} onChange={(e) => updateAgendaItem(idx, "speaker", e.target.value)} placeholder="Speaker" className="w-32 px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                  <input type="text" value={item.duration} onChange={(e) => updateAgendaItem(idx, "duration", e.target.value)} placeholder="30m" className="w-16 px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                  <button type="button" onClick={() => removeAgendaItem(idx)} className="p-2 text-gray-400 hover:text-red-500">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: Details (Tags, FAQ, Speakers) */}
+        {currentStep === 3 && (
+          <div className="space-y-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Additional Details</h2>
+
+            {/* Tags */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Tag className="w-4 h-4 inline mr-1" /> Tags
+              </label>
+              <div className="flex gap-2 mb-2 flex-wrap">
+                {form.tags.map((tag) => (
+                  <span key={tag} className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
+                    {tag}
+                    <button type="button" onClick={() => removeTag(tag)} className="hover:text-red-500"><X className="w-3 h-3" /></button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
+                  placeholder="Add a tag and press Enter"
+                  className={inputClass}
+                />
+                <button type="button" onClick={addTag} className="px-4 py-2 bg-gray-100 rounded-lg text-sm font-medium hover:bg-gray-200">Add</button>
+              </div>
+            </div>
+
+            {/* Speakers */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-gray-700">
+                  <Mic className="w-4 h-4 inline mr-1" /> Speakers
+                </label>
+                <button type="button" onClick={addSpeaker} className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
+                  <Plus className="w-4 h-4" /> Add Speaker
+                </button>
+              </div>
+              {form.speakers.map((speaker, idx) => (
+                <div key={idx} className="border border-gray-200 rounded-lg p-3 mb-2 space-y-2">
+                  <div className="flex gap-2">
+                    <input type="text" value={speaker.name} onChange={(e) => updateSpeaker(idx, "name", e.target.value)} placeholder="Speaker name" className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                    <input type="text" value={speaker.role} onChange={(e) => updateSpeaker(idx, "role", e.target.value)} placeholder="Role / Title" className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                    <button type="button" onClick={() => removeSpeaker(idx)} className="p-2 text-gray-400 hover:text-red-500"><X className="w-4 h-4" /></button>
+                  </div>
+                  <input type="text" value={speaker.bio} onChange={(e) => updateSpeaker(idx, "bio", e.target.value)} placeholder="Short bio" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                  <input type="url" value={speaker.socialLink} onChange={(e) => updateSpeaker(idx, "socialLink", e.target.value)} placeholder="LinkedIn/Twitter URL" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                </div>
+              ))}
+            </div>
+
+            {/* FAQ */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-gray-700">
+                  <HelpCircle className="w-4 h-4 inline mr-1" /> FAQ
+                </label>
+                <button type="button" onClick={addFaq} className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
+                  <Plus className="w-4 h-4" /> Add Question
+                </button>
+              </div>
+              {form.faqs.map((faq, idx) => (
+                <div key={idx} className="border border-gray-200 rounded-lg p-3 mb-2 space-y-2">
+                  <div className="flex gap-2 items-start">
+                    <input type="text" value={faq.question} onChange={(e) => updateFaq(idx, "question", e.target.value)} placeholder="Question" className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                    <button type="button" onClick={() => removeFaq(idx)} className="p-2 text-gray-400 hover:text-red-500"><X className="w-4 h-4" /></button>
+                  </div>
+                  <textarea value={faq.answer} onChange={(e) => updateFaq(idx, "answer", e.target.value)} placeholder="Answer" rows={2} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Step 4: Media & Review */}
+        {currentStep === 4 && (
+          <div className="space-y-5">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Media & Review</h2>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Event Image</label>
+              <input
                 type="file"
                 name="imageFile"
-                id="imageFile"
                 accept="image/jpeg,image/png,image/webp"
                 onChange={handleChange}
-                className="w-full border p-3 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 rounded-lg bg-gray-50"
-            />
-        </div>
+                className="w-full border border-gray-200 p-3 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 rounded-lg bg-gray-50"
+              />
+              {form.imageFile && (
+                <p className="text-xs text-green-600 mt-1">Selected: {form.imageFile.name}</p>
+              )}
+            </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-blue-600 text-white py-3 rounded-lg mt-6 font-semibold hover:bg-blue-700 transition duration-200 disabled:bg-gray-400"
-        >
-          {loading ? "Creating Event..." : "Create Event"}
-        </button>
-      </form>
+            {/* Summary */}
+            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+              <h3 className="font-semibold text-gray-900">Event Summary</h3>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div><span className="text-gray-500">Title:</span> <span className="font-medium">{form.title || "—"}</span></div>
+                <div><span className="text-gray-500">Category:</span> <span className="font-medium">{form.category}</span></div>
+                <div><span className="text-gray-500">Venue:</span> <span className="font-medium">{form.venueName || "—"}</span></div>
+                <div><span className="text-gray-500">Capacity:</span> <span className="font-medium">{form.capacity}</span></div>
+                <div><span className="text-gray-500">Price:</span> <span className="font-medium">{form.price > 0 ? `₹${form.price}` : "Free"}</span></div>
+                <div><span className="text-gray-500">Tags:</span> <span className="font-medium">{form.tags.length > 0 ? form.tags.join(", ") : "None"}</span></div>
+                <div><span className="text-gray-500">Start:</span> <span className="font-medium">{form.startTime ? new Date(form.startTime).toLocaleString() : "—"}</span></div>
+                <div><span className="text-gray-500">End:</span> <span className="font-medium">{form.endTime ? new Date(form.endTime).toLocaleString() : "—"}</span></div>
+                <div><span className="text-gray-500">Agenda Items:</span> <span className="font-medium">{form.agenda.length}</span></div>
+                <div><span className="text-gray-500">Speakers:</span> <span className="font-medium">{form.speakers.length}</span></div>
+                <div><span className="text-gray-500">FAQs:</span> <span className="font-medium">{form.faqs.length}</span></div>
+                <div><span className="text-gray-500">Image:</span> <span className="font-medium">{form.imageFile ? "Yes" : "No"}</span></div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Navigation Buttons */}
+        <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
+          <button
+            type="button"
+            onClick={prevStep}
+            disabled={currentStep === 1}
+            className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ChevronLeft className="w-4 h-4" /> Back
+          </button>
+
+          {currentStep < 4 ? (
+            <button
+              type="button"
+              onClick={nextStep}
+              className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition"
+            >
+              Next <ChevronRight className="w-4 h-4" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={loading}
+              className="flex items-center gap-2 px-6 py-2.5 text-sm font-medium text-white bg-green-600 rounded-xl hover:bg-green-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {loading ? "Creating..." : (
+                <><Check className="w-4 h-4" /> Create Event</>
+              )}
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

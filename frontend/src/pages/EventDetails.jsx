@@ -1,201 +1,433 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import api from '../api/axios';
-import toast from 'react-hot-toast';
-import { Clock, MapPin, Calendar, Users, IndianRupee, Share2 } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useParams, Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import api from "../api/axios";
+import toast from "react-hot-toast";
+import EventCard from "../components/EventCard";
+import {
+  Clock,
+  MapPin,
+  Calendar,
+  Users,
+  IndianRupee,
+  Share2,
+  Tag,
+  ChevronDown,
+  ChevronUp,
+  Star,
+  MessageSquare,
+  Mic,
+  ExternalLink,
+  Timer,
+} from "lucide-react";
 
-// ✅ Helper function for colored placeholders
 const generatePlaceholderUrl = (category, width = 800, height = 400) => {
-    let color = '2563EB';
-    
-    switch (category) {
-        case 'Technical': color = '10B981'; break;
-        case 'Cultural': color = 'F59E0B'; break;
-        case 'Sports': color = 'EF4444'; break;
-        case 'Academic': color = '6366F1'; break;
-        case 'Social': color = 'EC4899'; break;
-        case 'Workshop': color = '8B5CF6'; break;
-        case 'Seminar': color = '06B6D4'; break;
-        case 'Conference': color = '14B8A6'; break;
-        default: color = '4B5563';
-    }
-    
-    const text = encodeURIComponent(category?.toUpperCase() || 'EVENT');
-    return `https://placehold.co/${width}x${height}/${color}/FFFFFF?text=${text}`;
+  const colors = {
+    Technical: "10B981", Cultural: "F59E0B", Sports: "EF4444",
+    Academic: "6366F1", Social: "EC4899",
+  };
+  const color = colors[category] || "4B5563";
+  return `https://placehold.co/${width}x${height}/${color}/FFFFFF?text=${encodeURIComponent((category || "EVENT").toUpperCase())}`;
 };
 
-export default function EventDetails() {
-    const { id } = useParams();
-    const [event, setEvent] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+function CountdownTimer({ targetDate }) {
+  const [timeLeft, setTimeLeft] = useState({});
 
-    useEffect(() => {
-        const fetchEventDetails = async () => {
-            try {
-                const res = await api.get(`/events/${id}`); 
-                setEvent(res.data);
-            } catch (err) {
-                console.error("Failed to fetch event details:", err);
-                setError("Could not load event details. It might have been deleted.");
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        if (id) {
-            fetchEventDetails();
-        }
-    }, [id]);
-
-    const handleShare = async () => {
-        const shareUrl = window.location.href;
-        
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: `Check out ${event.title}!`,
-                    url: shareUrl,
-                });
-            } catch (error) {
-                console.error('Error using Web Share API:', error);
-            }
-        } else {
-            try {
-                await navigator.clipboard.writeText(shareUrl);
-                toast.success("Event link copied to clipboard!");
-            } catch (error) {
-                toast.error("Failed to copy link.");
-                console.error('Error copying:', error);
-            }
-        }
+  useEffect(() => {
+    const calc = () => {
+      const diff = new Date(targetDate) - new Date();
+      if (diff <= 0) return { days: 0, hours: 0, minutes: 0, seconds: 0 };
+      return {
+        days: Math.floor(diff / 86400000),
+        hours: Math.floor((diff % 86400000) / 3600000),
+        minutes: Math.floor((diff % 3600000) / 60000),
+        seconds: Math.floor((diff % 60000) / 1000),
+      };
     };
+    setTimeLeft(calc());
+    const interval = setInterval(() => setTimeLeft(calc()), 1000);
+    return () => clearInterval(interval);
+  }, [targetDate]);
 
-    // ✅ Loading/Error states
-    if (loading) return <div className="text-center mt-12 text-lg">Loading event details...</div>;
-    if (error) return <div className="text-center mt-12 text-red-600 font-semibold">{error}</div>;
-    if (!event) return <div className="text-center mt-12">Event not found.</div>;
+  if (timeLeft.days === 0 && timeLeft.hours === 0 && timeLeft.minutes === 0 && timeLeft.seconds === 0) return null;
 
-    // ✅ Safe to access event properties now
-    const startTime = new Date(event.startTime);
-    const endTime = new Date(event.endTime);
-    const totalDurationHours = Math.ceil((endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60));
-    const isWaitlistActive = event.seatsAvailable <= 0;
-    const eventImage = event.imageUrl || generatePlaceholderUrl(event.category, 800, 400);
-
-    return (
-        <div className="max-w-3xl mx-auto p-4 mt-6">
-            <div className="bg-white shadow-2xl rounded-xl overflow-hidden border border-gray-100">
-                
-                {/* Header Image and Share Button */}
-                <div className="relative h-72">
-                    <img 
-                        src={eventImage}
-                        alt={event.title} 
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                            e.target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='400'%3E%3Crect fill='%234B5563' width='800' height='400'/%3E%3Ctext fill='%23FFF' font-size='36' font-family='Arial' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3E${event.category || 'EVENT'}%3C/text%3E%3C/svg%3E`;
-                        }}
-                    />
-                    <button 
-                        onClick={handleShare}
-                        className="absolute top-4 right-4 p-3 bg-black bg-opacity-60 rounded-full text-white hover:bg-opacity-80 transition shadow-lg"
-                        title="Share Event Link"
-                    >
-                         <Share2 size={24} />
-                    </button>
-                    
-                    {/* Price Badge */}
-                    {event.price === 0 && (
-                        <span className="absolute top-4 left-4 bg-green-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg">
-                            FREE EVENT
-                        </span>
-                    )}
-                </div>
-                
-                {/* Content */}
-                <div className="p-6 space-y-8">
-                    
-                    {/* Title and Category */}
-                    <div className="border-b pb-4">
-                        <h1 className="text-3xl md:text-4xl font-extrabold text-gray-800 mb-2">{event.title}</h1>
-                        <span className="inline-block bg-blue-100 text-blue-700 px-4 py-1 rounded-full text-sm font-medium">
-                            {event.category}
-                        </span>
-                    </div>
-
-                    {/* Meta Section */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
-                        
-                        {/* Time & Date */}
-                        <div className="space-y-2">
-                            <h3 className="text-lg font-bold text-gray-700 mb-1">When & Where</h3>
-                            <div className="flex items-center gap-3 text-gray-700">
-                                <Calendar size={18} className="text-blue-500 flex-shrink-0" />
-                                <span>{startTime.toLocaleDateString()}</span>
-                            </div>
-                            <div className="flex items-center gap-3 text-gray-700">
-                                <Clock size={18} className="text-blue-500 flex-shrink-0" />
-                                <span>{startTime.toLocaleTimeString()} – {endTime.toLocaleTimeString()} ({totalDurationHours} hrs)</span>
-                            </div>
-                            <div className="flex items-center gap-3 text-gray-700">
-                                <MapPin size={18} className="text-blue-500 flex-shrink-0" />
-                                <a 
-                                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.fullAddress || event.venueName)}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="underline text-blue-600 hover:text-blue-700 transition"
-                                >
-                                    {event.venueName || event.fullAddress || 'Venue TBD'}
-                                </a>
-                            </div>
-                        </div>
-
-                        {/* Capacity & Price */}
-                        <div className="space-y-2 pt-4 md:pt-0 border-t md:border-t-0">
-                            <h3 className="text-lg font-bold text-gray-700 mb-1">Details</h3>
-                            <div className="flex items-center gap-2.5 text-gray-700">
-                                <Users size={18} className="text-green-500 flex-shrink-0" />
-                                <span>Seats: {event.seatsAvailable} / {event.capacity}</span>
-                            </div>
-                            <div className="flex items-center gap-2.5 text-gray-700">
-                                <IndianRupee size={18} className="text-green-500 flex-shrink-0" />
-                                <span>Price: {event.price > 0 ? `${event.price}` : 'Free'}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Description */}
-                    <div>
-                        <h2 className="text-xl font-bold text-gray-800 mb-3 border-b pb-1">About This Event</h2>
-                        <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{event.description}</p>
-                    </div>
-                    
-                    {/* CTA Section */}
-                    <div className="pt-4 border-t bg-gray-50 p-4 rounded-lg flex flex-col sm:flex-row justify-between items-center gap-4">
-                        <div>
-                            <p className="text-lg font-bold text-gray-800">
-                                Status: <span className={isWaitlistActive ? "text-orange-500" : "text-green-600"}>
-                                    {isWaitlistActive ? "Waitlist Active" : "Seats Available"}
-                                </span>
-                            </p>
-                            {isWaitlistActive && (
-                                <p className="text-sm text-gray-600 mt-1">
-                                    Join the waitlist and we'll notify you if a spot opens up!
-                                </p>
-                            )}
-                        </div>
-                        
-                        <Link 
-                            to="/" 
-                            className="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition shadow-lg whitespace-nowrap"
-                        >
-                            {isWaitlistActive ? 'Join Waitlist' : 'Register Now'}
-                        </Link>
-                    </div>
-
-                </div>
-            </div>
+  return (
+    <div className="flex gap-3 justify-center">
+      {[
+        { val: timeLeft.days, label: "Days" },
+        { val: timeLeft.hours, label: "Hours" },
+        { val: timeLeft.minutes, label: "Min" },
+        { val: timeLeft.seconds, label: "Sec" },
+      ].map((item) => (
+        <div key={item.label} className="text-center">
+          <div className="w-14 h-14 bg-blue-600 text-white rounded-lg flex items-center justify-center text-xl font-bold">
+            {item.val}
+          </div>
+          <span className="text-xs text-gray-500 mt-1">{item.label}</span>
         </div>
+      ))}
+    </div>
+  );
+}
+
+function StarRating({ rating, onRate, interactive = false }) {
+  return (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <Star
+          key={star}
+          className={`w-5 h-5 ${
+            star <= rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
+          } ${interactive ? "cursor-pointer hover:text-yellow-400" : ""}`}
+          onClick={() => interactive && onRate(star)}
+        />
+      ))}
+    </div>
+  );
+}
+
+export default function EventDetails() {
+  const { id } = useParams();
+  const { user } = useAuth();
+  const [event, setEvent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [avgRating, setAvgRating] = useState(0);
+  const [relatedEvents, setRelatedEvents] = useState([]);
+  const [openFaqIndex, setOpenFaqIndex] = useState(null);
+  const [reviewForm, setReviewForm] = useState({ rating: 0, comment: "" });
+  const [reviewLoading, setReviewLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchAll = async () => {
+      try {
+        const [eventRes, reviewsRes] = await Promise.all([
+          api.get(`/events/${id}`),
+          api.get(`/reviews/${id}`).catch(() => ({ data: { reviews: [], averageRating: 0 } })),
+        ]);
+        setEvent(eventRes.data);
+        setReviews(reviewsRes.data.reviews);
+        setAvgRating(reviewsRes.data.averageRating);
+
+        // Fetch related events (same category)
+        const allRes = await api.get("/events", {
+          params: { category: eventRes.data.category },
+        });
+        setRelatedEvents(
+          allRes.data.filter((e) => e._id !== id).slice(0, 3)
+        );
+      } catch (err) {
+        setError("Could not load event details.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (id) fetchAll();
+  }, [id]);
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    if (navigator.share) {
+      await navigator.share({ title: event.title, url }).catch(() => {});
+    } else {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied!");
+    }
+  };
+
+  const submitReview = async () => {
+    if (reviewForm.rating === 0) return toast.error("Please select a rating");
+    setReviewLoading(true);
+    try {
+      const res = await api.post(`/reviews/${id}`, reviewForm);
+      setReviews((prev) => [res.data.review, ...prev]);
+      setAvgRating(
+        (reviews.reduce((s, r) => s + r.rating, 0) + reviewForm.rating) / (reviews.length + 1)
+      );
+      setReviewForm({ rating: 0, comment: "" });
+      toast.success("Review submitted!");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to submit review");
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
+  if (loading)
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-12">
+        <div className="animate-pulse space-y-4">
+          <div className="h-72 bg-gray-200 rounded-xl"></div>
+          <div className="h-8 bg-gray-200 rounded w-2/3"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+        </div>
+      </div>
     );
+  if (error) return <div className="text-center mt-12 text-red-600 font-semibold">{error}</div>;
+  if (!event) return <div className="text-center mt-12">Event not found.</div>;
+
+  const startTime = new Date(event.startTime);
+  const endTime = new Date(event.endTime);
+  const isUpcoming = startTime > new Date();
+  const isPast = endTime < new Date();
+  const fillPercent = event.capacity > 0 ? Math.round(((event.capacity - event.seatsAvailable) / event.capacity) * 100) : 0;
+  const eventImage = event.imageUrl || generatePlaceholderUrl(event.category, 800, 400);
+
+  return (
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
+      {/* Hero Image */}
+      <div className="relative rounded-2xl overflow-hidden mb-8">
+        <img src={eventImage} alt={event.title} className="w-full h-64 sm:h-80 object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 p-6">
+          <div className="flex flex-wrap gap-2 mb-2">
+            <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-semibold">{event.category}</span>
+            {event.price === 0 && <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold">FREE</span>}
+            {event.tags?.map((tag) => <span key={tag} className="bg-white/20 text-white px-2 py-0.5 rounded-full text-xs">{tag}</span>)}
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white">{event.title}</h1>
+        </div>
+        <button onClick={handleShare} className="absolute top-4 right-4 p-2.5 bg-black/50 rounded-full text-white hover:bg-black/70 transition">
+          <Share2 className="w-5 h-5" />
+        </button>
+      </div>
+
+      <div className="grid lg:grid-cols-3 gap-8">
+        {/* Main Content */}
+        <div className="lg:col-span-2 space-y-8">
+          {/* Countdown */}
+          {isUpcoming && (
+            <div className="bg-blue-50 rounded-xl p-6 text-center">
+              <p className="text-sm font-medium text-blue-600 mb-3 flex items-center justify-center gap-1">
+                <Timer className="w-4 h-4" /> Event starts in
+              </p>
+              <CountdownTimer targetDate={event.startTime} />
+            </div>
+          )}
+
+          {/* Description */}
+          <div>
+            <h2 className="text-lg font-bold text-gray-900 mb-3">About This Event</h2>
+            <p className="text-gray-700 whitespace-pre-wrap leading-relaxed text-sm">{event.description}</p>
+          </div>
+
+          {/* Agenda */}
+          {event.agenda?.length > 0 && (
+            <div>
+              <h2 className="text-lg font-bold text-gray-900 mb-4">Agenda</h2>
+              <div className="space-y-3">
+                {event.agenda.map((item, idx) => (
+                  <div key={idx} className="flex gap-4 items-start">
+                    <div className="w-20 text-right flex-shrink-0">
+                      <span className="text-sm font-semibold text-blue-600">{item.time}</span>
+                      {item.duration && <p className="text-xs text-gray-400">{item.duration}</p>}
+                    </div>
+                    <div className="w-px bg-blue-200 self-stretch flex-shrink-0"></div>
+                    <div className="flex-1 pb-3">
+                      <p className="text-sm font-semibold text-gray-900">{item.title}</p>
+                      {item.speaker && <p className="text-xs text-gray-500 mt-0.5">by {item.speaker}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Speakers */}
+          {event.speakers?.length > 0 && (
+            <div>
+              <h2 className="text-lg font-bold text-gray-900 mb-4">
+                <Mic className="w-5 h-5 inline mr-1" /> Speakers
+              </h2>
+              <div className="grid sm:grid-cols-2 gap-4">
+                {event.speakers.map((speaker, idx) => (
+                  <div key={idx} className="bg-white border border-gray-200 rounded-xl p-4 flex gap-3">
+                    <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-lg flex-shrink-0">
+                      {speaker.name?.charAt(0)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-gray-900 text-sm">{speaker.name}</p>
+                      {speaker.role && <p className="text-xs text-gray-500">{speaker.role}</p>}
+                      {speaker.bio && <p className="text-xs text-gray-600 mt-1 line-clamp-2">{speaker.bio}</p>}
+                      {speaker.socialLink && (
+                        <a href={speaker.socialLink} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-0.5 mt-1">
+                          Profile <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* FAQ */}
+          {event.faqs?.length > 0 && (
+            <div>
+              <h2 className="text-lg font-bold text-gray-900 mb-4">FAQ</h2>
+              <div className="space-y-2">
+                {event.faqs.map((faq, idx) => (
+                  <div key={idx} className="border border-gray-200 rounded-lg overflow-hidden">
+                    <button
+                      onClick={() => setOpenFaqIndex(openFaqIndex === idx ? null : idx)}
+                      className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50"
+                    >
+                      <span className="text-sm font-medium text-gray-900">{faq.question}</span>
+                      {openFaqIndex === idx ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                    </button>
+                    {openFaqIndex === idx && (
+                      <div className="px-4 pb-3">
+                        <p className="text-sm text-gray-600">{faq.answer}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Reviews */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-900">
+                Reviews {reviews.length > 0 && `(${reviews.length})`}
+              </h2>
+              {avgRating > 0 && (
+                <div className="flex items-center gap-2">
+                  <StarRating rating={Math.round(avgRating)} />
+                  <span className="text-sm font-medium text-gray-600">{avgRating.toFixed(1)}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Review Form (only for past events, logged-in students) */}
+            {isPast && user?.role === "student" && (
+              <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                <p className="text-sm font-medium text-gray-700 mb-2">Write a review</p>
+                <StarRating rating={reviewForm.rating} onRate={(r) => setReviewForm({ ...reviewForm, rating: r })} interactive />
+                <textarea
+                  value={reviewForm.comment}
+                  onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+                  placeholder="Share your experience..."
+                  rows={2}
+                  className="w-full mt-2 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-blue-400 focus:outline-none resize-none"
+                />
+                <button
+                  onClick={submitReview}
+                  disabled={reviewLoading}
+                  className="mt-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
+                >
+                  {reviewLoading ? "Submitting..." : "Submit Review"}
+                </button>
+              </div>
+            )}
+
+            {reviews.length > 0 ? (
+              <div className="space-y-3">
+                {reviews.map((review) => (
+                  <div key={review._id} className="bg-white border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-semibold">
+                        {review.user?.name?.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{review.user?.name}</p>
+                        <StarRating rating={review.rating} />
+                      </div>
+                      <span className="text-xs text-gray-400 ml-auto">
+                        {new Date(review.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    {review.comment && <p className="text-sm text-gray-600">{review.comment}</p>}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 text-center py-6">No reviews yet.</p>
+            )}
+          </div>
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Event Info Card */}
+          <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4 sticky top-20">
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 text-sm text-gray-700">
+                <Calendar className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                <span>{startTime.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-gray-700">
+                <Clock className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                <span>{startTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} - {endTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+              </div>
+              <div className="flex items-start gap-3 text-sm text-gray-700">
+                <MapPin className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.fullAddress || event.venueName)}`}
+                  target="_blank" rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
+                >
+                  {event.venueName}
+                  {event.fullAddress && <span className="block text-xs text-gray-500">{event.fullAddress}</span>}
+                </a>
+              </div>
+              <div className="flex items-center gap-3 text-sm text-gray-700">
+                <IndianRupee className="w-4 h-4 text-green-500 flex-shrink-0" />
+                <span className="font-semibold">{event.price > 0 ? `₹${event.price}` : "Free"}</span>
+              </div>
+            </div>
+
+            {/* Registration Progress */}
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span className="text-gray-600">
+                  <Users className="w-4 h-4 inline mr-1" />
+                  {event.capacity - event.seatsAvailable} / {event.capacity} registered
+                </span>
+                <span className="font-medium text-gray-900">{fillPercent}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className={`h-2 rounded-full transition-all ${fillPercent >= 90 ? "bg-red-500" : fillPercent >= 60 ? "bg-amber-500" : "bg-green-500"}`}
+                  style={{ width: `${fillPercent}%` }}
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                {event.seatsAvailable > 0 ? `${event.seatsAvailable} spots left` : "Waitlist active"}
+              </p>
+            </div>
+
+            <Link
+              to="/explore"
+              className="block w-full text-center bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition"
+            >
+              {event.seatsAvailable > 0 ? "Register Now" : "Join Waitlist"}
+            </Link>
+
+            {/* Organizer */}
+            {event.organizer && (
+              <div className="pt-4 border-t border-gray-100">
+                <p className="text-xs text-gray-500 mb-1">Organized by</p>
+                <p className="text-sm font-semibold text-gray-900">{event.organizer.name}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Related Events */}
+      {relatedEvents.length > 0 && (
+        <div className="mt-12">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">Related Events</h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {relatedEvents.map((ev) => (
+              <EventCard key={ev._id} event={ev} />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
