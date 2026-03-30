@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 import socket from "../utils/socket";
@@ -7,6 +7,7 @@ import { ArrowLeft, Wifi, Users, Send, MessageSquare, Radio, Clock, Loader2 } fr
 
 export default function LiveEvent() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -91,6 +92,8 @@ export default function LiveEvent() {
           hideLoginButton: true,
           disableThirdPartyRequests: true,
           disableInviteFunctions: true,
+          enableClosePage: false,
+          feedbackPercentage: 0,
           notifications: [],
           startSilent: !isOrganizer,
         },
@@ -127,7 +130,6 @@ export default function LiveEvent() {
         if (user?.email) jitsi.executeCommand("email", user.email);
         if (isOrganizer) {
           jitsi.executeCommand("subject", event.title);
-          // Mark stream as live
           try {
             await api.patch(`/events/${id}/stream/start`);
           } catch (err) {
@@ -136,15 +138,26 @@ export default function LiveEvent() {
         }
       });
 
-      jitsi.addEventListener("readyToClose", async () => {
+      // Intercept hangup — dispose immediately to prevent Jitsi close/promo page
+      jitsi.addEventListener("videoConferenceLeft", async () => {
         if (isOrganizer) {
-          try {
-            await api.patch(`/events/${id}/stream/end`);
-          } catch (err) {
-            console.error("Failed to mark stream as ended:", err);
-          }
+          try { await api.patch(`/events/${id}/stream/end`); } catch {}
         }
-        window.history.back();
+        // Dispose IMMEDIATELY before Jitsi can render its close page
+        if (jitsiApiRef.current) {
+          jitsiApiRef.current.dispose();
+          jitsiApiRef.current = null;
+        }
+        navigate(`${rolePrefix}/events/${id}`);
+      });
+
+      // Fallback — if readyToClose fires (shouldn't after videoConferenceLeft)
+      jitsi.addEventListener("readyToClose", () => {
+        if (jitsiApiRef.current) {
+          jitsiApiRef.current.dispose();
+          jitsiApiRef.current = null;
+        }
+        navigate(`${rolePrefix}/events/${id}`);
       });
     } catch (err) {
       console.error("Jitsi init failed:", err);
