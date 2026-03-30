@@ -6,7 +6,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend,
   PieChart, Pie, Cell, LineChart, Line, CartesianGrid,
 } from "recharts";
-import { CalendarDays, Users, TrendingUp, Ticket, BarChart3 } from "lucide-react";
+import { CalendarDays, Users, TrendingUp, Ticket, BarChart3, DollarSign } from "lucide-react";
 
 const COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6"];
 
@@ -20,7 +20,7 @@ export default function OrganizerAnalytics() {
       try {
         const res = await api.get("/events");
         const mine = res.data.filter(
-          (e) => e.organizer === user?._id || e.organizer?._id === user?._id || e.organizer?.toString() === user?.id
+          (e) => e.organizer?._id === user?.id || e.organizer === user?.id || e.organizer?._id === user?._id
         );
         setEvents(mine);
       } catch (err) {
@@ -62,6 +62,7 @@ export default function OrganizerAnalytics() {
   const totalBooked = events.reduce((s, e) => s + (e.capacity - e.seatsAvailable), 0);
   const upcomingCount = events.filter((e) => new Date(e.startTime) > new Date()).length;
   const fillRate = totalCapacity > 0 ? Math.round((totalBooked / totalCapacity) * 100) : 0;
+  const totalRevenue = events.filter((e) => e.price > 0).reduce((s, e) => s + (e.capacity - e.seatsAvailable) * e.price, 0);
 
   const barData = events.map((e) => ({
     name: e.title.length > 15 ? e.title.slice(0, 15) + "..." : e.title,
@@ -86,14 +87,15 @@ export default function OrganizerAnalytics() {
     { title: "Total Registrations", value: totalBooked, icon: Users, color: "bg-green-50 text-green-600" },
     { title: "Upcoming Events", value: upcomingCount, icon: Ticket, color: "bg-purple-50 text-purple-600" },
     { title: "Avg Fill Rate", value: `${fillRate}%`, icon: TrendingUp, color: "bg-amber-50 text-amber-600" },
+    { title: "Revenue", value: `₹${totalRevenue.toLocaleString()}`, icon: DollarSign, color: "bg-green-50 text-green-600" },
   ];
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Analytics Dashboard</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">Analytics & Revenue</h1>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         {statCards.map((card) => {
           const Icon = card.icon;
           return (

@@ -36,7 +36,7 @@ import StudentNotifications from "./pages/student/StudentNotifications";
 // Organizer Pages
 import OrganizerDashboard from "./pages/organizer/OrganizerDashboard";
 import OrganizerEvents from "./pages/organizer/OrganizerEvents";
-import OrganizerRevenue from "./pages/organizer/OrganizerRevenue";
+// OrganizerRevenue merged into OrganizerAnalytics
 import OrganizerAnnouncements from "./pages/organizer/OrganizerAnnouncements";
 import CreateEvent from "./pages/CreateEvent";
 import EditEvent from "./pages/EditEvent";
@@ -140,7 +140,6 @@ export default function App() {
             <Route path="/organizer/events/:id/edit" element={<EditEvent />} />
             <Route path="/organizer/events/:id/live" element={<LiveEvent />} />
             <Route path="/organizer/analytics" element={<OrganizerAnalytics />} />
-            <Route path="/organizer/revenue" element={<OrganizerRevenue />} />
             <Route path="/organizer/announcements" element={<OrganizerAnnouncements />} />
             <Route path="/organizer/profile" element={<Profile />} />
             <Route path="/organizer/settings" element={<Settings />} />

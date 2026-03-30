@@ -5,7 +5,10 @@ import api from "../../api/axios";
 import toast from "react-hot-toast";
 import Loader from "../../components/Loader";
 import EventDeleteModal from "../../components/EventDeleteModal";
-import { PlusCircle, Edit, Trash2, Calendar, Clock, Users, Eye, Search } from "lucide-react";
+import {
+  PlusCircle, Edit, Trash2, Calendar, Clock, Users, Eye, Search,
+  Radio, Video, Wifi, BarChart3, Upload,
+} from "lucide-react";
 
 export default function OrganizerEvents() {
   const { user } = useAuth();
@@ -13,6 +16,7 @@ export default function OrganizerEvents() {
   const [loading, setLoading] = useState(true);
   const [deletionTarget, setDeletionTarget] = useState(null);
   const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("all"); // all | upcoming | live | past
 
   const fetchEvents = async () => {
     try {
@@ -29,95 +33,188 @@ export default function OrganizerEvents() {
     }
   };
 
-  useEffect(() => {
-    fetchEvents();
-  }, [user]);
+  useEffect(() => { fetchEvents(); }, [user]);
 
-  const filtered = search
-    ? events.filter((e) => e.title.toLowerCase().includes(search.toLowerCase()))
-    : events;
+  const now = new Date();
+  const isLiveNow = (e) => {
+    const isOnline = e.eventMode === "online" || e.eventMode === "hybrid";
+    return isOnline && new Date(e.startTime) <= now && new Date(e.endTime) >= now;
+  };
+  const isUpcoming = (e) => new Date(e.startTime) > now;
+  const isPast = (e) => new Date(e.endTime) < now;
+  const canGoLive = (e) => {
+    const isOnline = e.eventMode === "online" || e.eventMode === "hybrid";
+    const earlyStart = new Date(new Date(e.startTime).getTime() - 15 * 60000);
+    return isOnline && now >= earlyStart && now <= new Date(e.endTime);
+  };
+
+  const liveEvents = events.filter(isLiveNow);
+  const upcomingEvents = events.filter((e) => isUpcoming(e) && !isLiveNow(e));
+  const pastEvents = events.filter(isPast);
+
+  let filtered = events;
+  if (filter === "live") filtered = liveEvents;
+  else if (filter === "upcoming") filtered = upcomingEvents;
+  else if (filter === "past") filtered = pastEvents;
+
+  if (search) {
+    filtered = filtered.filter((e) => e.title.toLowerCase().includes(search.toLowerCase()));
+  }
+
+  // Group: live first, then upcoming, then past
+  const grouped = filter === "all"
+    ? [...liveEvents, ...upcomingEvents.sort((a, b) => new Date(a.startTime) - new Date(b.startTime)), ...pastEvents.sort((a, b) => new Date(b.startTime) - new Date(a.startTime))]
+    : filtered;
 
   if (loading) return <Loader />;
+
+  const EventRow = ({ event }) => {
+    const booked = event.capacity - event.seatsAvailable;
+    const fillPct = event.capacity > 0 ? Math.round((booked / event.capacity) * 100) : 0;
+    const live = isLiveNow(event);
+    const upcoming = isUpcoming(event);
+    const goLive = canGoLive(event);
+    const past = isPast(event);
+    const isOnline = event.eventMode === "online" || event.eventMode === "hybrid";
+    const hasRecording = !!event.streamConfig?.recordingUrl;
+
+    return (
+      <div className={`bg-white p-4 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition ${
+        live ? "border-red-200 bg-red-50/30 shadow-sm" : "border-gray-200 hover:shadow-sm"
+      }`}>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            {live && (
+              <span className="flex items-center gap-1 text-[11px] font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-full">
+                <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span> LIVE
+              </span>
+            )}
+            {isOnline && !live && (
+              <span className="text-[11px] font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">
+                {event.eventMode === "online" ? "Online" : "Hybrid"}
+              </span>
+            )}
+            {hasRecording && past && (
+              <span className="text-[11px] font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <Video className="w-3 h-3" /> Recording
+              </span>
+            )}
+          </div>
+
+          <Link to={`/organizer/events/${event._id}`} className="text-base font-semibold text-gray-900 hover:text-blue-600 transition-colors">
+            {event.title}
+          </Link>
+
+          <div className="flex flex-wrap items-center gap-3 mt-1.5 text-sm text-gray-500">
+            <span className="flex items-center gap-1">
+              <Calendar className="w-3.5 h-3.5" />
+              {new Date(event.startTime).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+            </span>
+            <span className="flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5" />
+              {new Date(event.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            </span>
+            <span className="flex items-center gap-1">
+              <Users className="w-3.5 h-3.5" />
+              {booked}/{event.capacity}
+            </span>
+            {/* Inline fill bar */}
+            <div className="flex items-center gap-1.5">
+              <div className="w-16 bg-gray-200 rounded-full h-1.5">
+                <div className={`h-1.5 rounded-full ${fillPct >= 80 ? "bg-green-500" : fillPct >= 40 ? "bg-blue-500" : "bg-amber-500"}`} style={{ width: `${fillPct}%` }} />
+              </div>
+              <span className="text-xs">{fillPct}%</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {/* Go Live — most prominent action */}
+          {goLive && (
+            <Link to={`/organizer/events/${event._id}/live`} className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-white bg-red-600 hover:bg-red-700 transition shadow-sm">
+              <Radio className="w-3.5 h-3.5" /> {live ? "Rejoin" : "Go Live"}
+            </Link>
+          )}
+
+          {/* Upcoming online but can't go live yet */}
+          {isOnline && upcoming && !goLive && (
+            <span className="text-[11px] text-gray-400 px-2 py-1.5 rounded-lg bg-gray-50 flex items-center gap-1">
+              <Clock className="w-3 h-3" /> Live in {Math.ceil((new Date(event.startTime).getTime() - 15 * 60000 - now.getTime()) / 60000)}m
+            </span>
+          )}
+
+          <Link to={`/organizer/events/${event._id}`} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="View">
+            <Eye className="w-4 h-4" />
+          </Link>
+          <Link to={`/organizer/events/${event._id}/edit`} className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition" title="Edit">
+            <Edit className="w-4 h-4" />
+          </Link>
+          <button onClick={() => setDeletionTarget(event)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">My Events</h1>
-          <p className="text-sm text-gray-600 mt-1">{events.length} total events</p>
+          <p className="text-sm text-gray-600 mt-1">
+            {events.length} events · {liveEvents.length > 0 && <span className="text-red-600 font-semibold">{liveEvents.length} live now</span>}
+            {liveEvents.length === 0 && `${upcomingEvents.length} upcoming`}
+          </p>
         </div>
-        <Link
-          to="/organizer/events/create"
-          className="inline-flex items-center gap-2 bg-blue-600 text-white font-semibold px-5 py-2.5 rounded-xl hover:bg-blue-700 transition shadow-sm"
-        >
+        <Link to="/organizer/events/create" className="inline-flex items-center gap-2 bg-blue-600 text-white font-semibold px-5 py-2.5 rounded-xl hover:bg-blue-700 transition shadow-sm">
           <PlusCircle className="w-4 h-4" /> Create Event
         </Link>
       </div>
 
-      {/* Search */}
-      {events.length > 3 && (
-        <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search your events..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:border-blue-400 focus:outline-none"
-          />
+      {/* Filter tabs + Search */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-5">
+        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl">
+          {[
+            { id: "all", label: "All" },
+            { id: "live", label: "Live", count: liveEvents.length },
+            { id: "upcoming", label: "Upcoming", count: upcomingEvents.length },
+            { id: "past", label: "Past", count: pastEvents.length },
+          ].map((tab) => (
+            <button key={tab.id} onClick={() => setFilter(tab.id)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition flex items-center gap-1.5 ${
+                filter === tab.id ? "bg-white text-blue-600 shadow-sm" : "text-gray-600 hover:text-gray-900"
+              }`}>
+              {tab.id === "live" && tab.count > 0 && <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>}
+              {tab.label}
+              {tab.count !== undefined && tab.count > 0 && (
+                <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                  tab.id === "live" ? "bg-red-100 text-red-600" : "bg-gray-200 text-gray-600"
+                }`}>{tab.count}</span>
+              )}
+            </button>
+          ))}
         </div>
-      )}
 
-      {filtered.length > 0 ? (
-        <div className="space-y-3">
-          {filtered.map((event) => {
-            const booked = event.capacity - event.seatsAvailable;
-            const isUpcoming = new Date(event.startTime) > new Date();
-            return (
-              <div key={event._id} className="bg-white p-4 rounded-xl border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:shadow-sm transition">
-                <div className="flex-1 min-w-0">
-                  <Link to={`/organizer/events/${event._id}`} className="text-base font-semibold text-gray-900 hover:text-blue-600 transition-colors">
-                    {event.title}
-                  </Link>
-                  <div className="flex flex-wrap items-center gap-3 mt-1.5 text-sm text-gray-500">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5" />
-                      {new Date(event.startTime).toLocaleDateString()}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" />
-                      {new Date(event.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Users className="w-3.5 h-3.5" />
-                      {booked}/{event.capacity} registered
-                    </span>
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${isUpcoming ? "bg-green-50 text-green-600" : "bg-gray-100 text-gray-600"}`}>
-                      {isUpcoming ? "Upcoming" : "Past"}
-                    </span>
-                  </div>
-                </div>
+        {events.length > 3 && (
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input type="text" placeholder="Search events..." value={search} onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:border-blue-400 focus:outline-none" />
+          </div>
+        )}
+      </div>
 
-                <div className="flex items-center gap-2">
-                  <Link to={`/organizer/events/${event._id}`} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="View">
-                    <Eye className="w-4 h-4" />
-                  </Link>
-                  <Link to={`/organizer/events/${event._id}/edit`} className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition" title="Edit">
-                    <Edit className="w-4 h-4" />
-                  </Link>
-                  <button onClick={() => setDeletionTarget(event)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Delete">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+      {/* Events */}
+      {grouped.length > 0 ? (
+        <div className="space-y-2">
+          {grouped.map((event) => <EventRow key={event._id} event={event} />)}
         </div>
       ) : (
         <div className="text-center py-20">
           <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-700">
-            {search ? "No events match your search" : "No events yet"}
+            {search ? "No events match your search" : filter !== "all" ? `No ${filter} events` : "No events yet"}
           </h3>
           <p className="text-gray-500 mt-2">Create your first event to get started</p>
           <Link to="/organizer/events/create" className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-blue-600">
@@ -127,11 +224,7 @@ export default function OrganizerEvents() {
       )}
 
       {deletionTarget && (
-        <EventDeleteModal
-          event={deletionTarget}
-          onClose={() => setDeletionTarget(null)}
-          onDeleteSuccess={() => { setDeletionTarget(null); fetchEvents(); }}
-        />
+        <EventDeleteModal event={deletionTarget} onClose={() => setDeletionTarget(null)} onDeleteSuccess={() => { setDeletionTarget(null); fetchEvents(); }} />
       )}
     </div>
   );

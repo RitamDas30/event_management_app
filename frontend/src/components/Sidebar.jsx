@@ -1,5 +1,7 @@
+import { useState, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import api from "../api/axios";
 import {
   LayoutDashboard,
   CalendarDays,
@@ -38,12 +40,10 @@ const studentLinks = [
 
 const organizerLinks = [
   { name: "Dashboard", path: "/organizer/dashboard", icon: LayoutDashboard },
-  { name: "Explore Events", path: "/organizer/explore", icon: Compass },
-  { name: "My Events", path: "/organizer/events", icon: CalendarDays },
+  { name: "My Events", path: "/organizer/events", icon: CalendarDays, liveIndicator: true },
   { name: "Create Event", path: "/organizer/events/create", icon: PlusCircle },
-  { name: "Live / Streaming", path: "/organizer/live", icon: Radio },
+  { name: "Explore Events", path: "/organizer/explore", icon: Compass },
   { name: "Analytics", path: "/organizer/analytics", icon: BarChart3 },
-  { name: "Revenue", path: "/organizer/revenue", icon: DollarSign },
   { name: "Announcements", path: "/organizer/announcements", icon: Megaphone },
   { name: "Profile", path: "/organizer/profile", icon: UserCircle },
   { name: "Settings", path: "/organizer/settings", icon: Settings },
@@ -65,6 +65,30 @@ const adminLinks = [
 export default function Sidebar({ collapsed, onToggle }) {
   const { user } = useAuth();
   const location = useLocation();
+  const [hasLiveEvent, setHasLiveEvent] = useState(false);
+
+  // Check if organizer has any event that should be live now
+  useEffect(() => {
+    if (user?.role !== "organizer") return;
+    const checkLive = async () => {
+      try {
+        const res = await api.get("/events");
+        const now = new Date();
+        const mine = res.data.filter(
+          (e) => e.organizer?._id === user.id || e.organizer === user.id
+        );
+        const live = mine.some((e) => {
+          const isOnline = e.eventMode === "online" || e.eventMode === "hybrid";
+          const earlyStart = new Date(new Date(e.startTime).getTime() - 15 * 60000);
+          return isOnline && now >= earlyStart && now <= new Date(e.endTime);
+        });
+        setHasLiveEvent(live);
+      } catch {}
+    };
+    checkLive();
+    const interval = setInterval(checkLive, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
 
   const getLinks = () => {
     switch (user?.role) {
@@ -149,24 +173,35 @@ export default function Sidebar({ collapsed, onToggle }) {
           const active =
             location.pathname === link.path ||
             (link.path !== "/explore" && location.pathname.startsWith(link.path + "/"));
+          const showLiveDot = link.liveIndicator && hasLiveEvent;
 
           return (
             <NavLink
               key={link.path}
               to={link.path}
               title={collapsed ? link.name : undefined}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative ${
                 active
                   ? "bg-blue-50 text-blue-700"
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
               }`}
             >
-              <Icon
-                className={`w-5 h-5 flex-shrink-0 ${
-                  active ? "text-blue-600" : "text-gray-400 group-hover:text-gray-600"
-                }`}
-              />
-              {!collapsed && <span>{link.name}</span>}
+              <div className="relative flex-shrink-0">
+                <Icon
+                  className={`w-5 h-5 ${
+                    active ? "text-blue-600" : "text-gray-400 group-hover:text-gray-600"
+                  }`}
+                />
+                {showLiveDot && (
+                  <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse border-2 border-white"></span>
+                )}
+              </div>
+              {!collapsed && (
+                <span className="flex-1">{link.name}</span>
+              )}
+              {!collapsed && showLiveDot && (
+                <span className="text-[10px] font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded-full">LIVE</span>
+              )}
             </NavLink>
           );
         })}
