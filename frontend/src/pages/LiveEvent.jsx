@@ -53,8 +53,19 @@ export default function LiveEvent() {
           startWithAudioMuted: !isOrg,
           startWithVideoMuted: !isOrg,
           prejoinPageEnabled: false,
+          prejoinConfig: { enabled: false },
           disableDeepLinking: true,
           disableSimulcast: false,
+          requireDisplayName: false,
+          disableProfile: true,
+          enableClosePage: false,
+          hideLoginButton: true,
+          disableThirdPartyRequests: true,
+          disableInviteFunctions: true,
+          enableNoisyMicDetection: false,
+          notifications: [],
+          // Skip all prompts
+          startSilent: !isOrg,
         },
         interfaceConfigOverwrite: {
           SHOW_JITSI_WATERMARK: false,
@@ -62,6 +73,13 @@ export default function LiveEvent() {
           SHOW_BRAND_WATERMARK: false,
           DEFAULT_REMOTE_DISPLAY_NAME: "Attendee",
           TOOLBAR_ALWAYS_VISIBLE: true,
+          DISABLE_JOIN_LEAVE_NOTIFICATIONS: true,
+          HIDE_INVITE_MORE_HEADER: true,
+          GENERATE_ROOMNAMES_ON_WELCOME_PAGE: false,
+          DISPLAY_WELCOME_FOOTER: false,
+          DISPLAY_WELCOME_PAGE_CONTENT: false,
+          DISPLAY_WELCOME_PAGE_TOOLBAR_ADDITIONAL_CONTENT: false,
+          SETTINGS_SECTIONS: ["devices"],
         },
         userInfo: {
           displayName: user?.name || "Guest",
@@ -81,6 +99,18 @@ export default function LiveEvent() {
         iframe.style.top = "0";
         iframe.style.left = "0";
       }
+
+      // Force set display name after join
+      jitsi.addEventListener("videoConferenceJoined", () => {
+        jitsi.executeCommand("displayName", user?.name || "Guest");
+        if (user?.email) {
+          jitsi.executeCommand("email", user.email);
+        }
+        // If organizer, try to set as moderator subject
+        if (isOrg) {
+          jitsi.executeCommand("subject", event.title);
+        }
+      });
 
       jitsi.addEventListener("readyToClose", () => {
         window.history.back();
