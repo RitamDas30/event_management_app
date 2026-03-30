@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import socket from "../utils/socket";
+import api from "../api/axios";
 import {
   Send, Pin, PinOff, BarChart3, X, ThumbsUp, Heart, Laugh,
   PartyPopper, Flame, Check, ChevronDown, Crown, Plus,
+  Paperclip, FileText, Image, File, Download, ExternalLink,
 } from "lucide-react";
 
 const quickReactions = ["ok", "okay", "yes", "no", "nice", "great", "thanks", "thank you", "lol", "haha", "👍", "❤️", "🔥", "👏", "💯"];
@@ -85,11 +87,121 @@ export default function LiveChat({ eventId, user, isOrganizer, isFullscreen }) {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, stackedReactions]);
 
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
+
+  // Link detection regex
+  const urlRegex = /(https?:\/\/[^\s<]+)/g;
+
+  const renderMessageText = (text) => {
+    if (!urlRegex.test(text)) return text;
+    // Reset regex lastIndex
+    urlRegex.lastIndex = 0;
+    const parts = text.split(urlRegex);
+    return parts.map((part, i) => {
+      if (urlRegex.test(part)) {
+        urlRegex.lastIndex = 0;
+        return (
+          <a key={i} href={part} target="_blank" rel="noopener noreferrer"
+            className="text-blue-400 hover:text-blue-300 underline break-all inline-flex items-center gap-0.5">
+            {part.length > 40 ? part.slice(0, 40) + "…" : part}
+            <ExternalLink className="w-3 h-3 inline flex-shrink-0" />
+          </a>
+        );
+      }
+      return part;
+    });
+  };
+
+  const getFileIcon = (type) => {
+    if (type?.startsWith("image/")) return Image;
+    if (type?.includes("pdf")) return FileText;
+    return File;
+  };
+
   const sendMessage = (e) => {
     e.preventDefault();
-    if (!newMessage.trim()) return;
-    socket.emit("sendEventChatMessage", { eventId, userName: user.name, message: newMessage.trim(), isHost: isOrganizer });
+    const text = newMessage.trim();
+    if (!text) return;
+
+    // /poll command
+    if (text.startsWith("/poll ") && isOrganizer) {
+      const pollText = text.slice(6).trim();
+      // Format: /poll Question? Option1, Option2, Option3
+      const qMarkIdx = pollText.indexOf("?");
+      if (qMarkIdx > 0) {
+        const question = pollText.slice(0, qMarkIdx + 1).trim();
+        const options = pollText.slice(qMarkIdx + 1).split(",").map((o) => o.trim()).filter(Boolean);
+        if (options.length >= 2) {
+          const poll = {
+            question,
+            options: options.map((o) => ({ text: o, votes: 0 })),
+            totalVotes: 0,
+            id: Date.now(),
+          };
+          socket.emit("createEventPoll", { eventId, poll });
+          setActivePoll(poll);
+          setNewMessage("");
+          return;
+        }
+      }
+      // If format is wrong, show help
+      setNewMessage("");
+      setMessages((prev) => [...prev, {
+        id: Date.now(), userName: "System", message: "Poll format: /poll Question? Option1, Option2, Option3",
+        isHost: false, isSystem: true, reactions: {},
+      }]);
+      return;
+    }
+
+    socket.emit("sendEventChatMessage", { eventId, userName: user.name, message: text, isHost: isOrganizer });
     setNewMessage("");
+  };
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // 10MB limit
+    if (file.size > 10 * 1024 * 1024) {
+      setMessages((prev) => [...prev, {
+        id: Date.now(), userName: "System", message: "File too large. Max 10MB.",
+        isHost: false, isSystem: true, reactions: {},
+      }]);
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("image", file); // using existing Cloudinary upload middleware
+      const res = await api.put("/users/avatar", fd, { headers: { "Content-Type": "multipart/form-data" } });
+      // Use the returned URL — we're reusing avatar endpoint for file upload
+      const fileUrl = res.data.avatar;
+
+      socket.emit("sendEventChatMessage", {
+        eventId,
+        userName: user.name,
+        message: fileUrl,
+        isHost: isOrganizer,
+        attachment: {
+          url: fileUrl,
+          name: file.name,
+          type: file.type,
+          size: file.size,
+        },
+      });
+    } catch (err) {
+      // Fallback: send file name as text if upload fails
+      socket.emit("sendEventChatMessage", {
+        eventId, userName: user.name,
+        message: `📎 Shared file: ${file.name} (upload failed)`,
+        isHost: isOrganizer,
+      });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   const pinMessage = (msg) => {
@@ -232,7 +344,30 @@ export default function LiveChat({ eventId, user, isOrganizer, isFullscreen }) {
                       <span className="text-[8px] font-bold bg-amber-500/20 text-amber-400 px-1 py-0.5 rounded uppercase tracking-wider">Host</span>
                     )}
                   </div>
-                  <p className="text-sm text-gray-200 break-words leading-relaxed">{msg.message}</p>
+                  {/* File attachment */}
+                  {msg.attachment ? (
+                    <div className="mt-1">
+                      {msg.attachment.type?.startsWith("image/") ? (
+                        <a href={msg.attachment.url} target="_blank" rel="noopener noreferrer" className="block">
+                          <img src={msg.attachment.url} alt={msg.attachment.name} className="max-w-[200px] max-h-[150px] rounded-lg border border-gray-700 hover:opacity-90 transition" />
+                        </a>
+                      ) : (
+                        <a href={msg.attachment.url} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-2 bg-gray-800 rounded-lg px-3 py-2 hover:bg-gray-750 transition max-w-[220px]">
+                          {(() => { const FIcon = getFileIcon(msg.attachment.type); return <FIcon className="w-5 h-5 text-blue-400 flex-shrink-0" />; })()}
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs text-gray-200 font-medium truncate">{msg.attachment.name}</p>
+                            <p className="text-[10px] text-gray-500">{(msg.attachment.size / 1024).toFixed(0)} KB</p>
+                          </div>
+                          <Download className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                        </a>
+                      )}
+                    </div>
+                  ) : (
+                    <p className={`text-sm break-words leading-relaxed ${msg.isSystem ? "text-gray-500 italic" : "text-gray-200"}`}>
+                      {renderMessageText(msg.message)}
+                    </p>
+                  )}
 
                   {/* Reactions on this message */}
                   {Object.keys(msg.reactions || {}).length > 0 && (
@@ -279,6 +414,10 @@ export default function LiveChat({ eventId, user, isOrganizer, isFullscreen }) {
       {showPlusMenu && (
         <div className="px-2 pb-1 pt-2 border-t border-gray-800">
           <div className="bg-gray-800 rounded-xl p-2 space-y-1">
+            <button onClick={() => { fileInputRef.current?.click(); setShowPlusMenu(false); }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-200 hover:bg-gray-700 transition">
+              <Paperclip className="w-4 h-4 text-blue-400" /> Send File
+            </button>
             {isOrganizer && (
               <button onClick={() => { setShowPollForm(!showPollForm); setShowPlusMenu(false); }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-200 hover:bg-gray-700 transition">
@@ -291,23 +430,30 @@ export default function LiveChat({ eventId, user, isOrganizer, isFullscreen }) {
                 <PinOff className="w-4 h-4 text-amber-400" /> Unpin Message
               </button>
             )}
-            {!isOrganizer && (
-              <p className="px-3 py-2 text-xs text-gray-500">No actions available</p>
-            )}
           </div>
+        </div>
+      )}
+
+      {/* Hidden file input */}
+      <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept="image/*,video/*,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.rar,.txt" />
+
+      {/* Upload indicator */}
+      {uploading && (
+        <div className="px-3 py-1.5 border-t border-gray-800 flex items-center gap-2 text-xs text-blue-400">
+          <div className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+          Uploading file...
         </div>
       )}
 
       {/* Input */}
       <form onSubmit={sendMessage} className="p-2 border-t border-gray-800">
         <div className="flex items-center gap-1.5">
-          {isOrganizer && (
-            <button type="button" onClick={() => setShowPlusMenu(!showPlusMenu)}
-              className={`p-2 rounded-lg transition flex-shrink-0 ${showPlusMenu ? "bg-blue-600 text-white rotate-45" : "text-gray-400 hover:text-white hover:bg-gray-800"}`}>
-              <Plus className="w-5 h-5 transition-transform" />
-            </button>
-          )}
-          <input type="text" value={newMessage} onChange={(e) => { setNewMessage(e.target.value); if (showPlusMenu) setShowPlusMenu(false); }} placeholder="Type a message..."
+          <button type="button" onClick={() => setShowPlusMenu(!showPlusMenu)}
+            className={`p-2 rounded-lg transition flex-shrink-0 ${showPlusMenu ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white hover:bg-gray-800"}`}>
+            <Plus className={`w-5 h-5 transition-transform duration-200 ${showPlusMenu ? "rotate-45" : ""}`} />
+          </button>
+          <input type="text" value={newMessage} onChange={(e) => { setNewMessage(e.target.value); if (showPlusMenu) setShowPlusMenu(false); }}
+            placeholder={isOrganizer ? "Message or /poll Question? A, B, C" : "Type a message..."}
             className="flex-1 bg-gray-800 text-white text-sm px-3 py-2.5 rounded-lg placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
           <button type="submit" className="p-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex-shrink-0">
             <Send className="w-4 h-4" />

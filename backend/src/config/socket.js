@@ -63,13 +63,14 @@ export const initSocket = (server) => {
       }
     });
 
-    // Live chat message
-    socket.on("sendEventChatMessage", ({ eventId, userName, message, isHost }) => {
+    // Live chat message (with optional file attachment)
+    socket.on("sendEventChatMessage", ({ eventId, userName, message, isHost, attachment }) => {
       if (!eventId || !message) return;
       io.to(`event:${eventId}`).emit("eventChatMessage", {
         userName: userName || "Anonymous",
         message,
         isHost: !!isHost,
+        attachment: attachment || null,
         timestamp: new Date().toISOString(),
       });
     });
