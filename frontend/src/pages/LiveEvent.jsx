@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 import socket from "../utils/socket";
+import LiveChat from "../components/LiveChat";
 import {
   ArrowLeft, Wifi, Users, Send, MessageSquare, Radio, Clock, Loader2,
   Maximize2, Minimize2, Mic, MicOff, Video, VideoOff, MonitorUp, PhoneOff, Calendar,
@@ -15,8 +16,6 @@ export default function LiveEvent() {
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [streamStatus, setStreamStatus] = useState({ isLive: false, checking: true });
-  const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState("");
   const [viewerCount, setViewerCount] = useState(1);
   const [chatOpen, setChatOpen] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -28,7 +27,6 @@ export default function LiveEvent() {
   const [recordingUploaded, setRecordingUploaded] = useState(false);
   const jitsiContainerRef = useRef(null);
   const jitsiApiRef = useRef(null);
-  const chatEndRef = useRef(null);
   const pollRef = useRef(null);
   const timerRef = useRef(null);
   const containerRef = useRef(null);
@@ -229,23 +227,13 @@ export default function LiveEvent() {
     };
   }, [event, isOrganizer, streamStatus.isLive, startJitsi]);
 
-  // Socket chat
+  // Socket — viewer count only (chat handled by LiveChat component)
   useEffect(() => {
     if (!id || !user) return;
     socket.emit("joinEventRoom", { eventId: id, userName: user.name });
-    socket.on("eventChatMessage", (msg) => setMessages((prev) => [...prev, msg]));
     socket.on("eventViewerCount", (count) => setViewerCount(count));
-    return () => { socket.emit("leaveEventRoom", { eventId: id }); socket.off("eventChatMessage"); socket.off("eventViewerCount"); };
+    return () => { socket.emit("leaveEventRoom", { eventId: id }); socket.off("eventViewerCount"); };
   }, [id, user]);
-
-  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
-
-  const sendMessage = (e) => {
-    e.preventDefault();
-    if (!newMessage.trim()) return;
-    socket.emit("sendEventChatMessage", { eventId: id, userName: user.name, message: newMessage.trim() });
-    setNewMessage("");
-  };
 
   const handleRecordingUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -433,36 +421,9 @@ export default function LiveEvent() {
           </div>
         </div>
 
-        {/* Chat Panel — overlays on right */}
+        {/* Chat Panel */}
         {chatOpen && (
-          <div className={`bg-gray-900 border-l border-gray-800 flex flex-col flex-shrink-0 ${isFullscreen ? "w-80" : "w-72"}`}>
-            <div className="px-3 py-2 border-b border-gray-800 flex items-center justify-between">
-              <h3 className="text-white font-semibold text-sm">Live Chat</h3>
-              <span className="text-[10px] text-gray-500">{messages.length} messages</span>
-            </div>
-            <div className="flex-1 overflow-y-auto p-3 space-y-2">
-              {messages.length === 0 ? (
-                <p className="text-gray-500 text-xs text-center mt-8">No messages yet. Say hi!</p>
-              ) : (
-                messages.map((msg, idx) => (
-                  <div key={idx} className="flex gap-2">
-                    <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[9px] font-semibold flex-shrink-0">{msg.userName?.charAt(0).toUpperCase()}</div>
-                    <div className="min-w-0">
-                      <span className="text-[10px] font-medium text-blue-400">{msg.userName}</span>
-                      <p className="text-xs text-gray-300 break-words">{msg.message}</p>
-                    </div>
-                  </div>
-                ))
-              )}
-              <div ref={chatEndRef} />
-            </div>
-            <form onSubmit={sendMessage} className="p-2 border-t border-gray-800">
-              <div className="flex gap-1.5">
-                <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Type a message..." className="flex-1 bg-gray-800 text-white text-xs px-2.5 py-1.5 rounded-lg placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                <button type="submit" className="p-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700"><Send className="w-3.5 h-3.5" /></button>
-              </div>
-            </form>
-          </div>
+          <LiveChat eventId={id} user={user} isOrganizer={isOrganizer} isFullscreen={isFullscreen} />
         )}
       </div>
     </div>

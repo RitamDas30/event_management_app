@@ -29,8 +29,9 @@ export const initSocket = (server) => {
 
 
 
-  // Track viewers per event room
+  // Track viewers and polls per event room
   const roomViewers = {};
+  let roomPolls = {};
 
   io.on("connection", (socket) => {
     logger.info({ socketId: socket.id }, "Socket connected");
@@ -63,13 +64,59 @@ export const initSocket = (server) => {
     });
 
     // Live chat message
-    socket.on("sendEventChatMessage", ({ eventId, userName, message }) => {
+    socket.on("sendEventChatMessage", ({ eventId, userName, message, isHost }) => {
       if (!eventId || !message) return;
       io.to(`event:${eventId}`).emit("eventChatMessage", {
         userName: userName || "Anonymous",
         message,
+        isHost: !!isHost,
         timestamp: new Date().toISOString(),
       });
+    });
+
+    // Pin message
+    socket.on("pinEventMessage", ({ eventId, message }) => {
+      if (!eventId || !message) return;
+      io.to(`event:${eventId}`).emit("eventPinnedMessage", message);
+    });
+
+    // Unpin message
+    socket.on("unpinEventMessage", ({ eventId }) => {
+      if (!eventId) return;
+      io.to(`event:${eventId}`).emit("eventUnpinMessage");
+    });
+
+    // Create poll
+    socket.on("createEventPoll", ({ eventId, poll }) => {
+      if (!eventId || !poll) return;
+      // Store poll in memory per room
+      if (!roomPolls) roomPolls = {};
+      roomPolls[eventId] = poll;
+      io.to(`event:${eventId}`).emit("eventPoll", poll);
+    });
+
+    // Vote on poll
+    socket.on("voteEventPoll", ({ eventId, optionIndex, userName }) => {
+      if (!eventId || !roomPolls?.[eventId]) return;
+      const poll = roomPolls[eventId];
+      if (optionIndex >= 0 && optionIndex < poll.options.length) {
+        poll.options[optionIndex].votes++;
+        poll.totalVotes++;
+        io.to(`event:${eventId}`).emit("eventPollUpdate", poll);
+      }
+    });
+
+    // End poll
+    socket.on("endEventPoll", ({ eventId }) => {
+      if (!eventId) return;
+      if (roomPolls?.[eventId]) delete roomPolls[eventId];
+      io.to(`event:${eventId}`).emit("eventPollEnd");
+    });
+
+    // React to message
+    socket.on("reactToEventMessage", ({ eventId, messageId, emoji, userName }) => {
+      if (!eventId || !messageId || !emoji) return;
+      io.to(`event:${eventId}`).emit("eventMessageReaction", { messageId, emoji, userName });
     });
 
     // Cleanup on disconnect
