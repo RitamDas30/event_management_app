@@ -172,7 +172,6 @@ export default function LiveEvent() {
       if (iframe) {
         Object.assign(iframe.style, {
           width: "100%", height: "100%", border: "none",
-          position: "absolute", top: "0", left: "0", borderRadius: "0",
         });
       }
 
@@ -259,7 +258,7 @@ export default function LiveEvent() {
   // ===== POST-STREAM SCREEN (organizer only) =====
   if (streamEnded && isOrganizer) {
     return (
-      <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, left: "68px", zIndex: 35 }} className="flex flex-col bg-gray-950">
+      <div style={{ position: "fixed", top: "40px", right: 0, bottom: 0, left: "68px", zIndex: 35 }} className="flex flex-col bg-gray-950">
         <div className="bg-gray-900 border-b border-gray-800 px-4 py-2 flex items-center gap-3 flex-shrink-0">
           <h1 className="text-white font-semibold text-sm">{event.title}</h1>
           <span className="text-xs text-gray-500">Stream ended</span>
@@ -393,10 +392,10 @@ export default function LiveEvent() {
       </div>
 
       {/* Main: Video + Chat */}
-      <div className="flex-1 flex min-h-0 relative">
+      <div className="flex-1 flex min-h-0 min-w-0">
         {/* Video */}
-        <div className="flex-1 bg-black relative">
-          <div ref={jitsiContainerRef} className="absolute inset-0" />
+        <div className="flex-1 bg-black min-w-0 min-h-0 relative">
+          <div ref={jitsiContainerRef} className="w-full h-full" />
 
           {/* Our floating control bar at bottom center */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-gray-900/90 backdrop-blur-md px-4 py-2 rounded-2xl border border-gray-700/50 shadow-2xl">
