@@ -42,6 +42,7 @@ export default function CreateEvent() {
     endTime: "",
     capacity: 50,
     price: 0,
+    eventMode: "in-person",
     imageFile: null,
     tags: [],
     agenda: [],
@@ -173,7 +174,7 @@ export default function CreateEvent() {
       // Basic fields
       const basicFields = [
         "title", "description", "category", "fullAddress", "venueName",
-        "startTime", "endTime", "capacity", "price",
+        "startTime", "endTime", "capacity", "price", "eventMode",
       ];
       basicFields.forEach((key) => {
         if (form[key] !== null && form[key] !== undefined) {
@@ -283,6 +284,26 @@ export default function CreateEvent() {
                 className={inputClass + " resize-none"}
               />
               <p className="text-xs text-gray-400 mt-1">{form.description.length}/2000</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Event Mode *</label>
+              <div className="grid grid-cols-3 gap-2">
+                {["in-person", "online", "hybrid"].map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setForm({ ...form, eventMode: mode })}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium border transition-all capitalize ${
+                      form.eventMode === mode
+                        ? "border-blue-500 bg-blue-50 text-blue-700"
+                        : "border-gray-200 text-gray-600 hover:border-gray-300"
+                    }`}
+                  >
+                    {mode}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

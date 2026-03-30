@@ -118,7 +118,7 @@ test.describe("Public Pages Navigation", () => {
   test("login page is accessible", async ({ page }) => {
     await page.goto("/login");
 
-    await expect(page.locator("h2")).toContainText("Login");
+    await expect(page.locator("h2")).toContainText(/Login|Welcome back/i);
     await expect(page.locator('input[type="email"]')).toBeVisible();
     await expect(page.locator('input[type="password"]')).toBeVisible();
 

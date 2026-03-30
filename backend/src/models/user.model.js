@@ -16,10 +16,26 @@ const userSchema = new mongoose.Schema({
     },
     // The select: false option hides the password by default, but it's not needed here 
     // because you manually add .select('+password') in the login controller.
-    password: { 
-        type: String, 
-        required: [true, "password is required"],
-    }, 
+    password: {
+        type: String,
+        required: function () {
+            // Password not required for OAuth users
+            return !this.googleId && !this.githubId;
+        },
+    },
+    authProvider: {
+        type: String,
+        enum: ["local", "google", "github"],
+        default: "local",
+    },
+    googleId: {
+        type: String,
+        sparse: true,
+    },
+    githubId: {
+        type: String,
+        sparse: true,
+    },
     role: {
         type: String,
         enum: ["student", "organizer", "admin"],

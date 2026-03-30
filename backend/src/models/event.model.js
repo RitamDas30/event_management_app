@@ -78,6 +78,16 @@ const eventSchema = new mongoose.Schema(
       enum: ["upcoming", "ongoing", "completed", "cancelled"],
       default: "upcoming",
     },
+    eventMode: {
+      type: String,
+      enum: ["in-person", "online", "hybrid"],
+      default: "in-person",
+    },
+    streamConfig: {
+      roomId: { type: String, default: "" },
+      isLive: { type: Boolean, default: false },
+      recordingUrl: { type: String, default: "" },
+    },
     tags: {
       type: [String],
       default: [],

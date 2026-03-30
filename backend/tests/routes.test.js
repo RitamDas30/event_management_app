@@ -234,6 +234,40 @@ describe("Payment module", () => {
   });
 });
 
+describe("OAuth module", () => {
+  it("oauth controller exports all functions", async () => {
+    const module = await import("../src/controllers/oauth.controller.js");
+    expect(typeof module.googleAuth).toBe("function");
+    expect(typeof module.githubAuth).toBe("function");
+  });
+
+  it("oauth routes module imports successfully", async () => {
+    const module = await import("../src/routes/oauth.routes.js");
+    expect(module.default).toBeDefined();
+  });
+});
+
+describe("Event model has streaming fields", () => {
+  it("event schema includes eventMode and streamConfig", async () => {
+    const module = await import("../src/models/event.model.js");
+    const paths = module.default.schema.paths;
+    expect(paths.eventMode).toBeDefined();
+    expect(paths["streamConfig.roomId"]).toBeDefined();
+    expect(paths["streamConfig.isLive"]).toBeDefined();
+    expect(paths["streamConfig.recordingUrl"]).toBeDefined();
+  });
+});
+
+describe("User model supports OAuth", () => {
+  it("user schema includes OAuth fields", async () => {
+    const module = await import("../src/models/user.model.js");
+    const paths = module.default.schema.paths;
+    expect(paths.googleId).toBeDefined();
+    expect(paths.githubId).toBeDefined();
+    expect(paths.authProvider).toBeDefined();
+  });
+});
+
 describe("User model schema has new fields", () => {
   it("user schema includes avatar, bio, interests, socialLinks, notificationPreferences", async () => {
     const module = await import("../src/models/user.model.js");

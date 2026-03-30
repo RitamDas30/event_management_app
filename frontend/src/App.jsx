@@ -17,6 +17,8 @@ import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import EventDetails from "./pages/EventDetails";
 import NotFound from "./pages/NotFound";
+import OAuthCallback from "./pages/OAuthCallback";
+import LiveEvent from "./pages/LiveEvent";
 
 // Student Pages
 import StudentDashboard from "./pages/student/StudentDashboard";
@@ -93,6 +95,9 @@ export default function App() {
             />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/auth/google/callback" element={<OAuthCallback provider="google" />} />
+            <Route path="/auth/github/callback" element={<OAuthCallback provider="github" />} />
+            <Route path="/events/:id/live" element={<LiveEvent />} />
           </Route>
 
           {/* ========================================= */}

@@ -45,6 +45,10 @@ export const createEvent = async (req, res) => {
       agenda,
       faqs,
       speakers,
+      eventMode: req.body.eventMode || "in-person",
+      streamConfig: {
+        roomId: req.body.eventMode !== "in-person" ? `evently-${Date.now()}-${Math.random().toString(36).slice(2, 8)}` : "",
+      },
     });
 
     res.status(201).json({ message: "Event created successfully", event });

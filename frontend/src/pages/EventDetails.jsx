@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 import toast from "react-hot-toast";
 import EventCard from "../components/EventCard";
+import EventMap from "../components/EventMap";
 import {
   Clock,
   MapPin,
@@ -19,6 +20,7 @@ import {
   Mic,
   ExternalLink,
   Timer,
+  Video,
 } from "lucide-react";
 
 const generatePlaceholderUrl = (category, width = 800, height = 400) => {
@@ -399,12 +401,47 @@ export default function EventDetails() {
               </p>
             </div>
 
+            {/* Online/Hybrid: Join Live Button */}
+            {(event.eventMode === "online" || event.eventMode === "hybrid") && isUpcoming && (
+              <Link
+                to={`/events/${id}/live`}
+                className="block w-full text-center bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition mb-2 flex items-center justify-center gap-2"
+              >
+                <Video className="w-5 h-5" />
+                Join Online Event
+              </Link>
+            )}
+
+            {/* Watch Recording */}
+            {event.streamConfig?.recordingUrl && isPast && (
+              <a
+                href={event.streamConfig.recordingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full text-center bg-purple-600 text-white py-3 rounded-xl font-semibold hover:bg-purple-700 transition mb-2"
+              >
+                Watch Recording
+              </a>
+            )}
+
             <Link
               to="/explore"
               className="block w-full text-center bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition"
             >
               {event.seatsAvailable > 0 ? "Register Now" : "Join Waitlist"}
             </Link>
+
+            {/* Map */}
+            {(event.fullAddress || event.venueName) && (
+              <div className="pt-4 border-t border-gray-100">
+                <p className="text-xs text-gray-500 mb-2">Location</p>
+                <EventMap
+                  address={event.fullAddress || event.venueName}
+                  venueName={event.venueName}
+                  className="h-40 w-full rounded-lg overflow-hidden"
+                />
+              </div>
+            )}
 
             {/* Organizer */}
             {event.organizer && (
