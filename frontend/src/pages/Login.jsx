@@ -184,6 +184,28 @@ export default function Login() {
             Sign up
           </Link>
         </p>
+
+        {/* Demo Accounts */}
+        <div className="mt-6 p-4 bg-gray-50 rounded-xl border border-gray-200">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Demo Accounts (click to fill)</p>
+          <div className="space-y-2">
+            {[
+              { label: "Student", email: "student@student.com", pass: "student", color: "bg-blue-50 text-blue-700 border-blue-200" },
+              { label: "Organizer", email: "organizer@organizer.com", pass: "organizer", color: "bg-purple-50 text-purple-700 border-purple-200" },
+              { label: "Admin", email: "admin@admin.com", pass: "admin", color: "bg-red-50 text-red-700 border-red-200" },
+            ].map((demo) => (
+              <button
+                key={demo.label}
+                type="button"
+                onClick={() => { setEmail(demo.email); setPassword(demo.pass); }}
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg border text-xs font-medium transition-all hover:shadow-sm ${demo.color}`}
+              >
+                <span>{demo.label}</span>
+                <span className="font-mono opacity-70">{demo.email}</span>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

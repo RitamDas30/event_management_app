@@ -100,7 +100,8 @@ test.describe("Public pages still work after Phase 2", () => {
     await expect(page.locator('input[name="name"]')).toBeVisible();
     await expect(page.locator('input[name="email"]')).toBeVisible();
     await expect(page.locator('input[name="password"]')).toBeVisible();
-    await expect(page.locator('select[name="role"]')).toBeVisible();
+    // Role is now button-based, not a select
+    await expect(page.locator('button:has-text("Attend Events")')).toBeVisible();
 
     await page.screenshot({ path: "tests/screenshots/register-form.png" });
   });

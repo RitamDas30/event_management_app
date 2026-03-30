@@ -128,9 +128,9 @@ test.describe("Public Pages Navigation", () => {
   test("register page is accessible", async ({ page }) => {
     await page.goto("/register");
 
-    await expect(page.locator("h2")).toContainText("Register");
+    await expect(page.locator("h2")).toContainText(/Register|Create an account/i);
     await expect(page.locator('input[name="name"]')).toBeVisible();
-    await expect(page.locator('select[name="role"]')).toBeVisible();
+    await expect(page.locator('input[name="email"]')).toBeVisible();
 
     await page.screenshot({ path: "tests/screenshots/register.png" });
   });

@@ -56,6 +56,16 @@ export default function EventCard({ event, refresh }) {
   
   const isWaitlistActive = event.seatsAvailable <= 0;
 
+  // Role-aware event detail path
+  const getEventPath = () => {
+    if (!user) return `/events/${event._id}`;
+    switch (user.role) {
+      case "organizer": return `/organizer/events/${event._id}`;
+      case "admin": return `/admin/events/${event._id}`;
+      default: return `/student/events/${event._id}`;
+    }
+  };
+
   // Date/Time Formatting Variables
   const startTime = new Date(event.startTime);
   const endTime = new Date(event.endTime);
@@ -211,7 +221,7 @@ export default function EventCard({ event, refresh }) {
                 )}
 
                 <Link
-                    to="/student/registrations"
+                    to="/student/tickets"
                     className="mt-2 text-sm text-blue-600 hover:text-blue-800 font-medium underline"
                 >
                     View Your Digital Ticket
@@ -272,7 +282,9 @@ export default function EventCard({ event, refresh }) {
             </div>
         </div>
         
-        <h3 className="text-lg font-semibold">{event.title}</h3>
+        <Link to={getEventPath()} className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors">
+          {event.title}
+        </Link>
         
         {/* Date/Time/Venue Section */}
         <div className="space-y-1 mt-2 text-sm text-gray-700">

@@ -29,10 +29,14 @@ import StudentProfile from "./pages/student/StudentProfile";
 import StudentSettings from "./pages/student/StudentSettings";
 import SavedEvents from "./pages/student/SavedEvents";
 import StudentNotifications from "./pages/student/StudentNotifications";
+import StudentTickets from "./pages/student/StudentTickets";
 
 // Organizer Pages
 import OrganizerDashboard from "./pages/organizer/OrganizerDashboard";
 import OrganizerRevenue from "./pages/organizer/OrganizerRevenue";
+import OrganizerAnnouncements from "./pages/organizer/OrganizerAnnouncements";
+import OrganizerProfile from "./pages/organizer/OrganizerProfile";
+import OrganizerSettings from "./pages/organizer/OrganizerSettings";
 import Dashboard from "./pages/Dashboard";
 import CreateEvent from "./pages/CreateEvent";
 import EditEvent from "./pages/EditEvent";
@@ -47,12 +51,6 @@ import AdminCategories from "./pages/admin/AdminCategories";
 import AdminAnnouncements from "./pages/admin/AdminAnnouncements";
 import AdminAuditLog from "./pages/admin/AdminAuditLog";
 import AdminSettings from "./pages/admin/AdminSettings";
-
-// Additional Pages
-import StudentTickets from "./pages/student/StudentTickets";
-import OrganizerAnnouncements from "./pages/organizer/OrganizerAnnouncements";
-import OrganizerProfile from "./pages/organizer/OrganizerProfile";
-import OrganizerSettings from "./pages/organizer/OrganizerSettings";
 
 // Smart redirect: sends logged-in users to their role-specific dashboard
 function DashboardRedirect() {
@@ -89,24 +87,22 @@ export default function App() {
           {/* ========================================= */}
           <Route element={<PublicLayout />}>
             <Route path="/" element={<LandingPage />} />
-            <Route path="/explore" element={<Explore />} />
-            <Route path="/events/:id" element={<EventDetails />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
-            <Route
-              path="/login"
-              element={<GuestOnly><Login /></GuestOnly>}
-            />
-            <Route
-              path="/register"
-              element={<GuestOnly><Register /></GuestOnly>}
-            />
+            <Route path="/login" element={<GuestOnly><Login /></GuestOnly>} />
+            <Route path="/register" element={<GuestOnly><Register /></GuestOnly>} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/auth/google/callback" element={<OAuthCallback provider="google" />} />
             <Route path="/auth/github/callback" element={<OAuthCallback provider="github" />} />
             <Route path="/auth/select-role" element={<OAuthRoleSelect />} />
-            <Route path="/events/:id/live" element={<LiveEvent />} />
+          </Route>
+
+          {/* Public pages that work both logged-in and logged-out */}
+          {/* Guests see PublicLayout, logged-in users see these in DashboardLayout below */}
+          <Route element={<PublicLayout />}>
+            <Route path="/explore" element={<Explore />} />
+            <Route path="/events/:id" element={<EventDetails />} />
           </Route>
 
           {/* ========================================= */}
@@ -119,6 +115,9 @@ export default function App() {
           {/* ========================================= */}
           <Route element={<DashboardLayout allowedRoles={["student"]} />}>
             <Route path="/student/dashboard" element={<StudentDashboard />} />
+            <Route path="/student/explore" element={<Explore />} />
+            <Route path="/student/events/:id" element={<EventDetails />} />
+            <Route path="/student/events/:id/live" element={<LiveEvent />} />
             <Route path="/student/registrations" element={<StudentRegistrations />} />
             <Route path="/student/tickets" element={<StudentTickets />} />
             <Route path="/student/calendar" element={<StudentCalendar />} />
@@ -133,9 +132,12 @@ export default function App() {
           {/* ========================================= */}
           <Route element={<DashboardLayout allowedRoles={["organizer", "admin"]} />}>
             <Route path="/organizer/dashboard" element={<OrganizerDashboard />} />
+            <Route path="/organizer/explore" element={<Explore />} />
+            <Route path="/organizer/events/:id" element={<EventDetails />} />
             <Route path="/organizer/events" element={<Dashboard />} />
             <Route path="/organizer/events/create" element={<CreateEvent />} />
             <Route path="/organizer/events/:id/edit" element={<EditEvent />} />
+            <Route path="/organizer/events/:id/live" element={<LiveEvent />} />
             <Route path="/organizer/analytics" element={<OrganizerAnalytics />} />
             <Route path="/organizer/revenue" element={<OrganizerRevenue />} />
             <Route path="/organizer/announcements" element={<OrganizerAnnouncements />} />
@@ -148,6 +150,8 @@ export default function App() {
           {/* ========================================= */}
           <Route element={<DashboardLayout allowedRoles={["admin"]} />}>
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/explore" element={<Explore />} />
+            <Route path="/admin/events/:id" element={<EventDetails />} />
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/admin/events" element={<AdminEvents />} />
             <Route path="/admin/categories" element={<AdminCategories />} />
