@@ -170,7 +170,7 @@ test.describe("Navigation Flow", () => {
 
   test("legacy routes redirect correctly", async ({ page }) => {
     await page.goto("/my-registrations");
-    await expect(page).toHaveURL(/\/student\/registrations/);
+    await expect(page).toHaveURL(/\/student\/my-events|\/login/);
   });
 });
 

@@ -18,28 +18,25 @@ import OAuthCallback from "./pages/OAuthCallback";
 import OAuthRoleSelect from "./pages/OAuthRoleSelect";
 import NotFound from "./pages/NotFound";
 
-// Shared Pages (used in all dashboard roles)
+// Shared Pages (used across roles)
 import Explore from "./pages/Explore";
 import EventDetails from "./pages/EventDetails";
 import LiveEvent from "./pages/LiveEvent";
+import Profile from "./pages/shared/Profile";
+import Settings from "./pages/shared/Settings";
 
 // Student Pages
 import StudentDashboard from "./pages/student/StudentDashboard";
-import StudentRegistrations from "./pages/StudentRegistrations";
+import MyEvents from "./pages/student/MyEvents";
 import StudentCalendar from "./pages/StudentCalendar";
-import StudentProfile from "./pages/student/StudentProfile";
-import StudentSettings from "./pages/student/StudentSettings";
 import SavedEvents from "./pages/student/SavedEvents";
 import StudentNotifications from "./pages/student/StudentNotifications";
-import StudentTickets from "./pages/student/StudentTickets";
 
 // Organizer Pages
 import OrganizerDashboard from "./pages/organizer/OrganizerDashboard";
+import OrganizerEvents from "./pages/organizer/OrganizerEvents";
 import OrganizerRevenue from "./pages/organizer/OrganizerRevenue";
 import OrganizerAnnouncements from "./pages/organizer/OrganizerAnnouncements";
-import OrganizerProfile from "./pages/organizer/OrganizerProfile";
-import OrganizerSettings from "./pages/organizer/OrganizerSettings";
-import Dashboard from "./pages/Dashboard";
 import CreateEvent from "./pages/CreateEvent";
 import EditEvent from "./pages/EditEvent";
 import OrganizerAnalytics from "./pages/OrganizerAnalytics";
@@ -54,7 +51,6 @@ import AdminAnnouncements from "./pages/admin/AdminAnnouncements";
 import AdminAuditLog from "./pages/admin/AdminAuditLog";
 import AdminSettings from "./pages/admin/AdminSettings";
 
-// Smart redirect based on role
 function DashboardRedirect() {
   const { user, loading } = useAuth();
   if (loading) return null;
@@ -66,7 +62,6 @@ function DashboardRedirect() {
   }
 }
 
-// Redirect logged-in users away from auth pages
 function GuestOnly({ children }) {
   const { user, loading } = useAuth();
   if (loading) return null;
@@ -74,7 +69,6 @@ function GuestOnly({ children }) {
   return children;
 }
 
-// Redirect /explore to role-prefixed explore
 function ExploreRedirect() {
   const { user, loading } = useAuth();
   if (loading) return null;
@@ -86,14 +80,6 @@ function ExploreRedirect() {
   }
 }
 
-// Redirect /events/:id to role-prefixed event details
-function EventRedirect() {
-  const { user, loading } = useAuth();
-  if (loading) return null;
-  if (user) return <DashboardRedirect />;
-  return <EventDetails />;
-}
-
 export default function App() {
   return (
     <AuthProvider>
@@ -101,8 +87,7 @@ export default function App() {
         <Toaster position="top-right" />
         <Routes>
           {/* ========================================= */}
-          {/* GUEST ROUTES — GuestLayout (minimal bar + footer) */}
-          {/* Only for non-logged-in users */}
+          {/* GUEST ROUTES */}
           {/* ========================================= */}
           <Route element={<GuestLayout />}>
             <Route path="/" element={<GuestOnly><LandingPage /></GuestOnly>} />
@@ -120,47 +105,46 @@ export default function App() {
           </Route>
 
           {/* ========================================= */}
-          {/* SMART REDIRECTS */}
+          {/* REDIRECTS */}
           {/* ========================================= */}
           <Route path="/dashboard" element={<DashboardRedirect />} />
 
           {/* ========================================= */}
-          {/* STUDENT — DashboardLayout (sidebar) */}
+          {/* STUDENT */}
           {/* ========================================= */}
           <Route element={<DashboardLayout allowedRoles={["student"]} />}>
             <Route path="/student/dashboard" element={<StudentDashboard />} />
             <Route path="/student/explore" element={<Explore />} />
             <Route path="/student/events/:id" element={<EventDetails />} />
             <Route path="/student/events/:id/live" element={<LiveEvent />} />
-            <Route path="/student/registrations" element={<StudentRegistrations />} />
-            <Route path="/student/tickets" element={<StudentTickets />} />
+            <Route path="/student/my-events" element={<MyEvents />} />
             <Route path="/student/calendar" element={<StudentCalendar />} />
             <Route path="/student/saved" element={<SavedEvents />} />
             <Route path="/student/notifications" element={<StudentNotifications />} />
-            <Route path="/student/profile" element={<StudentProfile />} />
-            <Route path="/student/settings" element={<StudentSettings />} />
+            <Route path="/student/profile" element={<Profile />} />
+            <Route path="/student/settings" element={<Settings />} />
           </Route>
 
           {/* ========================================= */}
-          {/* ORGANIZER — DashboardLayout (sidebar) */}
+          {/* ORGANIZER */}
           {/* ========================================= */}
           <Route element={<DashboardLayout allowedRoles={["organizer", "admin"]} />}>
             <Route path="/organizer/dashboard" element={<OrganizerDashboard />} />
             <Route path="/organizer/explore" element={<Explore />} />
             <Route path="/organizer/events/:id" element={<EventDetails />} />
-            <Route path="/organizer/events" element={<Dashboard />} />
+            <Route path="/organizer/events" element={<OrganizerEvents />} />
             <Route path="/organizer/events/create" element={<CreateEvent />} />
             <Route path="/organizer/events/:id/edit" element={<EditEvent />} />
             <Route path="/organizer/events/:id/live" element={<LiveEvent />} />
             <Route path="/organizer/analytics" element={<OrganizerAnalytics />} />
             <Route path="/organizer/revenue" element={<OrganizerRevenue />} />
             <Route path="/organizer/announcements" element={<OrganizerAnnouncements />} />
-            <Route path="/organizer/profile" element={<OrganizerProfile />} />
-            <Route path="/organizer/settings" element={<OrganizerSettings />} />
+            <Route path="/organizer/profile" element={<Profile />} />
+            <Route path="/organizer/settings" element={<Settings />} />
           </Route>
 
           {/* ========================================= */}
-          {/* ADMIN — DashboardLayout (sidebar) */}
+          {/* ADMIN */}
           {/* ========================================= */}
           <Route element={<DashboardLayout allowedRoles={["admin"]} />}>
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
@@ -178,16 +162,13 @@ export default function App() {
           {/* ========================================= */}
           {/* LEGACY REDIRECTS */}
           {/* ========================================= */}
-          <Route path="/my-registrations" element={<Navigate to="/student/registrations" replace />} />
+          <Route path="/my-registrations" element={<Navigate to="/student/my-events" replace />} />
           <Route path="/calendar" element={<Navigate to="/student/calendar" replace />} />
           <Route path="/create-event" element={<Navigate to="/organizer/events/create" replace />} />
           <Route path="/analytics" element={<Navigate to="/organizer/analytics" replace />} />
-          <Route path="/edit-event/:id" element={<Navigate to="/organizer/events/:id/edit" replace />} />
           <Route path="/admin-panel" element={<Navigate to="/admin/dashboard" replace />} />
 
-          {/* ========================================= */}
           {/* 404 */}
-          {/* ========================================= */}
           <Route path="*" element={<GuestLayout />}>
             <Route path="*" element={<NotFound />} />
           </Route>

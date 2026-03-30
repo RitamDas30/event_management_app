@@ -26,8 +26,7 @@ import {
 const studentLinks = [
   { name: "Dashboard", path: "/student/dashboard", icon: LayoutDashboard },
   { name: "Explore Events", path: "/student/explore", icon: Compass },
-  { name: "My Registrations", path: "/student/registrations", icon: ClipboardList },
-  { name: "My Tickets", path: "/student/tickets", icon: Ticket },
+  { name: "My Events", path: "/student/my-events", icon: Ticket },
   { name: "Calendar", path: "/student/calendar", icon: CalendarDays },
   { name: "Saved Events", path: "/student/saved", icon: Bookmark },
   { name: "Notifications", path: "/student/notifications", icon: Bell },
