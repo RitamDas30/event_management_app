@@ -50,7 +50,7 @@ test.describe("Event Details Page", () => {
       await eventLinks.first().click();
       await page.waitForTimeout(1000);
 
-      await expect(page.locator('text=Reviews')).toBeVisible();
+      await expect(page.locator('h2:has-text("Reviews")')).toBeVisible();
     }
   });
 });

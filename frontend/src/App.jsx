@@ -3,22 +3,24 @@ import { Toaster } from "react-hot-toast";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
 // Layouts
-import PublicLayout from "./layouts/PublicLayout";
+import GuestLayout from "./layouts/GuestLayout";
 import DashboardLayout from "./layouts/DashboardLayout";
 
-// Public Pages
+// Guest-only Pages
 import LandingPage from "./pages/LandingPage";
-import Explore from "./pages/Explore";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
-import EventDetails from "./pages/EventDetails";
-import NotFound from "./pages/NotFound";
 import OAuthCallback from "./pages/OAuthCallback";
 import OAuthRoleSelect from "./pages/OAuthRoleSelect";
+import NotFound from "./pages/NotFound";
+
+// Shared Pages (used in all dashboard roles)
+import Explore from "./pages/Explore";
+import EventDetails from "./pages/EventDetails";
 import LiveEvent from "./pages/LiveEvent";
 
 // Student Pages
@@ -52,19 +54,15 @@ import AdminAnnouncements from "./pages/admin/AdminAnnouncements";
 import AdminAuditLog from "./pages/admin/AdminAuditLog";
 import AdminSettings from "./pages/admin/AdminSettings";
 
-// Smart redirect: sends logged-in users to their role-specific dashboard
+// Smart redirect based on role
 function DashboardRedirect() {
   const { user, loading } = useAuth();
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
-
   switch (user.role) {
-    case "admin":
-      return <Navigate to="/admin/dashboard" replace />;
-    case "organizer":
-      return <Navigate to="/organizer/dashboard" replace />;
-    default:
-      return <Navigate to="/student/dashboard" replace />;
+    case "admin": return <Navigate to="/admin/dashboard" replace />;
+    case "organizer": return <Navigate to="/organizer/dashboard" replace />;
+    default: return <Navigate to="/student/dashboard" replace />;
   }
 }
 
@@ -76,6 +74,26 @@ function GuestOnly({ children }) {
   return children;
 }
 
+// Redirect /explore to role-prefixed explore
+function ExploreRedirect() {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (!user) return <Explore />;
+  switch (user.role) {
+    case "admin": return <Navigate to="/admin/explore" replace />;
+    case "organizer": return <Navigate to="/organizer/explore" replace />;
+    default: return <Navigate to="/student/explore" replace />;
+  }
+}
+
+// Redirect /events/:id to role-prefixed event details
+function EventRedirect() {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (user) return <DashboardRedirect />;
+  return <EventDetails />;
+}
+
 export default function App() {
   return (
     <AuthProvider>
@@ -83,10 +101,11 @@ export default function App() {
         <Toaster position="top-right" />
         <Routes>
           {/* ========================================= */}
-          {/* PUBLIC ROUTES — PublicLayout (Navbar + Footer) */}
+          {/* GUEST ROUTES — GuestLayout (minimal bar + footer) */}
+          {/* Only for non-logged-in users */}
           {/* ========================================= */}
-          <Route element={<PublicLayout />}>
-            <Route path="/" element={<LandingPage />} />
+          <Route element={<GuestLayout />}>
+            <Route path="/" element={<GuestOnly><LandingPage /></GuestOnly>} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/login" element={<GuestOnly><Login /></GuestOnly>} />
@@ -96,22 +115,17 @@ export default function App() {
             <Route path="/auth/google/callback" element={<OAuthCallback provider="google" />} />
             <Route path="/auth/github/callback" element={<OAuthCallback provider="github" />} />
             <Route path="/auth/select-role" element={<OAuthRoleSelect />} />
-          </Route>
-
-          {/* Public pages that work both logged-in and logged-out */}
-          {/* Guests see PublicLayout, logged-in users see these in DashboardLayout below */}
-          <Route element={<PublicLayout />}>
-            <Route path="/explore" element={<Explore />} />
+            <Route path="/explore" element={<ExploreRedirect />} />
             <Route path="/events/:id" element={<EventDetails />} />
           </Route>
 
           {/* ========================================= */}
-          {/* DASHBOARD REDIRECT */}
+          {/* SMART REDIRECTS */}
           {/* ========================================= */}
           <Route path="/dashboard" element={<DashboardRedirect />} />
 
           {/* ========================================= */}
-          {/* STUDENT ROUTES — DashboardLayout */}
+          {/* STUDENT — DashboardLayout (sidebar) */}
           {/* ========================================= */}
           <Route element={<DashboardLayout allowedRoles={["student"]} />}>
             <Route path="/student/dashboard" element={<StudentDashboard />} />
@@ -128,7 +142,7 @@ export default function App() {
           </Route>
 
           {/* ========================================= */}
-          {/* ORGANIZER ROUTES — DashboardLayout */}
+          {/* ORGANIZER — DashboardLayout (sidebar) */}
           {/* ========================================= */}
           <Route element={<DashboardLayout allowedRoles={["organizer", "admin"]} />}>
             <Route path="/organizer/dashboard" element={<OrganizerDashboard />} />
@@ -146,7 +160,7 @@ export default function App() {
           </Route>
 
           {/* ========================================= */}
-          {/* ADMIN ROUTES — DashboardLayout */}
+          {/* ADMIN — DashboardLayout (sidebar) */}
           {/* ========================================= */}
           <Route element={<DashboardLayout allowedRoles={["admin"]} />}>
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
@@ -162,7 +176,7 @@ export default function App() {
           </Route>
 
           {/* ========================================= */}
-          {/* LEGACY ROUTE REDIRECTS */}
+          {/* LEGACY REDIRECTS */}
           {/* ========================================= */}
           <Route path="/my-registrations" element={<Navigate to="/student/registrations" replace />} />
           <Route path="/calendar" element={<Navigate to="/student/calendar" replace />} />
@@ -172,9 +186,9 @@ export default function App() {
           <Route path="/admin-panel" element={<Navigate to="/admin/dashboard" replace />} />
 
           {/* ========================================= */}
-          {/* 404 CATCH-ALL */}
+          {/* 404 */}
           {/* ========================================= */}
-          <Route path="*" element={<PublicLayout />}>
+          <Route path="*" element={<GuestLayout />}>
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>

@@ -37,6 +37,7 @@ const studentLinks = [
 
 const organizerLinks = [
   { name: "Dashboard", path: "/organizer/dashboard", icon: LayoutDashboard },
+  { name: "Explore Events", path: "/organizer/explore", icon: Compass },
   { name: "My Events", path: "/organizer/events", icon: CalendarDays },
   { name: "Create Event", path: "/organizer/events/create", icon: PlusCircle },
   { name: "Analytics", path: "/organizer/analytics", icon: BarChart3 },
@@ -48,6 +49,7 @@ const organizerLinks = [
 
 const adminLinks = [
   { name: "Overview", path: "/admin/dashboard", icon: LayoutDashboard },
+  { name: "Explore Events", path: "/admin/explore", icon: Compass },
   { name: "User Management", path: "/admin/users", icon: Users },
   { name: "Event Moderation", path: "/admin/events", icon: Shield },
   { name: "Categories", path: "/admin/categories", icon: Tags },
