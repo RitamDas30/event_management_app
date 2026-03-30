@@ -1,62 +1,41 @@
-import React, { useState, useEffect } from "react"; 
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
-import toast from "react-hot-toast"; 
-import { CheckCircle, Clock, Share2, Calendar, MapPin, Bookmark, BookmarkCheck } from 'lucide-react'; 
+import toast from "react-hot-toast";
+import {
+  CheckCircle, Clock, Share2, Calendar, MapPin, Bookmark, BookmarkCheck,
+  Edit, Users, Radio, BarChart3, Eye,
+} from "lucide-react";
 
-// ✅ Helper function to generate a professional placeholder image
 const generatePlaceholderUrl = (category, width = 400, height = 200) => {
-    let color = '2563EB'; // Default: Blue
-    let textColor = 'FFFFFF';
-    
-    // Using placehold.co (reliable external placeholder service)
-    switch (category) {
-        case 'Technical':
-            color = '10B981'; // Teal/Green
-            break;
-        case 'Cultural':
-            color = 'F59E0B'; // Amber
-            break;
-        case 'Sports':
-            color = 'EF4444'; // Red
-            break;
-        case 'Academic':
-            color = '6366F1'; // Indigo
-            break;
-        case 'Social':
-            color = 'EC4899'; // Pink
-            break;
-        case 'Workshop':
-            color = '8B5CF6'; // Purple
-            break;
-        case 'Seminar':
-            color = '06B6D4'; // Cyan
-            break;
-        case 'Conference':
-            color = '14B8A6'; // Teal
-            break;
-        default:
-            color = '4B5563'; // Gray
-    }
-    
-    const text = encodeURIComponent(category.toUpperCase());
-    
-    // Construct the URL (placehold.co format)
-    return `https://placehold.co/${width}x${height}/${color}/${textColor}?text=${text}`;
+  const colors = { Technical: "10B981", Cultural: "F59E0B", Sports: "EF4444", Academic: "6366F1", Social: "EC4899" };
+  const color = colors[category] || "4B5563";
+  return `https://placehold.co/${width}x${height}/${color}/FFFFFF?text=${encodeURIComponent((category || "EVENT").toUpperCase())}`;
 };
 
 export default function EventCard({ event, refresh, initialRegStatus, initialSaved }) {
   const { user } = useAuth();
-  const [loading, setLoading] = useState(false); 
+  const [loading, setLoading] = useState(false);
   const [registrationStatus, setRegistrationStatus] = useState(initialRegStatus || null);
   const [localWaitlistCount, setLocalWaitlistCount] = useState(0);
   const [copied, setCopied] = useState(false);
   const [isSaved, setIsSaved] = useState(initialSaved || false);
-  
-  const isWaitlistActive = event.seatsAvailable <= 0;
 
-  // Role-aware event detail path
+  const isStudent = user?.role === "student";
+  const isOrganizer = user?.role === "organizer";
+  const isAdmin = user?.role === "admin";
+  const isOwnEvent = user && (event.organizer?._id === user.id || event.organizer === user.id || event.organizer?._id === user._id);
+  const isWaitlistActive = event.seatsAvailable <= 0;
+  const booked = event.capacity - event.seatsAvailable;
+  const fillPercent = event.capacity > 0 ? Math.round((booked / event.capacity) * 100) : 0;
+
+  // Can go live: online/hybrid, within 15 min of start to end time
+  const isOnline = event.eventMode === "online" || event.eventMode === "hybrid";
+  const now = new Date();
+  const canGoLive = isOnline && isOwnEvent && now >= new Date(new Date(event.startTime).getTime() - 15 * 60000) && now <= new Date(event.endTime);
+  const isLiveNow = isOnline && now >= new Date(event.startTime) && now <= new Date(event.endTime);
+
   const getEventPath = () => {
     if (!user) return `/events/${event._id}`;
     switch (user.role) {
@@ -66,263 +45,228 @@ export default function EventCard({ event, refresh, initialRegStatus, initialSav
     }
   };
 
-  // Date/Time Formatting Variables
+  const getLivePath = () => {
+    if (!user) return `/events/${event._id}`;
+    switch (user.role) {
+      case "organizer": return `/organizer/events/${event._id}/live`;
+      case "admin": return `/admin/events/${event._id}/live`;
+      default: return `/student/events/${event._id}/live`;
+    }
+  };
+
   const startTime = new Date(event.startTime);
   const endTime = new Date(event.endTime);
-  const formattedDate = startTime.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-  const formattedTime = `${startTime.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })} – ${endTime.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`;
-
-  // ✅ Get appropriate placeholder image
+  const formattedDate = startTime.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  const formattedTime = `${startTime.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })} – ${endTime.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`;
   const eventImage = event.imageUrl || generatePlaceholderUrl(event.category);
 
-  // Use pre-fetched data if available (passed from parent), otherwise skip per-card API calls
-  useEffect(() => {
-    if (!user || !event._id) {
-      setRegistrationStatus(null);
-      return;
-    }
-    // Only fetch if not already provided by parent — avoids N+1 API calls
-    // Parent pages (Explore, Landing) should pass registrationMap and savedSet props
-  }, [user, event._id]); 
-
   const handleRegister = async () => {
-    if (!user) {
-      toast.error("Please log in to register for an event.");
-      return;
-    }
-
+    if (!user) return toast.error("Please log in to register.");
     try {
       setLoading(true);
-      
       const res = await api.post(`/registrations/${event._id}`);
-      const statusMessage = res.data.message || "Registration successful!";
-      
-      const isWaitlistedResponse = statusMessage.toLowerCase().includes("waitlisted");
-      
-      setRegistrationStatus(isWaitlistedResponse ? "waitlisted" : "registered"); 
-      if (isWaitlistedResponse && res.data.waitlistCount) {
-          setLocalWaitlistCount(res.data.waitlistCount);
-      }
-
-      toast.success(statusMessage);
-      
-      if (refresh) refresh(); 
-      
+      const msg = res.data.message || "Registered!";
+      const isWaitlisted = msg.toLowerCase().includes("waitlisted");
+      setRegistrationStatus(isWaitlisted ? "waitlisted" : "registered");
+      if (isWaitlisted && res.data.waitlistCount) setLocalWaitlistCount(res.data.waitlistCount);
+      toast.success(msg);
+      if (refresh) refresh();
     } catch (err) {
-      const status = err.response?.status;
-      const backendData = err.response?.data;
-      
-      let displayMessage = "Registration failed. Please check event details.";
-
-      if (status === 409 || status === 400 || status === 403) {
-          displayMessage = backendData.message;
-          
-          if (backendData?.message?.toLowerCase().includes("already waitlisted")) {
-              setRegistrationStatus("waitlisted");
-              setLocalWaitlistCount(backendData.waitlistCount); 
-          } else if (backendData?.message?.toLowerCase().includes("already registered")) {
-              setRegistrationStatus("registered");
-          }
-      }
-      
-      toast.error(displayMessage);
-      
+      const backendMsg = err.response?.data?.message || "Registration failed.";
+      if (backendMsg.toLowerCase().includes("already waitlisted")) setRegistrationStatus("waitlisted");
+      else if (backendMsg.toLowerCase().includes("already registered")) setRegistrationStatus("registered");
+      toast.error(backendMsg);
     } finally {
       setLoading(false);
     }
   };
-  
-  // Share Handler Function
-  const handleShare = async () => {
-    const shareUrl = `${window.location.origin}/events/${event._id}`; 
-    const shareTitle = `Join me at ${event.title}!`;
-    const shareText = `Check out this awesome event: ${event.title} happening at ${event.venueName || 'TBD'}.`;
 
+  const handleShare = async () => {
+    const url = `${window.location.origin}/events/${event._id}`;
     if (navigator.share) {
-      try {
-        await navigator.share({
-          title: shareTitle,
-          text: shareText,
-          url: shareUrl,
-        });
-      } catch (error) {
-        console.error('Error sharing:', error);
-      }
+      await navigator.share({ title: event.title, url }).catch(() => {});
     } else {
-      try {
-        await navigator.clipboard.writeText(shareUrl);
-        toast.success("Link copied to clipboard! Share away!");
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } catch (error) {
-        toast.error("Failed to copy link.");
-        console.error('Error copying:', error);
-      }
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied!");
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
-  const renderStatusBlock = () => {
-    const status = registrationStatus;
-    
-    if (status === "registered" || status === "waitlisted") {
-        const isRegistered = status === "registered";
-        
-        return (
-            <div className={`mt-3 p-3 rounded-lg flex flex-col items-center border ${
-                isRegistered ? 'bg-green-50 border-green-300' : 'bg-yellow-50 border-yellow-300'
-            }`}>
-                <div className="flex items-center gap-2">
-                    {isRegistered ? (
-                      <CheckCircle size={20} className="text-green-600" />
-                    ) : (
-                      <Clock size={20} className="text-yellow-600" />
-                    )}
-                    <p className={`font-semibold text-center ${isRegistered ? 'text-green-800' : 'text-yellow-800'}`}>
-                        {isRegistered 
-                            ? "Confirmed! You are registered." 
-                            : `Waiting List: #${localWaitlistCount}` 
-                        }
-                    </p>
-                </div>
-                
-                {registrationStatus === "waitlisted" && localWaitlistCount > 0 && (
-                    <p className="text-xs text-yellow-700 mt-1">
-                        There are {localWaitlistCount} people ahead of you.
-                    </p>
-                )}
-
-                <Link
-                    to="/student/tickets"
-                    className="mt-2 text-sm text-blue-600 hover:text-blue-800 font-medium underline"
-                >
-                    View Your Digital Ticket
-                </Link>
-            </div>
-        );
+  const handleSaveToggle = async () => {
+    try {
+      if (isSaved) {
+        await api.delete(`/saved-events/${event._id}`);
+        setIsSaved(false);
+        toast.success("Removed from saved");
+      } else {
+        await api.post(`/saved-events/${event._id}`);
+        setIsSaved(true);
+        toast.success("Event saved!");
+      }
+    } catch (err) {
+      toast.error("Failed to update saved status");
     }
-    return null;
   };
 
   return (
-    <div className="bg-white shadow-md rounded-lg p-4 flex flex-col justify-between border">
-      
+    <div className="bg-white rounded-xl border border-gray-200 p-4 flex flex-col justify-between hover:shadow-md transition-shadow">
       <div>
-        
-        {/* Share Button with Image */}
+        {/* Image + Overlay Buttons */}
         <div className="relative">
-            <img
-                src={eventImage}
-                alt={event.title}
-                className="rounded-md w-full h-40 object-cover mb-3"
-                onError={(e) => {
-                    // Fallback if placehold.co also fails
-                    e.target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200'%3E%3Crect fill='%234B5563' width='400' height='200'/%3E%3Ctext fill='%23FFF' font-size='24' font-family='Arial' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3E${event.category || 'EVENT'}%3C/text%3E%3C/svg%3E`;
-                }}
-            />
-            <div className="absolute top-2 right-2 flex gap-1.5">
-                {user && (
-                    <button
-                        onClick={async () => {
-                            try {
-                                if (isSaved) {
-                                    await api.delete(`/saved-events/${event._id}`);
-                                    setIsSaved(false);
-                                    toast.success("Removed from saved");
-                                } else {
-                                    await api.post(`/saved-events/${event._id}`);
-                                    setIsSaved(true);
-                                    toast.success("Event saved!");
-                                }
-                            } catch (err) {
-                                toast.error("Failed to update saved status");
-                            }
-                        }}
-                        className="p-2 bg-black bg-opacity-60 rounded-full text-white hover:bg-opacity-80 transition duration-150"
-                        title={isSaved ? "Remove bookmark" : "Save event"}
-                    >
-                        {isSaved ? <BookmarkCheck size={20} className="text-blue-400" /> : <Bookmark size={20} />}
-                    </button>
-                )}
-                <button
-                    onClick={handleShare}
-                    className="p-2 bg-black bg-opacity-60 rounded-full text-white hover:bg-opacity-80 transition duration-150"
-                    title="Share Event"
-                >
-                    {copied ? <CheckCircle size={20} className="text-green-400" /> : <Share2 size={20} />}
-                </button>
-            </div>
+          <img src={eventImage} alt={event.title} className="rounded-lg w-full h-40 object-cover mb-3" onError={(e) => { e.target.src = generatePlaceholderUrl(event.category); }} />
+
+          {/* Live badge */}
+          {isLiveNow && (
+            <span className="absolute top-2 left-2 flex items-center gap-1 text-xs font-semibold text-white bg-red-600 px-2 py-1 rounded-full">
+              <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span> LIVE
+            </span>
+          )}
+
+          {/* Online/Hybrid badge */}
+          {isOnline && !isLiveNow && (
+            <span className="absolute top-2 left-2 text-xs font-medium text-white bg-purple-600 px-2 py-0.5 rounded-full">
+              {event.eventMode === "online" ? "Online" : "Hybrid"}
+            </span>
+          )}
+
+          <div className="absolute top-2 right-2 flex gap-1.5">
+            {/* Save — students only */}
+            {isStudent && (
+              <button onClick={handleSaveToggle} className="p-2 bg-black/60 rounded-full text-white hover:bg-black/80 transition" title={isSaved ? "Unsave" : "Save"}>
+                {isSaved ? <BookmarkCheck size={18} className="text-blue-400" /> : <Bookmark size={18} />}
+              </button>
+            )}
+            {/* Share — everyone */}
+            <button onClick={handleShare} className="p-2 bg-black/60 rounded-full text-white hover:bg-black/80 transition" title="Share">
+              {copied ? <CheckCircle size={18} className="text-green-400" /> : <Share2 size={18} />}
+            </button>
+          </div>
         </div>
-        
-        <Link to={getEventPath()} className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors">
+
+        {/* Title */}
+        <Link to={getEventPath()} className="text-base font-semibold text-gray-900 hover:text-blue-600 transition-colors line-clamp-1">
           {event.title}
         </Link>
-        
-        {/* Date/Time/Venue Section */}
-        <div className="space-y-1 mt-2 text-sm text-gray-700">
-            {/* Date */}
-            <div className="flex items-center gap-2">
-                <Calendar size={14} className="text-blue-500" />
-                <span className="font-semibold text-gray-800">{formattedDate}</span>
-            </div>
-            
-            {/* Time */}
-            <div className="flex items-center gap-2">
-                <Clock size={14} className="text-blue-500" />
-                <span className="text-gray-600">{formattedTime}</span>
-            </div>
-            
-            {/* Venue with Google Maps Link */}
-            <div className="flex items-center gap-1 pt-1">
-                <MapPin size={14} className="text-gray-500 flex-shrink-0" />
-                <a 
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.fullAddress || event.venueName)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline text-blue-600 hover:text-blue-700 transition cursor-pointer text-sm"
-                    title="View on Google Maps"
-                >
-                    {event.venueName || event.fullAddress || 'Venue TBD'}
-                </a>
-            </div>
 
-            {/* Category */}
-            <p className="text-sm pt-1">
-                Category: <span className="font-medium">{event.category}</span>
-            </p>
-
-            {/* Price */}
-            <p className="font-semibold pt-1">
-                {event.price > 0 ? `Price: ₹${event.price}` : 'Free'}
-            </p>
-            
-            {/* Seats Left */}
-            <p className="text-sm pt-2">
-                Seats left: <span className="font-semibold">{event.seatsAvailable}</span>
-            </p>
+        {/* Meta */}
+        <div className="space-y-1 mt-2 text-sm text-gray-600">
+          <div className="flex items-center gap-2">
+            <Calendar size={14} className="text-blue-500 flex-shrink-0" />
+            <span>{formattedDate}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Clock size={14} className="text-blue-500 flex-shrink-0" />
+            <span>{formattedTime}</span>
+          </div>
+          {event.venueName && event.eventMode !== "online" && (
+            <div className="flex items-center gap-1">
+              <MapPin size={14} className="text-gray-400 flex-shrink-0" />
+              <span className="truncate">{event.venueName}</span>
+            </div>
+          )}
+          <div className="flex items-center gap-2 pt-1">
+            <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{event.category}</span>
+            <span className="font-semibold text-gray-900">{event.price > 0 ? `₹${event.price}` : "Free"}</span>
+          </div>
         </div>
+
+        {/* ====== ORGANIZER VIEW (own event) ====== */}
+        {isOwnEvent && (isOrganizer || isAdmin) && (
+          <div className="mt-3 space-y-2">
+            {/* Fill bar */}
+            <div>
+              <div className="flex justify-between text-xs text-gray-500 mb-1">
+                <span>{booked}/{event.capacity} registered</span>
+                <span>{fillPercent}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-1.5">
+                <div className={`h-1.5 rounded-full ${fillPercent >= 80 ? "bg-green-500" : fillPercent >= 40 ? "bg-blue-500" : "bg-amber-500"}`} style={{ width: `${fillPercent}%` }} />
+              </div>
+            </div>
+
+            {/* Organizer actions */}
+            <div className="flex flex-wrap gap-2 pt-1">
+              <Link to={`/organizer/events/${event._id}/edit`} className="flex items-center gap-1 text-xs font-medium text-gray-600 hover:text-blue-600 bg-gray-100 hover:bg-blue-50 px-2.5 py-1.5 rounded-lg transition">
+                <Edit size={13} /> Edit
+              </Link>
+              <Link to={getEventPath()} className="flex items-center gap-1 text-xs font-medium text-gray-600 hover:text-blue-600 bg-gray-100 hover:bg-blue-50 px-2.5 py-1.5 rounded-lg transition">
+                <Users size={13} /> Attendees
+              </Link>
+              {canGoLive && (
+                <Link to={getLivePath()} className="flex items-center gap-1 text-xs font-semibold text-white bg-green-600 hover:bg-green-700 px-2.5 py-1.5 rounded-lg transition">
+                  <Radio size={13} /> Go Live
+                </Link>
+              )}
+              {isLiveNow && !canGoLive && (
+                <Link to={getLivePath()} className="flex items-center gap-1 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 px-2.5 py-1.5 rounded-lg transition">
+                  <Radio size={13} /> Live Now
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ====== ORGANIZER VIEW (other's event) ====== */}
+        {!isOwnEvent && (isOrganizer || isAdmin) && (
+          <div className="mt-3">
+            <p className="text-xs text-gray-500">{event.seatsAvailable} seats left</p>
+            {isLiveNow && (
+              <Link to={getLivePath()} className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700">
+                <Radio size={13} /> Watch Live
+              </Link>
+            )}
+          </div>
+        )}
       </div>
 
-      {user && user.role === "student" && (
-        renderStatusBlock() || ( 
-            <button
-              disabled={loading} 
-              onClick={handleRegister}
-              className={`mt-3 py-2 rounded transition text-white font-semibold 
-                ${loading 
-                    ? 'bg-gray-400 cursor-wait' 
-                    : isWaitlistActive 
-                        ? 'bg-orange-500 hover:bg-orange-600' 
-                        : 'bg-blue-600 hover:bg-blue-700'
-                }`}
-            >
-              {loading 
-                ? "Processing..." 
-                : isWaitlistActive 
-                    ? "Join Waiting List" 
-                    : "Register Now"
-              }
+      {/* ====== STUDENT VIEW ====== */}
+      {isStudent && (
+        <div className="mt-3">
+          {registrationStatus === "registered" || registrationStatus === "waitlisted" ? (
+            <div className={`p-3 rounded-lg flex flex-col items-center border ${registrationStatus === "registered" ? "bg-green-50 border-green-200" : "bg-amber-50 border-amber-200"}`}>
+              <div className="flex items-center gap-2">
+                {registrationStatus === "registered" ? (
+                  <CheckCircle size={18} className="text-green-600" />
+                ) : (
+                  <Clock size={18} className="text-amber-600" />
+                )}
+                <p className={`text-sm font-semibold ${registrationStatus === "registered" ? "text-green-700" : "text-amber-700"}`}>
+                  {registrationStatus === "registered" ? "Confirmed" : `Waitlisted #${localWaitlistCount}`}
+                </p>
+              </div>
+              <Link to="/student/my-events" className="mt-1.5 text-xs text-blue-600 hover:text-blue-700 font-medium">
+                View Ticket
+              </Link>
+            </div>
+          ) : (
+            <button disabled={loading} onClick={handleRegister}
+              className={`w-full py-2.5 rounded-lg text-sm font-semibold transition ${
+                loading ? "bg-gray-300 text-gray-500 cursor-wait"
+                  : isWaitlistActive ? "bg-amber-500 hover:bg-amber-600 text-white"
+                  : "bg-blue-600 hover:bg-blue-700 text-white"
+              }`}>
+              {loading ? "Processing..." : isWaitlistActive ? "Join Waitlist" : "Register Now"}
             </button>
-        )
+          )}
+
+          {/* Join live stream for registered students */}
+          {isLiveNow && registrationStatus === "registered" && (
+            <Link to={getLivePath()} className="mt-2 w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-semibold bg-green-600 hover:bg-green-700 text-white transition">
+              <Radio size={14} /> Join Live Stream
+            </Link>
+          )}
+        </div>
+      )}
+
+      {/* Guest — no user */}
+      {!user && (
+        <div className="mt-3">
+          <p className="text-xs text-gray-500 mb-2">{event.seatsAvailable} seats left</p>
+          <Link to="/login" className="block w-full text-center py-2.5 rounded-lg text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white transition">
+            Log in to Register
+          </Link>
+        </div>
       )}
     </div>
   );

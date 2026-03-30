@@ -15,7 +15,12 @@ const UserModel = mongoose.model('User');
 export const registerForEvent = async (req, res) => {
     try {
         const studentId = req.user.id;
-        const { eventId } = req.params; 
+        const { eventId } = req.params;
+
+        // 0. Only students can register
+        if (req.user.role !== "student") {
+            return res.status(403).json({ message: "Only students can register for events" });
+        }
 
         // 1. Fetch Event Details
         const event = await Event.findById(eventId);

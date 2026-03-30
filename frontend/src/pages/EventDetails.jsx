@@ -21,6 +21,12 @@ import {
   ExternalLink,
   Timer,
   Video,
+  Edit,
+  Trash2,
+  Radio,
+  BarChart3,
+  Megaphone,
+  Download,
 } from "lucide-react";
 
 const generatePlaceholderUrl = (category, width = 800, height = 400) => {
@@ -175,6 +181,13 @@ export default function EventDetails() {
   const isPast = endTime < new Date();
   const fillPercent = event.capacity > 0 ? Math.round(((event.capacity - event.seatsAvailable) / event.capacity) * 100) : 0;
   const eventImage = event.imageUrl || generatePlaceholderUrl(event.category, 800, 400);
+
+  const isStudent = user?.role === "student";
+  const isOwnEvent = user && (event.organizer?._id === user.id || event.organizer === user.id || event.organizer?._id === user._id);
+  const isOnline = event.eventMode === "online" || event.eventMode === "hybrid";
+  const rolePrefix = user?.role === "admin" ? "/admin" : user?.role === "organizer" ? "/organizer" : "/student";
+  const canGoLive = isOnline && isOwnEvent && new Date() >= new Date(new Date(event.startTime).getTime() - 15 * 60000) && new Date() <= new Date(event.endTime);
+  const isLiveNow = isOnline && new Date() >= new Date(event.startTime) && new Date() <= new Date(event.endTime);
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
@@ -401,35 +414,78 @@ export default function EventDetails() {
               </p>
             </div>
 
-            {/* Online/Hybrid: Join Live Button */}
-            {(event.eventMode === "online" || event.eventMode === "hybrid") && isUpcoming && (
-              <Link
-                to={`/events/${id}/live`}
-                className="block w-full text-center bg-green-600 text-white py-3 rounded-xl font-semibold hover:bg-green-700 transition mb-2 flex items-center justify-center gap-2"
-              >
-                <Video className="w-5 h-5" />
-                Join Online Event
+            {/* ===== ORGANIZER ACTIONS (own event) ===== */}
+            {isOwnEvent && (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Manage Event</p>
+                <Link to={`/organizer/events/${id}/edit`} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition">
+                  <Edit className="w-4 h-4" /> Edit Event
+                </Link>
+                {canGoLive && (
+                  <Link to={`${rolePrefix}/events/${id}/live`} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold bg-green-600 text-white hover:bg-green-700 transition">
+                    <Radio className="w-4 h-4" /> Go Live
+                  </Link>
+                )}
+                {isLiveNow && !canGoLive && (
+                  <Link to={`${rolePrefix}/events/${id}/live`} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold bg-red-600 text-white hover:bg-red-700 transition">
+                    <Radio className="w-4 h-4" /> Live Now — Join
+                  </Link>
+                )}
+                <Link to="/organizer/analytics" className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition">
+                  <BarChart3 className="w-4 h-4" /> View Analytics
+                </Link>
+              </div>
+            )}
+
+            {/* ===== STUDENT ACTIONS ===== */}
+            {isStudent && !isOwnEvent && (
+              <div className="space-y-2">
+                {/* Join Live */}
+                {isLiveNow && (
+                  <Link to={`${rolePrefix}/events/${id}/live`} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold bg-green-600 text-white hover:bg-green-700 transition">
+                    <Radio className="w-4 h-4" /> Join Live Stream
+                  </Link>
+                )}
+
+                {/* Join Online (upcoming) */}
+                {isOnline && isUpcoming && !isLiveNow && (
+                  <div className="text-center text-xs text-gray-500 py-2 bg-gray-50 rounded-xl">
+                    <Video className="w-4 h-4 inline mr-1" /> Online event — join link available at start time
+                  </div>
+                )}
+
+                {/* Watch Recording */}
+                {event.streamConfig?.recordingUrl && isPast && (
+                  <a href={event.streamConfig.recordingUrl} target="_blank" rel="noopener noreferrer" className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold bg-purple-600 text-white hover:bg-purple-700 transition">
+                    <Video className="w-4 h-4" /> Watch Recording
+                  </a>
+                )}
+
+                {/* Register */}
+                <Link to={`${rolePrefix}/explore`} className="block w-full text-center bg-blue-600 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700 transition">
+                  {event.seatsAvailable > 0 ? "Register Now" : "Join Waitlist"}
+                </Link>
+              </div>
+            )}
+
+            {/* ===== GUEST (not logged in) ===== */}
+            {!user && (
+              <Link to="/login" className="block w-full text-center bg-blue-600 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700 transition">
+                Log in to Register
               </Link>
             )}
 
-            {/* Watch Recording */}
-            {event.streamConfig?.recordingUrl && isPast && (
-              <a
-                href={event.streamConfig.recordingUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block w-full text-center bg-purple-600 text-white py-3 rounded-xl font-semibold hover:bg-purple-700 transition mb-2"
-              >
-                Watch Recording
-              </a>
+            {/* ===== NON-STUDENT, NON-OWNER (organizer viewing other's event) ===== */}
+            {user && !isStudent && !isOwnEvent && (
+              <div className="space-y-2">
+                {isLiveNow && (
+                  <Link to={`${rolePrefix}/events/${id}/live`} className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold bg-green-600 text-white hover:bg-green-700 transition">
+                    <Radio className="w-4 h-4" /> Watch Live
+                  </Link>
+                )}
+                <p className="text-xs text-gray-500 text-center">Viewing as {user.role}</p>
+              </div>
             )}
-
-            <Link
-              to="/explore"
-              className="block w-full text-center bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition"
-            >
-              {event.seatsAvailable > 0 ? "Register Now" : "Join Waitlist"}
-            </Link>
 
             {/* Map */}
             {(event.fullAddress || event.venueName) && (
