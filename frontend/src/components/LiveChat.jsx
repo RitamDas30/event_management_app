@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import socket from "../utils/socket";
 import {
   Send, Pin, PinOff, BarChart3, X, ThumbsUp, Heart, Laugh,
-  PartyPopper, Flame, Check, ChevronDown, Crown,
+  PartyPopper, Flame, Check, ChevronDown, Crown, Plus,
 } from "lucide-react";
 
 const quickReactions = ["ok", "okay", "yes", "no", "nice", "great", "thanks", "thank you", "lol", "haha", "👍", "❤️", "🔥", "👏", "💯"];
@@ -24,6 +24,7 @@ export default function LiveChat({ eventId, user, isOrganizer, isFullscreen }) {
   const [myVote, setMyVote] = useState(null);
   const [stackedReactions, setStackedReactions] = useState({});
   const [showReactionPicker, setShowReactionPicker] = useState(null);
+  const [showPlusMenu, setShowPlusMenu] = useState(false);
   const chatEndRef = useRef(null);
   const reactionTimerRef = useRef({});
 
@@ -139,14 +140,7 @@ export default function LiveChat({ eventId, user, isOrganizer, isFullscreen }) {
       {/* Header */}
       <div className="px-3 py-2 border-b border-gray-800 flex items-center justify-between">
         <h3 className="text-white font-semibold text-sm">Live Chat</h3>
-        <div className="flex items-center gap-1">
-          {isOrganizer && (
-            <button onClick={() => setShowPollForm(!showPollForm)} className="p-1 rounded text-gray-400 hover:text-blue-400 hover:bg-gray-800 transition" title="Create Poll">
-              <BarChart3 className="w-3.5 h-3.5" />
-            </button>
-          )}
-          <span className="text-[10px] text-gray-500">{messages.length}</span>
-        </div>
+        <span className="text-[10px] text-gray-500">{messages.length} messages</span>
       </div>
 
       {/* Pinned Message */}
@@ -281,12 +275,41 @@ export default function LiveChat({ eventId, user, isOrganizer, isFullscreen }) {
         </div>
       )}
 
+      {/* Plus Menu (pops up above input) */}
+      {showPlusMenu && (
+        <div className="px-2 pb-1 pt-2 border-t border-gray-800">
+          <div className="bg-gray-800 rounded-xl p-2 space-y-1">
+            {isOrganizer && (
+              <button onClick={() => { setShowPollForm(!showPollForm); setShowPlusMenu(false); }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-200 hover:bg-gray-700 transition">
+                <BarChart3 className="w-4 h-4 text-purple-400" /> Create Poll
+              </button>
+            )}
+            {isOrganizer && pinnedMessage && (
+              <button onClick={() => { unpinMessage(); setShowPlusMenu(false); }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-200 hover:bg-gray-700 transition">
+                <PinOff className="w-4 h-4 text-amber-400" /> Unpin Message
+              </button>
+            )}
+            {!isOrganizer && (
+              <p className="px-3 py-2 text-xs text-gray-500">No actions available</p>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Input */}
       <form onSubmit={sendMessage} className="p-2 border-t border-gray-800">
-        <div className="flex gap-1.5">
-          <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Type a message..."
-            className="flex-1 bg-gray-800 text-white text-sm px-3 py-2 rounded-lg placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
-          <button type="submit" className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+        <div className="flex items-center gap-1.5">
+          {isOrganizer && (
+            <button type="button" onClick={() => setShowPlusMenu(!showPlusMenu)}
+              className={`p-2 rounded-lg transition flex-shrink-0 ${showPlusMenu ? "bg-blue-600 text-white rotate-45" : "text-gray-400 hover:text-white hover:bg-gray-800"}`}>
+              <Plus className="w-5 h-5 transition-transform" />
+            </button>
+          )}
+          <input type="text" value={newMessage} onChange={(e) => { setNewMessage(e.target.value); if (showPlusMenu) setShowPlusMenu(false); }} placeholder="Type a message..."
+            className="flex-1 bg-gray-800 text-white text-sm px-3 py-2.5 rounded-lg placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+          <button type="submit" className="p-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex-shrink-0">
             <Send className="w-4 h-4" />
           </button>
         </div>
