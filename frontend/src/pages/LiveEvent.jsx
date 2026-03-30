@@ -69,6 +69,16 @@ export default function LiveEvent() {
   };
   useEffect(() => { const h = () => setIsFullscreen(!!document.fullscreenElement); document.addEventListener("fullscreenchange", h); return () => document.removeEventListener("fullscreenchange", h); }, []);
 
+  // Keyboard shortcut: F for fullscreen
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+      if (e.key === "f" || e.key === "F") toggleFullscreen();
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [isFullscreen]);
+
   const toggleAudio = () => { jitsiApiRef.current?.executeCommand("toggleAudio"); setAudioMuted((m) => !m); };
   const toggleVideo = () => { jitsiApiRef.current?.executeCommand("toggleVideo"); setVideoMuted((m) => !m); };
   const toggleScreenShare = () => { jitsiApiRef.current?.executeCommand("toggleShareScreen"); };
@@ -82,7 +92,7 @@ export default function LiveEvent() {
       const jitsi = new window.JitsiMeetExternalAPI("meet.jit.si", {
         roomName: roomId, parentNode: jitsiContainerRef.current,
         configOverwrite: { startWithAudioMuted: !isOrganizer, startWithVideoMuted: !isOrganizer, prejoinPageEnabled: false, prejoinConfig: { enabled: false }, disableDeepLinking: true, requireDisplayName: false, disableProfile: true, hideLoginButton: true, disableThirdPartyRequests: true, disableInviteFunctions: true, enableClosePage: false, feedbackPercentage: 0, notifications: [], startSilent: !isOrganizer, toolbarButtons: [] },
-        interfaceConfigOverwrite: { SHOW_JITSI_WATERMARK: false, SHOW_WATERMARK_FOR_GUESTS: false, SHOW_BRAND_WATERMARK: false, DEFAULT_REMOTE_DISPLAY_NAME: "Attendee", TOOLBAR_ALWAYS_VISIBLE: false, TOOLBAR_TIMEOUT: 0, DISABLE_JOIN_LEAVE_NOTIFICATIONS: true, HIDE_INVITE_MORE_HEADER: true, SETTINGS_SECTIONS: [], VIDEO_LAYOUT_FIT: "both" },
+        interfaceConfigOverwrite: { SHOW_JITSI_WATERMARK: false, SHOW_WATERMARK_FOR_GUESTS: false, SHOW_BRAND_WATERMARK: false, SHOW_POWERED_BY: false, SHOW_PROMOTIONAL_CLOSE_PAGE: false, DEFAULT_REMOTE_DISPLAY_NAME: "Attendee", TOOLBAR_ALWAYS_VISIBLE: false, TOOLBAR_TIMEOUT: 0, DISABLE_JOIN_LEAVE_NOTIFICATIONS: true, HIDE_INVITE_MORE_HEADER: true, SETTINGS_SECTIONS: [], VIDEO_LAYOUT_FIT: "both", HIDE_DEEP_LINKING_LOGO: true, JITSI_WATERMARK_LINK: "" },
         userInfo: { displayName: user?.name || "Guest", email: user?.email || "" },
       });
       jitsiApiRef.current = jitsi;
@@ -177,68 +187,78 @@ export default function LiveEvent() {
 
   // ===== LIVE STREAM =====
   return (
-    <div ref={fullscreenRef} className={isFullscreen ? "fixed inset-0 z-[100] bg-gray-950 flex flex-col" : ""}>
-      {/* Top Bar */}
-      <div className={`flex items-center justify-between px-4 py-3 ${isFullscreen ? "bg-gray-900" : "mb-3"}`}>
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-          <Link to={`${rolePrefix}/events/${id}`} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition flex-shrink-0">
-            <ArrowLeft className="w-5 h-5" />
+    <div ref={fullscreenRef} className={isFullscreen ? "fixed inset-0 z-[100] bg-black" : ""}>
+      <div className={`relative bg-black rounded-xl overflow-hidden ${isFullscreen ? "w-full h-full" : "mx-auto"}`}
+        style={isFullscreen ? {} : { aspectRatio: "16/9", maxHeight: "80vh", maxWidth: "100%" }}>
+
+        {/* Jitsi Video */}
+        <div ref={jitsiContainerRef} className="w-full h-full" />
+
+        {/* === TOP-LEFT: Back + LIVE badge + viewers + timer === */}
+        <div className="absolute top-3 left-3 z-30 flex items-center gap-2">
+          <Link to={`${rolePrefix}/events/${id}`} className="p-1.5 bg-black/50 backdrop-blur-sm rounded-lg text-white/80 hover:text-white hover:bg-black/70 transition">
+            <ArrowLeft className="w-4 h-4" />
           </Link>
-          <div className="min-w-0 flex-1">
-            <h1 className={`font-semibold text-sm truncate ${isFullscreen ? "text-white" : "text-gray-900"}`}>{event.title}</h1>
-            <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5 flex-wrap">
-              {isOrganizer ? (
-                <span className="flex items-center gap-1 text-red-500 font-semibold flex-shrink-0">
-                  <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span> LIVE
-                </span>
-              ) : (
-                <span className="flex items-center gap-1 text-green-500 flex-shrink-0">
-                  <Wifi className="w-3 h-3" /> Connected
-                </span>
-              )}
-              <span className="text-gray-300">·</span>
-              <span className="flex items-center gap-1 flex-shrink-0">
-                <Users className="w-3 h-3" /> {viewerCount}
+          <div className="flex items-center gap-2 bg-black/50 backdrop-blur-sm rounded-lg px-2.5 py-1.5">
+            {isOrganizer ? (
+              <span className="flex items-center gap-1 text-xs font-bold text-red-400">
+                <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span> LIVE
               </span>
-              <span className="text-gray-300">·</span>
-              <span className="font-mono flex-shrink-0">{formatElapsed(elapsed)}</span>
-            </div>
+            ) : (
+              <span className="flex items-center gap-1 text-xs font-medium text-green-400">
+                <Wifi className="w-3 h-3" /> Live
+              </span>
+            )}
+            <span className="w-px h-3 bg-white/20"></span>
+            <span className="flex items-center gap-1 text-xs text-white/80">
+              <Users className="w-3 h-3" /> {viewerCount}
+            </span>
+            <span className="w-px h-3 bg-white/20"></span>
+            <span className="text-xs text-white/60 font-mono">{formatElapsed(elapsed)}</span>
           </div>
         </div>
-        <div className="flex items-center gap-1 flex-shrink-0 ml-2">
-          <button onClick={() => setChatOpen(!chatOpen)} className={`p-2 rounded-lg transition ${chatOpen ? "bg-blue-100 text-blue-600" : "text-gray-400 hover:bg-gray-100"}`}><MessageSquare className="w-4 h-4" /></button>
-          <button onClick={toggleFullscreen} className="p-2 rounded-lg text-gray-400 hover:bg-gray-100 transition">{isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}</button>
+
+        {/* === TOP-RIGHT: Chat toggle + Fullscreen === */}
+        <div className="absolute top-3 right-3 z-30 flex items-center gap-1.5">
+          <button onClick={() => setChatOpen(!chatOpen)}
+            className={`p-2 rounded-lg backdrop-blur-sm transition ${chatOpen ? "bg-blue-500/30 text-blue-300" : "bg-black/50 text-white/70 hover:text-white"}`}
+            title="Toggle chat">
+            <MessageSquare className="w-4 h-4" />
+          </button>
+          <button onClick={toggleFullscreen}
+            className="p-2 bg-black/50 backdrop-blur-sm rounded-lg text-white/70 hover:text-white transition"
+            title="Fullscreen (F)">
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </button>
         </div>
-      </div>
 
-      {/* Video with overlapping glass chat */}
-      <div className={`${isFullscreen ? "flex-1 px-3 pb-3" : ""}`}>
-        <div className={`relative bg-black rounded-xl overflow-hidden ${isFullscreen ? "w-full h-full" : "mx-auto"}`}
-          style={isFullscreen ? {} : { aspectRatio: "16/9", maxHeight: "70vh", maxWidth: "90%" }}>
-
-          {/* Jitsi Video */}
-          <div ref={jitsiContainerRef} className="w-full h-full" />
-
-          {/* Glass Chat Overlay — right side, floating inside video */}
-          {chatOpen && (
-            <div className="absolute top-0 right-0 bottom-0 w-72 z-20 flex flex-col bg-black/40 backdrop-blur-md border-l border-white/10">
-              <LiveChat eventId={id} user={user} isOrganizer={isOrganizer} isFullscreen={isFullscreen} />
-            </div>
-          )}
-
-          {/* Controls — bottom center */}
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 bg-gray-900/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-gray-700/40">
-            <button onClick={toggleAudio} className={`p-2 rounded-lg transition ${audioMuted ? "bg-red-500/20 text-red-400" : "text-white hover:bg-white/10"}`}>{audioMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}</button>
-            <button onClick={toggleVideo} className={`p-2 rounded-lg transition ${videoMuted ? "bg-red-500/20 text-red-400" : "text-white hover:bg-white/10"}`}>{videoMuted ? <VideoOff className="w-4 h-4" /> : <Video className="w-4 h-4" />}</button>
-            <button onClick={toggleScreenShare} className="p-2 rounded-lg text-white hover:bg-white/10 transition"><MonitorUp className="w-4 h-4" /></button>
-            <div className="w-px h-6 bg-gray-600 mx-0.5"></div>
-            <button onClick={hangup} className="p-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition"><PhoneOff className="w-4 h-4" /></button>
+        {/* === RIGHT: Glass Chat Overlay === */}
+        {chatOpen && (
+          <div className="absolute top-12 right-3 bottom-12 w-72 z-20 flex flex-col bg-black/40 backdrop-blur-md rounded-xl border border-white/10 overflow-hidden">
+            <LiveChat eventId={id} user={user} isOrganizer={isOrganizer} isFullscreen={isFullscreen} />
           </div>
+        )}
 
-          {/* Watermark — bottom right */}
-          <div className="absolute bottom-3 right-3 z-10 flex items-center gap-1 text-white/20 text-[10px] font-semibold pointer-events-none">
-            <Calendar className="w-3 h-3" /> Evently
-          </div>
+        {/* === BOTTOM CENTER: Controls === */}
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
+          <button onClick={toggleAudio} className={`p-2 rounded-lg transition ${audioMuted ? "bg-red-500/20 text-red-400" : "text-white hover:bg-white/10"}`} title={audioMuted ? "Unmute" : "Mute"}>
+            {audioMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+          </button>
+          <button onClick={toggleVideo} className={`p-2 rounded-lg transition ${videoMuted ? "bg-red-500/20 text-red-400" : "text-white hover:bg-white/10"}`} title={videoMuted ? "Camera on" : "Camera off"}>
+            {videoMuted ? <VideoOff className="w-4 h-4" /> : <Video className="w-4 h-4" />}
+          </button>
+          <button onClick={toggleScreenShare} className="p-2 rounded-lg text-white hover:bg-white/10 transition" title="Screen share">
+            <MonitorUp className="w-4 h-4" />
+          </button>
+          <div className="w-px h-6 bg-white/20 mx-0.5"></div>
+          <button onClick={hangup} className="p-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition" title="Leave">
+            <PhoneOff className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* === BOTTOM LEFT: Watermark === */}
+        <div className="absolute bottom-3 left-3 z-10 flex items-center gap-1 text-white/15 text-[10px] font-semibold pointer-events-none">
+          <Calendar className="w-3 h-3" /> Evently
         </div>
       </div>
     </div>
