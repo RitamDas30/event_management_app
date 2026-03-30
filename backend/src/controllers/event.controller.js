@@ -110,31 +110,90 @@ export const updateEvent = async (req, res) => {
     
     // Handle image update via Multer/Cloudinary (if included)
     if (req.file) {
-        req.body.imageUrl = req.file.path; 
+        req.body.imageUrl = req.file.path;
     }
 
-    // 2. CRITICAL LOGIC: Handle Capacity Change
+    // 2. PROGRESSIVE FIELD LOCKING based on event lifecycle
+    const now = new Date();
+    const eventStart = new Date(event.startTime);
+    const eventEnd = new Date(event.endTime);
+    const occupiedSeats = event.capacity - event.seatsAvailable;
+    const hasRegistrations = occupiedSeats > 0;
+    const isLive = now >= eventStart && now <= eventEnd;
+    const isEnded = now > eventEnd;
+
+    // Determine locked fields based on lifecycle state
+    const lockedFields = [];
+    const warnings = [];
+
+    if (isEnded) {
+      // Post-event: only description, images, tags editable
+      const allowedAfterEnd = ["description", "imageUrl", "tags"];
+      const attemptedFields = Object.keys(req.body).filter(
+        (k) => !allowedAfterEnd.includes(k) && k !== "seatsAvailable"
+      );
+      if (attemptedFields.length > 0) {
+        return res.status(403).json({
+          message: `Event has ended. Only description, images, and tags can be updated.`,
+          lockedFields: attemptedFields,
+        });
+      }
+    } else if (isLive) {
+      // During event: only description and images
+      const allowedDuringLive = ["description", "imageUrl"];
+      const attemptedFields = Object.keys(req.body).filter(
+        (k) => !allowedDuringLive.includes(k) && k !== "seatsAvailable"
+      );
+      if (attemptedFields.length > 0) {
+        return res.status(403).json({
+          message: `Event is currently live. Only description and images can be updated.`,
+          lockedFields: attemptedFields,
+        });
+      }
+    } else if (hasRegistrations) {
+      // Has registrations but not started yet — lock price, allow most else with warnings
+      if (req.body.price !== undefined && Number(req.body.price) !== event.price) {
+        return res.status(403).json({
+          message: `Price cannot be changed after ${occupiedSeats} people have registered. Create a new ticket tier instead.`,
+          lockedFields: ["price"],
+        });
+      }
+
+      // Warn on critical field changes (but allow them)
+      if (req.body.startTime && req.body.startTime !== event.startTime.toISOString().slice(0, 16)) {
+        warnings.push(`Date/time change will notify ${occupiedSeats} registered attendees.`);
+      }
+      if (req.body.venueName && req.body.venueName !== event.venueName) {
+        warnings.push(`Venue change will notify ${occupiedSeats} registered attendees.`);
+      }
+      if (req.body.fullAddress && req.body.fullAddress !== event.fullAddress) {
+        warnings.push(`Address change will notify ${occupiedSeats} registered attendees.`);
+      }
+    }
+
+    // 3. CAPACITY LOGIC: Handle Capacity Change
     const newCapacityValue = req.body.capacity;
-    
-    if (newCapacityValue !== undefined && newCapacityValue !== null) { 
-        const newCapacity = Number(newCapacityValue); 
-        
+
+    if (newCapacityValue !== undefined && newCapacityValue !== null) {
+        const newCapacity = Number(newCapacityValue);
+
         if (isNaN(newCapacity) || newCapacity < 0) {
              return res.status(400).json({ message: "Capacity must be a non-negative number." });
         }
-        
-        const oldCapacity = event.capacity;
-        const occupiedSeats = oldCapacity - event.seatsAvailable;
 
         if (newCapacity < occupiedSeats) {
-            return res.status(400).json({ message: "New capacity cannot be less than the number of booked seats." });
+            return res.status(400).json({
+              message: `Cannot reduce capacity below ${occupiedSeats} booked seats.`,
+              lockedFields: ["capacity"],
+              minCapacity: occupiedSeats,
+            });
         }
-        
-        const capacityDifference = newCapacity - oldCapacity;
-        req.body.seatsAvailable = event.seatsAvailable + capacityDifference; 
+
+        const capacityDifference = newCapacity - event.capacity;
+        req.body.seatsAvailable = event.seatsAvailable + capacityDifference;
     }
 
-    // 3. Update fields and save
+    // 4. Update fields and save
     Object.assign(event, req.body);
     
     // Re-calculate isPaid if price is modified
@@ -144,7 +203,7 @@ export const updateEvent = async (req, res) => {
     
     await event.save();
 
-    res.json({ message: "Event updated successfully", event });
+    res.json({ message: "Event updated successfully", event, warnings });
   } catch (error) {
     logger.error({ err: error }, "Update event error"); 
     

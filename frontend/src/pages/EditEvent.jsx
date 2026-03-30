@@ -1,345 +1,291 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../api/axios";
 import toast from "react-hot-toast";
+import { Lock, AlertTriangle, Save, ArrowLeft } from "lucide-react";
+
+const categories = ["Technical", "Cultural", "Sports", "Academic", "Social"];
 
 export default function EditEvent() {
   const { id } = useParams();
   const navigate = useNavigate();
-  
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    category: "Technical",
-    fullAddress: "", 
-    venueName: "",
-    startTime: "",
-    endTime: "",
-    capacity: 50,
-    price: 0,
-    imageFile: null,
+
+  const [form, setForm] = useState({
+    title: "", description: "", category: "Technical", fullAddress: "", venueName: "",
+    startTime: "", endTime: "", capacity: 50, price: 0, imageFile: null,
   });
-
+  const [original, setOriginal] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  
-  // 🟢 NEW: Store occupied seats for validation
   const [occupiedSeats, setOccupiedSeats] = useState(0);
-  
-  // 🟢 NEW: Inline capacity validation error
-  const [capacityError, setCapacityError] = useState(null);
+  const [lifecycle, setLifecycle] = useState("open"); // open | has_registrations | live | ended
 
-  // Fetch Existing Event Data on Component Mount
   useEffect(() => {
     const fetchEvent = async () => {
       try {
-        setLoading(true);
-        
-        const res = await api.get(`/events/${id}`); 
-        const event = res.data;
-
-        // 🟢 Calculate occupied seats for validation
-        const occupied = event.capacity - event.seatsAvailable;
+        const res = await api.get(`/events/${id}`);
+        const e = res.data;
+        const occupied = e.capacity - e.seatsAvailable;
         setOccupiedSeats(occupied);
+        setOriginal(e);
 
-        // Convert ISO date strings to format required by datetime-local input
-        const formatDate = (isoString) => {
-            if (!isoString) return '';
-            return isoString.slice(0, 16); 
-        };
+        const now = new Date();
+        const start = new Date(e.startTime);
+        const end = new Date(e.endTime);
+        if (now > end) setLifecycle("ended");
+        else if (now >= start) setLifecycle("live");
+        else if (occupied > 0) setLifecycle("has_registrations");
+        else setLifecycle("open");
 
-        // Populate form state with fetched data
-        setFormData({
-            title: event.title,
-            description: event.description,
-            category: event.category,
-            fullAddress: event.fullAddress || '', 
-            venueName: event.venueName || '', 
-            startTime: formatDate(event.startTime),
-            endTime: formatDate(event.endTime),
-            capacity: event.capacity,
-            price: event.price,
-            imageFile: null,
+        const fmt = (iso) => iso ? new Date(iso).toISOString().slice(0, 16) : "";
+        setForm({
+          title: e.title, description: e.description, category: e.category,
+          fullAddress: e.fullAddress || "", venueName: e.venueName || "",
+          startTime: fmt(e.startTime), endTime: fmt(e.endTime),
+          capacity: e.capacity, price: e.price, imageFile: null,
         });
       } catch (err) {
-        const status = err.response?.status;
-        console.error(`[EditEvent] Fetch Failed. Status: ${status}. Error:`, err.response?.data);
-        
-        if (status === 404) {
-            setError("Event not found. It may have been deleted.");
-        } else {
-            setError(err.response?.data?.message || "Failed to load event for editing due to a server error.");
-        }
+        setError(err.response?.data?.message || "Failed to load event");
       } finally {
         setLoading(false);
       }
     };
-
-    if (id) {
-        fetchEvent();
-    }
+    if (id) fetchEvent();
   }, [id]);
+
+  // Field lock rules per lifecycle
+  const fieldLocks = {
+    open: {},
+    has_registrations: {
+      price: "Price is locked after registrations. Create a new ticket tier instead.",
+    },
+    live: {
+      title: "Locked during live event",
+      category: "Locked during live event",
+      fullAddress: "Locked during live event",
+      venueName: "Locked during live event",
+      startTime: "Locked during live event",
+      endTime: "Locked during live event",
+      capacity: "Locked during live event",
+      price: "Locked during live event",
+    },
+    ended: {
+      title: "Event has ended",
+      category: "Event has ended",
+      fullAddress: "Event has ended",
+      venueName: "Event has ended",
+      startTime: "Event has ended",
+      endTime: "Event has ended",
+      capacity: "Event has ended",
+      price: "Event has ended",
+    },
+  };
+
+  const locks = fieldLocks[lifecycle] || {};
+  const isLocked = (field) => !!locks[field];
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-    
-    // 🟢 Clear capacity error when user types
-    if (name === 'capacity') {
-        setCapacityError(null);
-    }
-    
-    if (name === "imageFile" && files && files.length > 0) {
-      setFormData({ ...formData, imageFile: files[0] });
+    if (isLocked(name)) return;
+    if (name === "imageFile" && files?.length > 0) {
+      setForm({ ...form, imageFile: files[0] });
     } else {
-      const finalValue = (name === 'capacity' || name === 'price') ? (value === '' ? '' : Number(value)) : value;
-      setFormData({ ...formData, [name]: finalValue });
+      const v = (name === "capacity" || name === "price") ? (value === "" ? "" : Number(value)) : value;
+      setForm({ ...form, [name]: v });
     }
   };
 
-  // 🟢 NEW: Validation wrapper that runs before submission
-  const handleFormSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    const newCapacity = Number(formData.capacity);
 
-    // Validate capacity is a valid number
-    if (isNaN(newCapacity) || newCapacity < 1) {
-        setCapacityError("Capacity must be at least 1.");
-        return;
+    if (form.capacity < occupiedSeats) {
+      return toast.error(`Capacity can't be less than ${occupiedSeats} booked seats`);
     }
-    
-    // 🛑 CRITICAL: Check if new capacity is less than occupied seats
-    if (newCapacity < occupiedSeats) {
-        setCapacityError(
-          `New capacity (${newCapacity}) cannot be less than booked seats (${occupiedSeats}).`
-        );
-        return;
+    if (form.endTime && form.startTime && new Date(form.endTime) <= new Date(form.startTime)) {
+      return toast.error("End time must be after start time");
     }
-    
-    // If validation passes, proceed to actual submission
-    handleSubmit();
-  };
 
-  const handleSubmit = async () => {
-    setLoading(true);
-    setError("");
-
-    // Determine if a new file was selected
-    const isImageUpdated = formData.imageFile !== null;
-    
-    // Get clean text data for both scenarios
-    const textData = { ...formData };
-    delete textData.imageFile;
-
+    setSaving(true);
     try {
-      let res;
+      const isImageUpdated = form.imageFile !== null;
+      const payload = { ...form };
+      delete payload.imageFile;
 
-      if (isImageUpdated) {
-        // SCENARIO 1: IMAGE IS BEING UPDATED (Use FormData)
-        const formToSend = new FormData();
-        
-        Object.entries(formData).forEach(([key, value]) => {
-            if (key === 'imageFile' && value) {
-                formToSend.append("image", value);
-            } else if (key !== 'imageFile' && value !== null) {
-                formToSend.append(key, value.toString());
-            }
-        });
-
-        res = await api.put(`/events/${id}`, formToSend, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-
-      } else {
-        // SCENARIO 2: NO IMAGE CHANGE (Use JSON)
-        res = await api.put(`/events/${id}`, textData); 
+      // Only send changed fields to avoid triggering locks on unchanged data
+      const changedFields = {};
+      for (const key of Object.keys(payload)) {
+        if (isLocked(key)) continue;
+        const orig = key === "startTime" || key === "endTime"
+          ? new Date(original[key]).toISOString().slice(0, 16)
+          : original[key];
+        if (String(payload[key]) !== String(orig)) {
+          changedFields[key] = payload[key];
+        }
       }
-      
-      toast.success("Event updated successfully!");
-      navigate("/dashboard");
-      
+
+      // Always send description (it's always editable)
+      if (!changedFields.description && payload.description !== original.description) {
+        changedFields.description = payload.description;
+      }
+
+      let res;
+      if (isImageUpdated) {
+        const fd = new FormData();
+        fd.append("image", form.imageFile);
+        Object.entries(changedFields).forEach(([k, v]) => fd.append(k, v));
+        res = await api.put(`/events/${id}`, fd, { headers: { "Content-Type": "multipart/form-data" } });
+      } else {
+        if (Object.keys(changedFields).length === 0) {
+          toast("No changes detected");
+          setSaving(false);
+          return;
+        }
+        res = await api.put(`/events/${id}`, changedFields);
+      }
+
+      // Show warnings if any
+      if (res.data.warnings?.length > 0) {
+        res.data.warnings.forEach((w) => toast(w, { icon: "⚠️", duration: 5000 }));
+      }
+
+      toast.success("Event updated!");
+      navigate("/organizer/events");
     } catch (err) {
-      const errorMessage = err.response?.data?.message || "Event update failed";
-      toast.error(errorMessage);
-      setError(errorMessage);
+      const msg = err.response?.data?.message || "Update failed";
+      toast.error(msg);
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
-  if (loading) return <div className="text-center mt-12">Loading event data...</div>;
-  if (error && id) return <div className="text-center mt-12 text-red-600 font-semibold">{error}</div>;
+  const lifecycleLabels = {
+    open: { text: "Fully Editable", color: "bg-green-50 text-green-700 border-green-200" },
+    has_registrations: { text: `${occupiedSeats} Registered — Some Fields Locked`, color: "bg-amber-50 text-amber-700 border-amber-200" },
+    live: { text: "Event is Live — Most Fields Locked", color: "bg-red-50 text-red-700 border-red-200" },
+    ended: { text: "Event Ended — Read Only (except description)", color: "bg-gray-100 text-gray-600 border-gray-200" },
+  };
+
+  const label = lifecycleLabels[lifecycle];
+  const inputBase = "w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none transition";
+  const inputNormal = `${inputBase} border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100`;
+  const inputLocked = `${inputBase} border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed`;
+
+  if (loading) return <div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>;
+  if (error) return <div className="text-center py-20 text-red-600 font-semibold">{error}</div>;
 
   return (
-    <div className="flex justify-center items-center py-10">
-      <form
-        onSubmit={handleFormSubmit}
-        className="bg-white shadow-xl rounded-2xl p-8 w-full max-w-lg"
-      >
-        <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">
-          Edit Event: {formData.title || "Loading..."}
-        </h2>
+    <div className="max-w-2xl mx-auto">
+      <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 mb-4">
+        <ArrowLeft className="w-4 h-4" /> Back
+      </button>
 
-        {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
+      <h1 className="text-2xl font-bold text-gray-900 mb-2">Edit Event</h1>
 
-        <div className="space-y-4">
+      {/* Lifecycle Banner */}
+      <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border mb-6 text-sm font-medium ${label.color}`}>
+        {lifecycle === "open" ? null : lifecycle === "live" ? <AlertTriangle className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+        {label.text}
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Title */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Title {isLocked("title") && <Lock className="w-3 h-3 inline text-gray-400 ml-1" />}
+          </label>
+          <input type="text" name="title" value={form.title} onChange={handleChange} disabled={isLocked("title")} required className={isLocked("title") ? inputLocked : inputNormal} />
+          {isLocked("title") && <p className="text-xs text-gray-400 mt-1">{locks.title}</p>}
+        </div>
+
+        {/* Description — always editable */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Description <span className="text-green-600 text-xs">(always editable)</span></label>
+          <textarea name="description" value={form.description} onChange={handleChange} rows={4} required className={inputNormal + " resize-none"} />
+        </div>
+
+        {/* Category + Venue */}
+        <div className="grid grid-cols-2 gap-4">
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">Event Title</label>
-            <input
-              type="text"
-              name="title"
-              id="title"
-              placeholder="Event Title"
-              value={formData.title}
-              onChange={handleChange}
-              required
-              className="border w-full p-3 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <textarea
-              name="description"
-              id="description"
-              placeholder="Event Description"
-              value={formData.description}
-              onChange={handleChange}
-              required
-              rows="4"
-              className="border w-full p-3 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 mt-4">
-            <div>
-                <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                <select
-                name="category"
-                id="category"
-                value={formData.category}
-                onChange={handleChange}
-                className="border w-full p-3 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500"
-                >
-                <option value="Technical">Technical</option>
-                <option value="Cultural">Cultural</option>
-                <option value="Sports">Sports</option>
-                <option value="Academic">Academic</option>
-                <option value="Social">Social</option>
-                </select>
-            </div>
-            
-            <div>
-                <label htmlFor="venueName" className="block text-sm font-medium text-gray-700 mb-1">Local Venue Name (e.g., Hall 1)</label>
-                <input
-                type="text"
-                name="venueName"
-                id="venueName"
-                placeholder="Specific Location Name"
-                value={formData.venueName}
-                onChange={handleChange}
-                className="border w-full p-3 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                />
-            </div>
-        </div>
-
-        <div className="mt-4">
-            <label htmlFor="fullAddress" className="block text-sm font-medium text-gray-700 mb-1">Full Address (for Map Link)</label>
-            <input
-                type="text"
-                name="fullAddress"
-                id="fullAddress"
-                placeholder="e.g., 123 Main St, Anytown, CA 90210"
-                value={formData.fullAddress}
-                onChange={handleChange}
-                className="border w-full p-3 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-            />
-        </div>
-        
-        <div className="mt-4 grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="startTime" className="block text-sm font-medium text-gray-700 mb-1">Start Date & Time</label>
-            <input
-              type="datetime-local"
-              name="startTime"
-              id="startTime"
-              value={formData.startTime}
-              onChange={handleChange}
-              className="border p-3 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-          <div>
-            <label htmlFor="endTime" className="block text-sm font-medium text-gray-700 mb-1">End Date & Time</label>
-            <input
-              type="datetime-local"
-              name="endTime"
-              id="endTime"
-              value={formData.endTime}
-              onChange={handleChange}
-              className="border p-3 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 mt-4">
-            <div>
-                <label htmlFor="capacity" className="block text-sm font-medium text-gray-700 mb-1">
-                  Capacity (Booked: {occupiedSeats})
-                </label>
-                <input
-                    type="number"
-                    name="capacity"
-                    id="capacity"
-                    placeholder="Min 1"
-                    value={formData.capacity}
-                    onChange={handleChange}
-                    min="1"
-                    className={`border w-full p-3 rounded-lg focus:ring-blue-500 focus:border-blue-500 ${
-                      capacityError ? 'border-red-500' : ''
-                    }`}
-                />
-                {capacityError && (
-                    <p className="text-xs text-red-600 mt-1">⚠️ {capacityError}</p>
-                )}
-            </div>
-            
-            <div>
-                <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">Ticket Price (₹)</label>
-                <input
-                    type="number"
-                    name="price"
-                    id="price"
-                    placeholder="0 for free"
-                    value={formData.price}
-                    onChange={handleChange}
-                    min="0"
-                    className="border w-full p-3 rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                />
-            </div>
-        </div>
-        
-        <div className="mt-4">
-            <label htmlFor="imageFile" className="block text-sm font-medium text-gray-700 mb-1">
-                Change Image (JPG, PNG, WEBP)
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Category {isLocked("category") && <Lock className="w-3 h-3 inline text-gray-400 ml-1" />}
             </label>
-            <input
-                type="file"
-                name="imageFile"
-                id="imageFile"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={handleChange}
-                className="w-full border p-3 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 rounded-lg bg-gray-50"
-            />
+            <select name="category" value={form.category} onChange={handleChange} disabled={isLocked("category")} className={isLocked("category") ? inputLocked : inputNormal + " bg-white"}>
+              {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Venue {isLocked("venueName") && <Lock className="w-3 h-3 inline text-gray-400 ml-1" />}
+            </label>
+            <input type="text" name="venueName" value={form.venueName} onChange={handleChange} disabled={isLocked("venueName")} className={isLocked("venueName") ? inputLocked : inputNormal} />
+            {lifecycle === "has_registrations" && !isLocked("venueName") && occupiedSeats > 0 && (
+              <p className="text-xs text-amber-600 mt-1">Changing venue will notify {occupiedSeats} attendees</p>
+            )}
+          </div>
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-orange-600 text-white py-3 rounded-lg mt-6 font-semibold hover:bg-orange-700 transition disabled:bg-gray-400"
-        >
-          {loading ? "Saving Changes..." : "Update Event"}
-        </button>
+        {/* Address */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Full Address {isLocked("fullAddress") && <Lock className="w-3 h-3 inline text-gray-400 ml-1" />}
+          </label>
+          <input type="text" name="fullAddress" value={form.fullAddress} onChange={handleChange} disabled={isLocked("fullAddress")} className={isLocked("fullAddress") ? inputLocked : inputNormal} />
+        </div>
+
+        {/* Date/Time */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Start Time {isLocked("startTime") && <Lock className="w-3 h-3 inline text-gray-400 ml-1" />}
+            </label>
+            <input type="datetime-local" name="startTime" value={form.startTime} onChange={handleChange} disabled={isLocked("startTime")} className={isLocked("startTime") ? inputLocked : inputNormal} />
+            {lifecycle === "has_registrations" && !isLocked("startTime") && (
+              <p className="text-xs text-amber-600 mt-1">Changing time will notify {occupiedSeats} attendees</p>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              End Time {isLocked("endTime") && <Lock className="w-3 h-3 inline text-gray-400 ml-1" />}
+            </label>
+            <input type="datetime-local" name="endTime" value={form.endTime} onChange={handleChange} disabled={isLocked("endTime")} className={isLocked("endTime") ? inputLocked : inputNormal} />
+          </div>
+        </div>
+
+        {/* Capacity + Price */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Capacity {isLocked("capacity") && <Lock className="w-3 h-3 inline text-gray-400 ml-1" />}
+              {!isLocked("capacity") && occupiedSeats > 0 && <span className="text-xs text-gray-500 ml-1">(min: {occupiedSeats} booked)</span>}
+            </label>
+            <input type="number" name="capacity" value={form.capacity} onChange={handleChange} disabled={isLocked("capacity")} min={occupiedSeats || 1} className={isLocked("capacity") ? inputLocked : inputNormal} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Price (₹) {isLocked("price") && <Lock className="w-3 h-3 inline text-gray-400 ml-1" />}
+            </label>
+            <input type="number" name="price" value={form.price} onChange={handleChange} disabled={isLocked("price")} min="0" className={isLocked("price") ? inputLocked : inputNormal} />
+            {isLocked("price") && <p className="text-xs text-amber-600 mt-1">{locks.price}</p>}
+          </div>
+        </div>
+
+        {/* Image — always editable */}
+        {lifecycle !== "ended" && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Change Image</label>
+            <input type="file" name="imageFile" accept="image/jpeg,image/png,image/webp" onChange={handleChange}
+              className="w-full border border-gray-200 p-3 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 rounded-lg bg-gray-50" />
+          </div>
+        )}
+
+        {/* Submit */}
+        <div className="flex items-center gap-3 pt-4 border-t border-gray-200">
+          <button type="submit" disabled={saving || lifecycle === "ended"} className="flex items-center gap-2 bg-blue-600 text-white font-semibold px-6 py-2.5 rounded-xl hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed">
+            <Save className="w-4 h-4" /> {saving ? "Saving..." : "Save Changes"}
+          </button>
+          {lifecycle === "ended" && <p className="text-sm text-gray-500">Event has ended — only description edits are saved</p>}
+        </div>
       </form>
     </div>
   );
