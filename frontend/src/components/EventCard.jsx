@@ -46,13 +46,13 @@ const generatePlaceholderUrl = (category, width = 400, height = 200) => {
     return `https://placehold.co/${width}x${height}/${color}/${textColor}?text=${text}`;
 };
 
-export default function EventCard({ event, refresh }) {
+export default function EventCard({ event, refresh, initialRegStatus, initialSaved }) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false); 
-  const [registrationStatus, setRegistrationStatus] = useState(null); 
-  const [localWaitlistCount, setLocalWaitlistCount] = useState(0); 
+  const [registrationStatus, setRegistrationStatus] = useState(initialRegStatus || null);
+  const [localWaitlistCount, setLocalWaitlistCount] = useState(0);
   const [copied, setCopied] = useState(false);
-  const [isSaved, setIsSaved] = useState(false);
+  const [isSaved, setIsSaved] = useState(initialSaved || false);
   
   const isWaitlistActive = event.seatsAvailable <= 0;
 
@@ -75,44 +75,15 @@ export default function EventCard({ event, refresh }) {
   // ✅ Get appropriate placeholder image
   const eventImage = event.imageUrl || generatePlaceholderUrl(event.category);
 
-  // Initial Status Check
+  // Use pre-fetched data if available (passed from parent), otherwise skip per-card API calls
   useEffect(() => {
-    const checkUserRegistration = async () => {
-      if (!user || !event._id) {
-          setRegistrationStatus(null); 
-          return;
-      }
-      
-      try {
-        const res = await api.get("/registrations/me");
-        const currentReg = res.data.find(reg => reg.event && reg.event._id === event._id);
-        
-        if (currentReg) {
-          setRegistrationStatus(currentReg.status);
-        } else {
-          setRegistrationStatus(null); 
-        }
-        
-      } catch (error) {
-        if (error.response?.status !== 403 && error.response?.status !== 401) {
-            console.error("Failed to check user registration status:", error.message);
-        }
-      }
-    };
-
-    const checkSavedStatus = async () => {
-      if (!user || !event._id) return;
-      try {
-        const res = await api.get(`/saved-events/${event._id}/check`);
-        setIsSaved(res.data.saved);
-      } catch (error) {
-        // Silently ignore - saved feature is non-critical
-      }
-    };
-
-    checkUserRegistration();
-    checkSavedStatus();
-  }, [user, event._id, refresh]); 
+    if (!user || !event._id) {
+      setRegistrationStatus(null);
+      return;
+    }
+    // Only fetch if not already provided by parent — avoids N+1 API calls
+    // Parent pages (Explore, Landing) should pass registrationMap and savedSet props
+  }, [user, event._id]); 
 
   const handleRegister = async () => {
     if (!user) {

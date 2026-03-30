@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 import EventCard from "../components/EventCard";
 import socket from "../utils/socket";
@@ -8,9 +9,12 @@ import { Search, SlidersHorizontal, X, Calendar, LayoutGrid, List } from "lucide
 const categories = ["Technical", "Cultural", "Sports", "Academic", "Social"];
 
 export default function Explore() {
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [regMap, setRegMap] = useState({});
+  const [savedSet, setSavedSet] = useState(new Set());
   const [search, setSearch] = useState(searchParams.get("search") || "");
   const [category, setCategory] = useState(searchParams.get("category") || "");
   const [showFilters, setShowFilters] = useState(false);
@@ -30,6 +34,28 @@ export default function Explore() {
       setLoading(false);
     }
   };
+
+  // Fetch user's registration status and saved events ONCE (not per card)
+  useEffect(() => {
+    if (!user) return;
+    const fetchUserData = async () => {
+      try {
+        const [regsRes, savedRes] = await Promise.all([
+          api.get("/registrations/me").catch(() => ({ data: [] })),
+          api.get("/saved-events").catch(() => ({ data: [] })),
+        ]);
+        const map = {};
+        regsRes.data.forEach((r) => {
+          if (r.event?._id) map[r.event._id] = r.status;
+        });
+        setRegMap(map);
+        setSavedSet(new Set(savedRes.data.map((e) => e._id)));
+      } catch (err) {
+        // Non-critical
+      }
+    };
+    fetchUserData();
+  }, [user]);
 
   // Socket.io listeners
   useEffect(() => {
@@ -191,7 +217,13 @@ export default function Explore() {
             }
           >
             {events.map((event) => (
-              <EventCard key={event._id} event={event} refresh={fetchEvents} />
+              <EventCard
+                key={event._id}
+                event={event}
+                refresh={fetchEvents}
+                initialRegStatus={regMap[event._id] || null}
+                initialSaved={savedSet.has(event._id)}
+              />
             ))}
           </div>
         </>
