@@ -146,6 +146,9 @@ export default function OrganizerEvents() {
           <Link to={`/organizer/events/${event._id}`} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition" title="View">
             <Eye className="w-4 h-4" />
           </Link>
+          <Link to={`/organizer/analytics?event=${event._id}`} className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition" title="Analytics">
+            <BarChart3 className="w-4 h-4" />
+          </Link>
           <Link to={`/organizer/events/${event._id}/edit`} className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition" title="Edit">
             <Edit className="w-4 h-4" />
           </Link>
