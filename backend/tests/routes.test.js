@@ -153,6 +153,43 @@ describe("Event model has expanded fields", () => {
   });
 });
 
+describe("Admin module", () => {
+  it("admin controller exports all functions", async () => {
+    const module = await import("../src/controllers/admin.controller.js");
+    expect(typeof module.getPlatformStats).toBe("function");
+    expect(typeof module.getUsers).toBe("function");
+    expect(typeof module.updateUserRole).toBe("function");
+    expect(typeof module.deleteUser).toBe("function");
+    expect(typeof module.getAdminEvents).toBe("function");
+    expect(typeof module.adminDeleteEvent).toBe("function");
+  });
+
+  it("admin routes module imports successfully", async () => {
+    const module = await import("../src/routes/admin.routes.js");
+    expect(module.default).toBeDefined();
+  });
+
+  it("admin routes require authentication", async () => {
+    const adminRoutes = (await import("../src/routes/admin.routes.js")).default;
+    const app = express();
+    app.use(express.json());
+    app.use("/api/admin", adminRoutes);
+
+    const res = await request(app).get("/api/admin/stats");
+    expect(res.status).toBe(401);
+  });
+
+  it("admin users endpoint requires authentication", async () => {
+    const adminRoutes = (await import("../src/routes/admin.routes.js")).default;
+    const app = express();
+    app.use(express.json());
+    app.use("/api/admin", adminRoutes);
+
+    const res = await request(app).get("/api/admin/users");
+    expect(res.status).toBe(401);
+  });
+});
+
 describe("User model schema has new fields", () => {
   it("user schema includes avatar, bio, interests, socialLinks, notificationPreferences", async () => {
     const module = await import("../src/models/user.model.js");

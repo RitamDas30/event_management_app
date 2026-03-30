@@ -98,7 +98,7 @@ test.describe("Landing page featured events", () => {
   test("landing page shows upcoming events section", async ({ page }) => {
     await page.goto("/");
 
-    await expect(page.locator('text=Upcoming Events')).toBeVisible();
+    await expect(page.locator('h2:has-text("Upcoming Events")')).toBeVisible();
 
     await page.screenshot({ path: "tests/screenshots/landing-events.png" });
   });

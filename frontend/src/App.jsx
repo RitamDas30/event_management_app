@@ -36,6 +36,9 @@ import OrganizerAnalytics from "./pages/OrganizerAnalytics";
 
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminEvents from "./pages/admin/AdminEvents";
+import AdminReports from "./pages/admin/AdminReports";
 
 // Shared
 import ComingSoon from "./pages/ComingSoon";
@@ -130,10 +133,10 @@ export default function App() {
           {/* ========================================= */}
           <Route element={<DashboardLayout allowedRoles={["admin"]} />}>
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/users" element={<ComingSoon title="User Management" description="Manage users, roles, and permissions. Coming soon." />} />
-            <Route path="/admin/events" element={<ComingSoon title="Event Moderation" description="Review and moderate platform events. Coming soon." />} />
+            <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/admin/events" element={<AdminEvents />} />
             <Route path="/admin/categories" element={<ComingSoon title="Categories" description="Manage event categories. Coming soon." />} />
-            <Route path="/admin/reports" element={<ComingSoon title="Reports" description="Platform-wide analytics and reports. Coming soon." />} />
+            <Route path="/admin/reports" element={<AdminReports />} />
             <Route path="/admin/announcements" element={<ComingSoon title="Announcements" description="Platform-wide announcements. Coming soon." />} />
             <Route path="/admin/audit" element={<ComingSoon title="Audit Log" description="Admin action history. Coming soon." />} />
             <Route path="/admin/settings" element={<ComingSoon title="Platform Settings" description="Platform configuration. Coming soon." />} />
