@@ -3,7 +3,10 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 import socket from "../utils/socket";
-import { ArrowLeft, Wifi, Users, Send, MessageSquare, Radio, Clock, Loader2 } from "lucide-react";
+import {
+  ArrowLeft, Wifi, Users, Send, MessageSquare, Radio, Clock, Loader2,
+  Maximize2, Minimize2, Mic, MicOff, Video, VideoOff, MonitorUp, PhoneOff, Calendar,
+} from "lucide-react";
 
 export default function LiveEvent() {
   const { id } = useParams();
@@ -16,60 +19,102 @@ export default function LiveEvent() {
   const [newMessage, setNewMessage] = useState("");
   const [viewerCount, setViewerCount] = useState(1);
   const [chatOpen, setChatOpen] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [audioMuted, setAudioMuted] = useState(true);
+  const [videoMuted, setVideoMuted] = useState(true);
+  const [elapsed, setElapsed] = useState(0);
   const jitsiContainerRef = useRef(null);
   const jitsiApiRef = useRef(null);
   const chatEndRef = useRef(null);
   const pollRef = useRef(null);
+  const timerRef = useRef(null);
+  const containerRef = useRef(null);
 
   const rolePrefix = user?.role === "admin" ? "/admin" : user?.role === "organizer" ? "/organizer" : "/student";
   const isOrganizer = event && user && (event.organizer?._id === user.id || event.organizer === user.id || event.organizer?._id === user._id);
 
-  // Fetch event
+  // Format elapsed time
+  const formatElapsed = (s) => {
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    return h > 0
+      ? `${h}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`
+      : `${m}:${String(sec).padStart(2, "0")}`;
+  };
+
   useEffect(() => {
     const fetchEvent = async () => {
       try {
         const res = await api.get(`/events/${id}`);
         setEvent(res.data);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
+      } catch (err) { console.error(err); }
+      finally { setLoading(false); }
     };
     fetchEvent();
   }, [id]);
 
-  // Check stream status (for non-organizers)
+  // Check stream status (non-organizers)
   useEffect(() => {
-    if (!event || isOrganizer) {
-      setStreamStatus({ isLive: false, checking: false });
-      return;
-    }
-
-    const checkStatus = async () => {
+    if (!event || isOrganizer) { setStreamStatus({ isLive: false, checking: false }); return; }
+    const check = async () => {
       try {
         const res = await api.get(`/events/${id}/stream/status`);
         setStreamStatus({ isLive: res.data.isLive, checking: false });
-      } catch {
-        setStreamStatus({ isLive: false, checking: false });
-      }
+      } catch { setStreamStatus({ isLive: false, checking: false }); }
     };
-
-    checkStatus();
-
-    // Poll every 5 seconds until stream is live
-    pollRef.current = setInterval(checkStatus, 5000);
+    check();
+    pollRef.current = setInterval(check, 5000);
     return () => clearInterval(pollRef.current);
   }, [event, isOrganizer, id]);
 
-  // Stop polling once live
   useEffect(() => {
-    if (streamStatus.isLive && pollRef.current) {
-      clearInterval(pollRef.current);
-    }
+    if (streamStatus.isLive && pollRef.current) clearInterval(pollRef.current);
   }, [streamStatus.isLive]);
 
-  // Start Jitsi (for organizer immediately, for others only when stream is live)
+  // Elapsed timer
+  useEffect(() => {
+    if (!event) return;
+    const shouldRun = isOrganizer || streamStatus.isLive;
+    if (!shouldRun) return;
+    timerRef.current = setInterval(() => setElapsed((e) => e + 1), 1000);
+    return () => clearInterval(timerRef.current);
+  }, [event, isOrganizer, streamStatus.isLive]);
+
+  // Fullscreen toggle
+  const toggleFullscreen = () => {
+    if (!containerRef.current) return;
+    if (!isFullscreen) {
+      containerRef.current.requestFullscreen?.() || containerRef.current.webkitRequestFullscreen?.();
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen?.() || document.webkitExitFullscreen?.();
+      setIsFullscreen(false);
+    }
+  };
+
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handler);
+    return () => document.removeEventListener("fullscreenchange", handler);
+  }, []);
+
+  // Our control commands → Jitsi
+  const toggleAudio = () => {
+    jitsiApiRef.current?.executeCommand("toggleAudio");
+    setAudioMuted((m) => !m);
+  };
+  const toggleVideo = () => {
+    jitsiApiRef.current?.executeCommand("toggleVideo");
+    setVideoMuted((m) => !m);
+  };
+  const toggleScreenShare = () => {
+    jitsiApiRef.current?.executeCommand("toggleShareScreen");
+  };
+  const hangup = () => {
+    jitsiApiRef.current?.executeCommand("hangup");
+  };
+
   const startJitsi = useCallback(() => {
     if (!event || !jitsiContainerRef.current || jitsiApiRef.current) return;
     if (!window.JitsiMeetExternalAPI) return;
@@ -96,16 +141,21 @@ export default function LiveEvent() {
           feedbackPercentage: 0,
           notifications: [],
           startSilent: !isOrganizer,
+          // Hide Jitsi's own toolbar — we use our custom one
+          toolbarButtons: [],
         },
         interfaceConfigOverwrite: {
           SHOW_JITSI_WATERMARK: false,
           SHOW_WATERMARK_FOR_GUESTS: false,
           SHOW_BRAND_WATERMARK: false,
           DEFAULT_REMOTE_DISPLAY_NAME: "Attendee",
-          TOOLBAR_ALWAYS_VISIBLE: true,
+          TOOLBAR_ALWAYS_VISIBLE: false,
+          TOOLBAR_TIMEOUT: 0,
+          FILM_STRIP_MAX_HEIGHT: 100,
           DISABLE_JOIN_LEAVE_NOTIFICATIONS: true,
           HIDE_INVITE_MORE_HEADER: true,
-          SETTINGS_SECTIONS: ["devices"],
+          SETTINGS_SECTIONS: [],
+          VIDEO_LAYOUT_FIT: "both",
         },
         userInfo: {
           displayName: user?.name || "Guest",
@@ -114,15 +164,15 @@ export default function LiveEvent() {
       });
 
       jitsiApiRef.current = jitsi;
+      setAudioMuted(!isOrganizer);
+      setVideoMuted(!isOrganizer);
 
       const iframe = jitsiContainerRef.current.querySelector("iframe");
       if (iframe) {
-        iframe.style.width = "100%";
-        iframe.style.height = "100%";
-        iframe.style.border = "none";
-        iframe.style.position = "absolute";
-        iframe.style.top = "0";
-        iframe.style.left = "0";
+        Object.assign(iframe.style, {
+          width: "100%", height: "100%", border: "none",
+          position: "absolute", top: "0", left: "0", borderRadius: "0",
+        });
       }
 
       jitsi.addEventListener("videoConferenceJoined", async () => {
@@ -130,85 +180,56 @@ export default function LiveEvent() {
         if (user?.email) jitsi.executeCommand("email", user.email);
         if (isOrganizer) {
           jitsi.executeCommand("subject", event.title);
-          try {
-            await api.patch(`/events/${id}/stream/start`);
-          } catch (err) {
-            console.error("Failed to mark stream as live:", err);
-          }
+          try { await api.patch(`/events/${id}/stream/start`); } catch {}
         }
       });
 
-      // Intercept hangup — dispose immediately to prevent Jitsi close/promo page
+      jitsi.addEventListener("audioMuteStatusChanged", ({ muted }) => setAudioMuted(muted));
+      jitsi.addEventListener("videoMuteStatusChanged", ({ muted }) => setVideoMuted(muted));
+
       jitsi.addEventListener("videoConferenceLeft", async () => {
-        if (isOrganizer) {
-          try { await api.patch(`/events/${id}/stream/end`); } catch {}
-        }
-        // Dispose IMMEDIATELY before Jitsi can render its close page
-        if (jitsiApiRef.current) {
-          jitsiApiRef.current.dispose();
-          jitsiApiRef.current = null;
-        }
+        if (isOrganizer) { try { await api.patch(`/events/${id}/stream/end`); } catch {} }
+        if (jitsiApiRef.current) { jitsiApiRef.current.dispose(); jitsiApiRef.current = null; }
         navigate(`${rolePrefix}/events/${id}`);
       });
 
-      // Fallback — if readyToClose fires (shouldn't after videoConferenceLeft)
       jitsi.addEventListener("readyToClose", () => {
-        if (jitsiApiRef.current) {
-          jitsiApiRef.current.dispose();
-          jitsiApiRef.current = null;
-        }
+        if (jitsiApiRef.current) { jitsiApiRef.current.dispose(); jitsiApiRef.current = null; }
         navigate(`${rolePrefix}/events/${id}`);
       });
     } catch (err) {
       console.error("Jitsi init failed:", err);
     }
-  }, [event, id, user, isOrganizer]);
+  }, [event, id, user, isOrganizer, navigate, rolePrefix]);
 
-  // Load Jitsi script
   useEffect(() => {
     if (!event) return;
-
-    // Organizer: load immediately. Others: only when stream is live.
     if (!isOrganizer && !streamStatus.isLive) return;
-
     const loadAndStart = () => {
-      if (window.JitsiMeetExternalAPI) {
-        startJitsi();
-        return;
-      }
+      if (window.JitsiMeetExternalAPI) { startJitsi(); return; }
       const script = document.createElement("script");
       script.src = "https://meet.jit.si/external_api.js";
       script.async = true;
       script.onload = () => setTimeout(startJitsi, 300);
       document.head.appendChild(script);
     };
-
     const timer = setTimeout(loadAndStart, 500);
     return () => {
       clearTimeout(timer);
-      if (jitsiApiRef.current) {
-        jitsiApiRef.current.dispose();
-        jitsiApiRef.current = null;
-      }
+      if (jitsiApiRef.current) { jitsiApiRef.current.dispose(); jitsiApiRef.current = null; }
     };
   }, [event, isOrganizer, streamStatus.isLive, startJitsi]);
 
-  // Socket.io chat
+  // Socket chat
   useEffect(() => {
     if (!id || !user) return;
     socket.emit("joinEventRoom", { eventId: id, userName: user.name });
     socket.on("eventChatMessage", (msg) => setMessages((prev) => [...prev, msg]));
     socket.on("eventViewerCount", (count) => setViewerCount(count));
-    return () => {
-      socket.emit("leaveEventRoom", { eventId: id });
-      socket.off("eventChatMessage");
-      socket.off("eventViewerCount");
-    };
+    return () => { socket.emit("leaveEventRoom", { eventId: id }); socket.off("eventChatMessage"); socket.off("eventViewerCount"); };
   }, [id, user]);
 
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
   const sendMessage = (e) => {
     e.preventDefault();
@@ -217,65 +238,37 @@ export default function LiveEvent() {
     setNewMessage("");
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-[60vh]">
-        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
-  }
+  if (loading) return <div className="flex items-center justify-center h-[60vh]"><div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div>;
+  if (!event) return <div className="flex items-center justify-center h-[60vh] text-gray-500">Event not found</div>;
 
-  if (!event) {
-    return <div className="flex items-center justify-center h-[60vh] text-gray-500">Event not found</div>;
-  }
-
-  // ===== WAITING ROOM (non-organizer, stream not live yet) =====
+  // ===== WAITING ROOM =====
   if (!isOrganizer && !streamStatus.isLive) {
     return (
       <div style={{ margin: "-1rem", height: "calc(100vh - 4.5rem)" }} className="flex flex-col">
-        {/* Top bar */}
         <div className="bg-gray-900 border-b border-gray-800 px-4 py-2 flex items-center gap-3 flex-shrink-0">
-          <Link to={`${rolePrefix}/events/${id}`} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800">
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <h1 className="text-white font-semibold text-sm">{event.title}</h1>
+          <Link to={`${rolePrefix}/events/${id}`} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800"><ArrowLeft className="w-5 h-5" /></Link>
+          <div>
+            <h1 className="text-white font-semibold text-sm">{event.title}</h1>
+            <p className="text-xs text-gray-500">{event.category} · {new Date(event.startTime).toLocaleString()}</p>
+          </div>
         </div>
-
-        {/* Waiting room */}
         <div className="flex-1 bg-gray-950 flex items-center justify-center">
           <div className="text-center max-w-md px-6">
             <div className="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
-              {streamStatus.checking ? (
-                <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
-              ) : (
-                <Clock className="w-8 h-8 text-gray-500" />
-              )}
+              {streamStatus.checking ? <Loader2 className="w-8 h-8 text-blue-400 animate-spin" /> : <Clock className="w-8 h-8 text-gray-500" />}
             </div>
             <h2 className="text-xl font-bold text-white mb-2">Waiting for host</h2>
-            <p className="text-gray-400 text-sm mb-6">
-              The organizer hasn't started the stream yet. You'll be connected automatically once they go live.
-            </p>
+            <p className="text-gray-400 text-sm mb-6">You'll be connected automatically once the organizer goes live.</p>
             <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
               <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
-              Checking every 5 seconds...
+              Checking...
             </div>
-
-            {/* Chat while waiting */}
-            <div className="mt-8 bg-gray-900 rounded-xl border border-gray-800 max-h-64 flex flex-col">
-              <div className="px-4 py-2 border-b border-gray-800">
-                <h3 className="text-white text-xs font-semibold">Chat while you wait</h3>
-              </div>
+            <div className="mt-8 bg-gray-900 rounded-xl border border-gray-800 flex flex-col max-h-64">
+              <div className="px-4 py-2 border-b border-gray-800"><h3 className="text-white text-xs font-semibold">Chat while you wait</h3></div>
               <div className="flex-1 overflow-y-auto p-3 space-y-2 max-h-32">
-                {messages.length === 0 ? (
-                  <p className="text-gray-600 text-xs text-center">No messages yet</p>
-                ) : (
-                  messages.map((msg, idx) => (
-                    <div key={idx} className="flex gap-2">
-                      <span className="text-[10px] font-medium text-blue-400">{msg.userName}:</span>
-                      <span className="text-xs text-gray-300">{msg.message}</span>
-                    </div>
-                  ))
-                )}
+                {messages.length === 0 ? <p className="text-gray-600 text-xs text-center">No messages yet</p> : messages.map((msg, i) => (
+                  <div key={i} className="flex gap-2"><span className="text-[10px] font-medium text-blue-400">{msg.userName}:</span><span className="text-xs text-gray-300">{msg.message}</span></div>
+                ))}
               </div>
               <form onSubmit={sendMessage} className="p-2 border-t border-gray-800 flex gap-1.5">
                 <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Say something..." className="flex-1 bg-gray-800 text-white text-xs px-2.5 py-1.5 rounded-lg placeholder-gray-600 focus:outline-none" />
@@ -288,62 +281,88 @@ export default function LiveEvent() {
     );
   }
 
-  // ===== LIVE STREAM VIEW (organizer always, students after stream starts) =====
+  // ===== LIVE STREAM =====
   return (
-    <div style={{ margin: "-1rem", height: "calc(100vh - 4.5rem)" }} className="flex flex-col">
-      {/* Top Bar */}
-      <div className="bg-gray-900 border-b border-gray-800 px-4 py-2 flex items-center justify-between flex-shrink-0">
+    <div ref={containerRef} style={isFullscreen ? {} : { margin: "-1rem", height: "calc(100vh - 4.5rem)" }} className={`flex flex-col bg-gray-950 ${isFullscreen ? "fixed inset-0 z-[100]" : ""}`}>
+      {/* Top Bar — our branded bar */}
+      <div className="bg-gray-900/95 backdrop-blur-sm border-b border-gray-800 px-4 py-1.5 flex items-center justify-between flex-shrink-0 z-10">
         <div className="flex items-center gap-3">
-          <Link to={`${rolePrefix}/events/${id}`} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800">
-            <ArrowLeft className="w-5 h-5" />
+          <Link to={`${rolePrefix}/events/${id}`} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition">
+            <ArrowLeft className="w-4 h-4" />
           </Link>
-          <div>
-            <h1 className="text-white font-semibold text-sm">{event.title}</h1>
-            <div className="flex items-center gap-2 text-xs text-gray-400">
-              {isOrganizer ? (
-                <span className="flex items-center gap-1 text-red-400 font-semibold">
-                  <Radio className="w-3 h-3" /> Broadcasting
-                </span>
-              ) : (
-                <>
-                  <Wifi className="w-3 h-3 text-green-400" />
-                  <span>Connected</span>
-                </>
-              )}
-              <span>-</span>
-              <Users className="w-3 h-3" />
-              <span>{viewerCount} in room</span>
+          <div className="flex items-center gap-3">
+            <div>
+              <h1 className="text-white font-semibold text-sm leading-tight">{event.title}</h1>
+              <div className="flex items-center gap-2 text-[11px] text-gray-400">
+                {isOrganizer ? (
+                  <span className="flex items-center gap-1 text-red-400 font-semibold"><span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span> LIVE</span>
+                ) : (
+                  <span className="flex items-center gap-1 text-green-400"><Wifi className="w-3 h-3" /> Connected</span>
+                )}
+                <span className="text-gray-600">|</span>
+                <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {viewerCount}</span>
+                <span className="text-gray-600">|</span>
+                <span className="font-mono">{formatElapsed(elapsed)}</span>
+              </div>
             </div>
           </div>
         </div>
-        <button onClick={() => setChatOpen(!chatOpen)} className={`p-2 rounded-lg transition ${chatOpen ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white hover:bg-gray-800"}`}>
-          <MessageSquare className="w-5 h-5" />
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button onClick={() => setChatOpen(!chatOpen)} className={`p-2 rounded-lg transition ${chatOpen ? "bg-blue-600 text-white" : "text-gray-400 hover:bg-gray-800"}`} title="Toggle chat">
+            <MessageSquare className="w-4 h-4" />
+          </button>
+          <button onClick={toggleFullscreen} className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition" title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}>
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+          </button>
+        </div>
       </div>
 
-      {/* Video + Chat */}
-      <div className="flex-1 flex min-h-0">
+      {/* Main: Video + Chat */}
+      <div className="flex-1 flex min-h-0 relative">
+        {/* Video */}
         <div className="flex-1 bg-black relative">
           <div ref={jitsiContainerRef} className="absolute inset-0" />
+
+          {/* Our floating control bar at bottom center */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-gray-900/90 backdrop-blur-md px-4 py-2 rounded-2xl border border-gray-700/50 shadow-2xl">
+            <button onClick={toggleAudio} className={`p-2.5 rounded-xl transition ${audioMuted ? "bg-red-500/20 text-red-400 hover:bg-red-500/30" : "bg-gray-700/50 text-white hover:bg-gray-700"}`} title={audioMuted ? "Unmute" : "Mute"}>
+              {audioMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+            </button>
+            <button onClick={toggleVideo} className={`p-2.5 rounded-xl transition ${videoMuted ? "bg-red-500/20 text-red-400 hover:bg-red-500/30" : "bg-gray-700/50 text-white hover:bg-gray-700"}`} title={videoMuted ? "Start camera" : "Stop camera"}>
+              {videoMuted ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
+            </button>
+            <button onClick={toggleScreenShare} className="p-2.5 rounded-xl bg-gray-700/50 text-white hover:bg-gray-700 transition" title="Share screen">
+              <MonitorUp className="w-5 h-5" />
+            </button>
+            <div className="w-px h-8 bg-gray-700 mx-1"></div>
+            <button onClick={hangup} className="p-2.5 rounded-xl bg-red-600 text-white hover:bg-red-700 transition" title="Leave">
+              <PhoneOff className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Evently watermark */}
+          <div className="absolute bottom-4 right-4 z-10 flex items-center gap-1.5 text-white/30 text-xs font-semibold pointer-events-none">
+            <Calendar className="w-3.5 h-3.5" /> Evently
+          </div>
         </div>
 
+        {/* Chat Panel — overlays on right */}
         {chatOpen && (
-          <div className="w-72 bg-gray-900 border-l border-gray-800 flex flex-col flex-shrink-0">
-            <div className="px-3 py-2.5 border-b border-gray-800">
+          <div className={`bg-gray-900 border-l border-gray-800 flex flex-col flex-shrink-0 ${isFullscreen ? "w-80" : "w-72"}`}>
+            <div className="px-3 py-2 border-b border-gray-800 flex items-center justify-between">
               <h3 className="text-white font-semibold text-sm">Live Chat</h3>
+              <span className="text-[10px] text-gray-500">{messages.length} messages</span>
             </div>
             <div className="flex-1 overflow-y-auto p-3 space-y-2">
               {messages.length === 0 ? (
-                <p className="text-gray-500 text-xs text-center mt-8">No messages yet</p>
+                <p className="text-gray-500 text-xs text-center mt-8">No messages yet. Say hi!</p>
               ) : (
                 messages.map((msg, idx) => (
                   <div key={idx} className="flex gap-2">
-                    <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[9px] font-semibold flex-shrink-0">
-                      {msg.userName?.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
+                    <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[9px] font-semibold flex-shrink-0">{msg.userName?.charAt(0).toUpperCase()}</div>
+                    <div className="min-w-0">
                       <span className="text-[10px] font-medium text-blue-400">{msg.userName}</span>
-                      <p className="text-xs text-gray-300">{msg.message}</p>
+                      <p className="text-xs text-gray-300 break-words">{msg.message}</p>
                     </div>
                   </div>
                 ))
@@ -353,9 +372,7 @@ export default function LiveEvent() {
             <form onSubmit={sendMessage} className="p-2 border-t border-gray-800">
               <div className="flex gap-1.5">
                 <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Type a message..." className="flex-1 bg-gray-800 text-white text-xs px-2.5 py-1.5 rounded-lg placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                <button type="submit" className="p-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                  <Send className="w-3.5 h-3.5" />
-                </button>
+                <button type="submit" className="p-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700"><Send className="w-3.5 h-3.5" /></button>
               </div>
             </form>
           </div>
