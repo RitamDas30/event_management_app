@@ -23,6 +23,9 @@ export default function LiveEvent() {
   const [audioMuted, setAudioMuted] = useState(true);
   const [videoMuted, setVideoMuted] = useState(true);
   const [elapsed, setElapsed] = useState(0);
+  const [streamEnded, setStreamEnded] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [recordingUploaded, setRecordingUploaded] = useState(false);
   const jitsiContainerRef = useRef(null);
   const jitsiApiRef = useRef(null);
   const chatEndRef = useRef(null);
@@ -188,9 +191,15 @@ export default function LiveEvent() {
       jitsi.addEventListener("videoMuteStatusChanged", ({ muted }) => setVideoMuted(muted));
 
       jitsi.addEventListener("videoConferenceLeft", async () => {
-        if (isOrganizer) { try { await api.patch(`/events/${id}/stream/end`); } catch {} }
         if (jitsiApiRef.current) { jitsiApiRef.current.dispose(); jitsiApiRef.current = null; }
-        navigate(`${rolePrefix}/events/${id}`);
+        if (isOrganizer) {
+          try { await api.patch(`/events/${id}/stream/end`); } catch {}
+          // Show post-stream screen instead of navigating away
+          setStreamEnded(true);
+          clearInterval(timerRef.current);
+        } else {
+          navigate(`${rolePrefix}/events/${id}`);
+        }
       });
 
       jitsi.addEventListener("readyToClose", () => {
@@ -238,8 +247,86 @@ export default function LiveEvent() {
     setNewMessage("");
   };
 
+  const handleRecordingUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("recording", file);
+      const res = await api.post(`/events/${id}/stream/recording`, fd, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setRecordingUploaded(true);
+    } catch (err) {
+      console.error("Upload failed:", err);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   if (loading) return <div className="flex items-center justify-center h-[60vh]"><div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div>;
   if (!event) return <div className="flex items-center justify-center h-[60vh] text-gray-500">Event not found</div>;
+
+  // ===== POST-STREAM SCREEN (organizer only) =====
+  if (streamEnded && isOrganizer) {
+    return (
+      <div style={{ margin: "-1rem", height: "calc(100vh - 4.5rem)" }} className="flex flex-col bg-gray-950">
+        <div className="bg-gray-900 border-b border-gray-800 px-4 py-2 flex items-center gap-3 flex-shrink-0">
+          <h1 className="text-white font-semibold text-sm">{event.title}</h1>
+          <span className="text-xs text-gray-500">Stream ended</span>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center max-w-lg px-6">
+            <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-8 h-8 text-green-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">Stream Completed</h2>
+            <p className="text-gray-400 mb-1">Duration: {formatElapsed(elapsed)}</p>
+            <p className="text-gray-500 text-sm mb-8">Peak viewers: {viewerCount}</p>
+
+            {/* Upload Recording */}
+            <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-6 text-left">
+              <h3 className="text-white font-semibold mb-2">Upload Recording</h3>
+              <p className="text-gray-500 text-sm mb-4">
+                Upload your screen recording so attendees can watch it later. Supports MP4, WebM, MOV.
+              </p>
+              {recordingUploaded ? (
+                <div className="flex items-center gap-2 text-green-400 text-sm font-medium">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                  Recording uploaded — attendees can now watch it
+                </div>
+              ) : (
+                <label className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-sm cursor-pointer transition ${
+                  uploading ? "bg-gray-700 text-gray-400 cursor-wait" : "bg-blue-600 text-white hover:bg-blue-700"
+                }`}>
+                  {uploading ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Uploading...</>
+                  ) : (
+                    <><Video className="w-4 h-4" /> Choose Recording File</>
+                  )}
+                  <input type="file" accept="video/*" onChange={handleRecordingUpload} disabled={uploading} className="hidden" />
+                </label>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-3 justify-center">
+              <Link to={`${rolePrefix}/events/${id}`} className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-gray-800 text-white hover:bg-gray-700 transition">
+                View Event
+              </Link>
+              <Link to="/organizer/analytics" className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-gray-800 text-white hover:bg-gray-700 transition">
+                View Analytics
+              </Link>
+              <Link to="/organizer/dashboard" className="px-5 py-2.5 rounded-xl text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 transition">
+                Back to Dashboard
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // ===== WAITING ROOM =====
   if (!isOrganizer && !streamStatus.isLive) {
