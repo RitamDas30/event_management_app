@@ -67,7 +67,15 @@ export default function LiveEvent() {
     if (!isFullscreen) { fullscreenRef.current.requestFullscreen?.(); setIsFullscreen(true); }
     else { document.exitFullscreen?.(); setIsFullscreen(false); }
   };
-  useEffect(() => { const h = () => setIsFullscreen(!!document.fullscreenElement); document.addEventListener("fullscreenchange", h); return () => document.removeEventListener("fullscreenchange", h); }, []);
+  useEffect(() => {
+    const h = () => {
+      const fs = !!document.fullscreenElement;
+      setIsFullscreen(fs);
+      if (!fs) setChatOpen(true); // Always show chat in normal mode
+    };
+    document.addEventListener("fullscreenchange", h);
+    return () => document.removeEventListener("fullscreenchange", h);
+  }, []);
 
   // Keyboard shortcut: F for fullscreen
   useEffect(() => {
@@ -214,11 +222,13 @@ export default function LiveEvent() {
 
       {/* TOP-RIGHT: Chat toggle + Fullscreen */}
       <div className="absolute top-3 right-3 z-30 flex items-center gap-1.5">
-        <button onClick={() => setChatOpen(!chatOpen)}
-          className={`p-2 rounded-lg backdrop-blur-sm transition ${chatOpen ? "bg-blue-500/30 text-blue-300" : "bg-black/50 text-white/70 hover:text-white"}`}
-          title="Toggle chat">
-          <MessageSquare className="w-4 h-4" />
-        </button>
+        {insideFullscreen && (
+          <button onClick={() => setChatOpen(!chatOpen)}
+            className={`p-2 rounded-lg backdrop-blur-sm transition ${chatOpen ? "bg-blue-500/30 text-blue-300" : "bg-black/50 text-white/70 hover:text-white"}`}
+            title="Toggle chat">
+            <MessageSquare className="w-4 h-4" />
+          </button>
+        )}
         <button onClick={toggleFullscreen}
           className="p-2 bg-black/50 backdrop-blur-sm rounded-lg text-white/70 hover:text-white transition"
           title="Fullscreen (F)">
@@ -274,20 +284,18 @@ export default function LiveEvent() {
     <div ref={fullscreenRef} className="flex h-full">
       {/* Video — takes all available space */}
       <div className="flex-1 min-w-0 flex items-center p-3 pr-0">
-        <div className="relative bg-black rounded-l-xl overflow-hidden w-full" style={{ height: "0", paddingBottom: chatOpen ? "50%" : "56.25%" }}>
+        <div className="relative bg-black rounded-l-xl overflow-hidden w-full" style={{ height: "0", paddingBottom: "56.25%" }}>
           <div ref={jitsiContainerRef} className="absolute inset-0" />
           <VideoOverlays insideFullscreen={false} />
         </div>
       </div>
 
-      {/* Chat — right edge, no gap, full height matching video */}
-      {chatOpen && (
-        <div className="w-72 flex-shrink-0 bg-gray-900 flex flex-col border-l border-gray-800 py-3 pr-3">
-          <div className="flex-1 rounded-r-xl overflow-hidden border border-gray-700 border-l-0 flex flex-col">
-            <LiveChat eventId={id} user={user} isOrganizer={isOrganizer} isFullscreen={false} />
-          </div>
+      {/* Chat — always visible in normal mode, right edge */}
+      <div className="w-72 flex-shrink-0 bg-gray-900 flex flex-col border-l border-gray-800 py-3 pr-3">
+        <div className="flex-1 rounded-r-xl overflow-hidden border border-gray-700 border-l-0 flex flex-col">
+          <LiveChat eventId={id} user={user} isOrganizer={isOrganizer} isFullscreen={false} />
         </div>
-      )}
+      </div>
     </div>
   );
 }
