@@ -43,9 +43,16 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminEvents from "./pages/admin/AdminEvents";
 import AdminReports from "./pages/admin/AdminReports";
+import AdminCategories from "./pages/admin/AdminCategories";
+import AdminAnnouncements from "./pages/admin/AdminAnnouncements";
+import AdminAuditLog from "./pages/admin/AdminAuditLog";
+import AdminSettings from "./pages/admin/AdminSettings";
 
-// Shared
-import ComingSoon from "./pages/ComingSoon";
+// Additional Pages
+import StudentTickets from "./pages/student/StudentTickets";
+import OrganizerAnnouncements from "./pages/organizer/OrganizerAnnouncements";
+import OrganizerProfile from "./pages/organizer/OrganizerProfile";
+import OrganizerSettings from "./pages/organizer/OrganizerSettings";
 
 // Smart redirect: sends logged-in users to their role-specific dashboard
 function DashboardRedirect() {
@@ -113,7 +120,7 @@ export default function App() {
           <Route element={<DashboardLayout allowedRoles={["student"]} />}>
             <Route path="/student/dashboard" element={<StudentDashboard />} />
             <Route path="/student/registrations" element={<StudentRegistrations />} />
-            <Route path="/student/tickets" element={<ComingSoon title="My Tickets" description="Digital tickets with QR codes are coming soon." />} />
+            <Route path="/student/tickets" element={<StudentTickets />} />
             <Route path="/student/calendar" element={<StudentCalendar />} />
             <Route path="/student/saved" element={<SavedEvents />} />
             <Route path="/student/notifications" element={<StudentNotifications />} />
@@ -131,9 +138,9 @@ export default function App() {
             <Route path="/organizer/events/:id/edit" element={<EditEvent />} />
             <Route path="/organizer/analytics" element={<OrganizerAnalytics />} />
             <Route path="/organizer/revenue" element={<OrganizerRevenue />} />
-            <Route path="/organizer/announcements" element={<ComingSoon title="Announcements" description="Send updates to your event attendees. Coming soon." />} />
-            <Route path="/organizer/profile" element={<ComingSoon title="Profile" description="Organizer profile editor is coming soon." />} />
-            <Route path="/organizer/settings" element={<ComingSoon title="Settings" description="Account settings are coming soon." />} />
+            <Route path="/organizer/announcements" element={<OrganizerAnnouncements />} />
+            <Route path="/organizer/profile" element={<OrganizerProfile />} />
+            <Route path="/organizer/settings" element={<OrganizerSettings />} />
           </Route>
 
           {/* ========================================= */}
@@ -143,11 +150,11 @@ export default function App() {
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/admin/events" element={<AdminEvents />} />
-            <Route path="/admin/categories" element={<ComingSoon title="Categories" description="Manage event categories. Coming soon." />} />
+            <Route path="/admin/categories" element={<AdminCategories />} />
             <Route path="/admin/reports" element={<AdminReports />} />
-            <Route path="/admin/announcements" element={<ComingSoon title="Announcements" description="Platform-wide announcements. Coming soon." />} />
-            <Route path="/admin/audit" element={<ComingSoon title="Audit Log" description="Admin action history. Coming soon." />} />
-            <Route path="/admin/settings" element={<ComingSoon title="Platform Settings" description="Platform configuration. Coming soon." />} />
+            <Route path="/admin/announcements" element={<AdminAnnouncements />} />
+            <Route path="/admin/audit" element={<AdminAuditLog />} />
+            <Route path="/admin/settings" element={<AdminSettings />} />
           </Route>
 
           {/* ========================================= */}
