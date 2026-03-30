@@ -259,7 +259,7 @@ export default function LiveEvent() {
   // ===== POST-STREAM SCREEN (organizer only) =====
   if (streamEnded && isOrganizer) {
     return (
-      <div className="flex flex-col bg-gray-950 h-full">
+      <div className="flex flex-col w-full h-full">
         <div className="bg-gray-900 border-b border-gray-800 px-4 py-2 flex items-center gap-3 flex-shrink-0">
           <h1 className="text-white font-semibold text-sm">{event.title}</h1>
           <span className="text-xs text-gray-500">Stream ended</span>
