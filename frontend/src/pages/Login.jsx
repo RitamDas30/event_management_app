@@ -22,7 +22,7 @@ export default function Login() {
       // Note: Endpoint is '/api/auth/login' via global baseURL config
       const res = await api.post("/auth/login", { email, password });
       login(res.data.user, res.data.token);
-      navigate("/");
+      navigate("/dashboard");
     } catch (err) {
       setError(err.response?.data?.message || "Login failed");
     } finally {

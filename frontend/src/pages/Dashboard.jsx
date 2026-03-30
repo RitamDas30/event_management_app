@@ -56,7 +56,7 @@ export default function Dashboard() {
       {organizerCanCreate && (
         <div className="text-center mb-8">
           <Link
-            to="/create-event"
+            to="/organizer/events/create"
             className="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition shadow-lg"
           >
             + Create New Event
@@ -108,7 +108,7 @@ export default function Dashboard() {
 
                 {/* Edit Button */}
                 <Link
-                  to={`/edit-event/${event._id}`}
+                  to={`/organizer/events/${event._id}/edit`}
                   className="p-2 bg-yellow-500 text-white rounded-lg shadow-md hover:bg-yellow-600 transition"
                   title="Edit Event"
                 >

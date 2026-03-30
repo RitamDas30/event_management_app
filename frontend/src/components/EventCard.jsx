@@ -199,7 +199,7 @@ export default function EventCard({ event, refresh }) {
                 )}
 
                 <Link
-                    to="/my-registrations"
+                    to="/student/registrations"
                     className="mt-2 text-sm text-blue-600 hover:text-blue-800 font-medium underline"
                 >
                     View Your Digital Ticket

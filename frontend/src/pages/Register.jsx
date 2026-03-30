@@ -32,7 +32,7 @@ export default function Register() {
       
       // Log in immediately upon successful registration
       login(res.data.user, res.data.token);
-      navigate("/");
+      navigate("/dashboard");
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed");
     } finally {

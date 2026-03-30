@@ -1,109 +1,157 @@
-// src/App.jsx
-import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { Toaster } from "react-hot-toast"; 
+import { Toaster } from "react-hot-toast";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 
+// Layouts
+import PublicLayout from "./layouts/PublicLayout";
+import DashboardLayout from "./layouts/DashboardLayout";
 
-import Navbar from "./components/Navbar";
-
-import Home from "./pages/Home";
+// Public Pages
+import LandingPage from "./pages/LandingPage";
+import Explore from "./pages/Explore";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import Dashboard from "./pages/Dashboard";
-import CreateEvent from "./pages/CreateEvent";
-import StudentRegistrations from "./pages/StudentRegistrations";
-import OrganizerAnalytics from "./pages/OrganizerAnalytics";
-import NotFound from "./pages/NotFound";
-import StudentCalendar from "./pages/StudentCalendar"; 
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
-import EventDetails from "./pages/EventDetails"; 
+import EventDetails from "./pages/EventDetails";
+import NotFound from "./pages/NotFound";
+
+// Student Pages
+import StudentDashboard from "./pages/student/StudentDashboard";
+import StudentRegistrations from "./pages/StudentRegistrations";
+import StudentCalendar from "./pages/StudentCalendar";
+
+// Organizer Pages
+import OrganizerDashboard from "./pages/organizer/OrganizerDashboard";
+import Dashboard from "./pages/Dashboard";
+import CreateEvent from "./pages/CreateEvent";
 import EditEvent from "./pages/EditEvent";
+import OrganizerAnalytics from "./pages/OrganizerAnalytics";
 
+// Admin Pages
+import AdminDashboard from "./pages/admin/AdminDashboard";
 
-import { AuthProvider, useAuth } from "./context/AuthContext"; 
+// Shared
+import ComingSoon from "./pages/ComingSoon";
 
-//  Protected Route 
-function ProtectedRoute({ children }) {
+// Smart redirect: sends logged-in users to their role-specific dashboard
+function DashboardRedirect() {
   const { user, loading } = useAuth();
-  
-  if (loading) return null; 
-  
-  return user ? children : <Navigate to="/login" replace />;
-}
-
-// Organizer Route 
-function OrganizerRoute({ children }) {
-  const { user, loading } = useAuth();
-  
   if (loading) return null;
-  
-  // Allow access if role is organizer OR admin
-  if (user && (user.role === 'organizer' || user.role === 'admin')) {
-    return children;
+  if (!user) return <Navigate to="/login" replace />;
+
+  switch (user.role) {
+    case "admin":
+      return <Navigate to="/admin/dashboard" replace />;
+    case "organizer":
+      return <Navigate to="/organizer/dashboard" replace />;
+    default:
+      return <Navigate to="/student/dashboard" replace />;
   }
-  
-  // Redirect non-organizers/non-admins to Home page.
-  return <Navigate to="/" replace />; 
 }
 
-// Admin Dashboard 
-function AdminDashboard() {
-    return (
-        <div className="text-center mt-12 p-8 bg-gray-50 rounded-xl">
-            <h1 className="text-3xl font-bold text-red-700">Admin Control Panel</h1>
-            <p className="mt-3 text-gray-600"> This panel is currently reserved for future User/System Management features.</p>
-        </div>
-    );
+// Redirect logged-in users away from auth pages
+function GuestOnly({ children }) {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (user) return <DashboardRedirect />;
+  return children;
 }
-
 
 export default function App() {
   return (
-    <AuthProvider> 
+    <AuthProvider>
       <BrowserRouter>
-        <Navbar />
-        <div className="max-w-6xl mx-auto p-4">
-          <Toaster position="top-right" />
-          <Routes>
-            
-            {/* ==================================== */}
-            {/* PUBLIC & PRIMARY ROUTES */}
-            {/* ==================================== */}
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            
-            {/* Public details page for social sharing */}
-            <Route path="/events/:id" element={<EventDetails />} /> 
-            
-            {/* Password Reset Flow */}
+        <Toaster position="top-right" />
+        <Routes>
+          {/* ========================================= */}
+          {/* PUBLIC ROUTES — PublicLayout (Navbar + Footer) */}
+          {/* ========================================= */}
+          <Route element={<PublicLayout />}>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/explore" element={<Explore />} />
+            <Route path="/events/:id" element={<EventDetails />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route
+              path="/login"
+              element={<GuestOnly><Login /></GuestOnly>}
+            />
+            <Route
+              path="/register"
+              element={<GuestOnly><Register /></GuestOnly>}
+            />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            
-            
-            {/* ==================================== */}
-            {/* PROTECTED ROUTES */}
-            {/* ==================================== */}
+          </Route>
 
-            {/* Admin/Organizer Management */}
-            <Route path="/dashboard" element={<OrganizerRoute><Dashboard /></OrganizerRoute>} />
-            <Route path="/admin-panel" element={<OrganizerRoute><AdminDashboard /></OrganizerRoute>} />
+          {/* ========================================= */}
+          {/* DASHBOARD REDIRECT */}
+          {/* ========================================= */}
+          <Route path="/dashboard" element={<DashboardRedirect />} />
 
-            {/* Organizer Tools */}
-            <Route path="/create-event" element={<OrganizerRoute><CreateEvent /></OrganizerRoute>} />
-            <Route path="/analytics" element={<OrganizerRoute><OrganizerAnalytics /></OrganizerRoute>} />
+          {/* ========================================= */}
+          {/* STUDENT ROUTES — DashboardLayout */}
+          {/* ========================================= */}
+          <Route element={<DashboardLayout allowedRoles={["student"]} />}>
+            <Route path="/student/dashboard" element={<StudentDashboard />} />
+            <Route path="/student/registrations" element={<StudentRegistrations />} />
+            <Route path="/student/tickets" element={<ComingSoon title="My Tickets" description="Digital tickets with QR codes are coming soon." />} />
+            <Route path="/student/calendar" element={<StudentCalendar />} />
+            <Route path="/student/saved" element={<ComingSoon title="Saved Events" description="Bookmark your favorite events. Coming soon." />} />
+            <Route path="/student/notifications" element={<ComingSoon title="Notifications" description="In-app notification center is coming soon." />} />
+            <Route path="/student/profile" element={<ComingSoon title="Profile" description="User profile editor is coming soon." />} />
+            <Route path="/student/settings" element={<ComingSoon title="Settings" description="Account settings are coming soon." />} />
+          </Route>
 
-            {/* Student Tools */}
-            <Route path="/my-registrations" element={<ProtectedRoute><StudentRegistrations /></ProtectedRoute>} />
-            <Route path="/calendar" element={<ProtectedRoute><StudentCalendar /></ProtectedRoute>} />
+          {/* ========================================= */}
+          {/* ORGANIZER ROUTES — DashboardLayout */}
+          {/* ========================================= */}
+          <Route element={<DashboardLayout allowedRoles={["organizer", "admin"]} />}>
+            <Route path="/organizer/dashboard" element={<OrganizerDashboard />} />
+            <Route path="/organizer/events" element={<Dashboard />} />
+            <Route path="/organizer/events/create" element={<CreateEvent />} />
+            <Route path="/organizer/events/:id/edit" element={<EditEvent />} />
+            <Route path="/organizer/analytics" element={<OrganizerAnalytics />} />
+            <Route path="/organizer/revenue" element={<ComingSoon title="Revenue" description="Payment tracking and revenue dashboard coming soon." />} />
+            <Route path="/organizer/announcements" element={<ComingSoon title="Announcements" description="Send updates to your event attendees. Coming soon." />} />
+            <Route path="/organizer/profile" element={<ComingSoon title="Profile" description="Organizer profile editor is coming soon." />} />
+            <Route path="/organizer/settings" element={<ComingSoon title="Settings" description="Account settings are coming soon." />} />
+          </Route>
 
-            {/* event edit  */}
-            <Route path="/edit-event/:id" element={<OrganizerRoute><EditEvent /></OrganizerRoute>} />
-            {/* CATCH ALL */}
+          {/* ========================================= */}
+          {/* ADMIN ROUTES — DashboardLayout */}
+          {/* ========================================= */}
+          <Route element={<DashboardLayout allowedRoles={["admin"]} />}>
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/users" element={<ComingSoon title="User Management" description="Manage users, roles, and permissions. Coming soon." />} />
+            <Route path="/admin/events" element={<ComingSoon title="Event Moderation" description="Review and moderate platform events. Coming soon." />} />
+            <Route path="/admin/categories" element={<ComingSoon title="Categories" description="Manage event categories. Coming soon." />} />
+            <Route path="/admin/reports" element={<ComingSoon title="Reports" description="Platform-wide analytics and reports. Coming soon." />} />
+            <Route path="/admin/announcements" element={<ComingSoon title="Announcements" description="Platform-wide announcements. Coming soon." />} />
+            <Route path="/admin/audit" element={<ComingSoon title="Audit Log" description="Admin action history. Coming soon." />} />
+            <Route path="/admin/settings" element={<ComingSoon title="Platform Settings" description="Platform configuration. Coming soon." />} />
+          </Route>
+
+          {/* ========================================= */}
+          {/* LEGACY ROUTE REDIRECTS */}
+          {/* ========================================= */}
+          <Route path="/my-registrations" element={<Navigate to="/student/registrations" replace />} />
+          <Route path="/calendar" element={<Navigate to="/student/calendar" replace />} />
+          <Route path="/create-event" element={<Navigate to="/organizer/events/create" replace />} />
+          <Route path="/analytics" element={<Navigate to="/organizer/analytics" replace />} />
+          <Route path="/edit-event/:id" element={<Navigate to="/organizer/events/:id/edit" replace />} />
+          <Route path="/admin-panel" element={<Navigate to="/admin/dashboard" replace />} />
+
+          {/* ========================================= */}
+          {/* 404 CATCH-ALL */}
+          {/* ========================================= */}
+          <Route path="*" element={<PublicLayout />}>
             <Route path="*" element={<NotFound />} />
-          </Routes>
-        </div>
+          </Route>
+        </Routes>
       </BrowserRouter>
     </AuthProvider>
   );
