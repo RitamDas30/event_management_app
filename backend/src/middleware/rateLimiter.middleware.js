@@ -12,7 +12,7 @@ export const apiLimiter = rateLimit({
 // Strict limiter for auth routes — prevent brute force login attempts
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 15,
+  max: 30,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Too many login attempts, please try again after 15 minutes." },

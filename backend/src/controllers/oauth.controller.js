@@ -27,22 +27,42 @@ const buildUserResponse = (user) => ({
 // =========================================================
 export const googleAuth = async (req, res) => {
   try {
-    const { credential } = req.body;
+    const { code, redirectUri } = req.body;
 
-    if (!credential) {
-      return res.status(400).json({ message: "Google credential is required" });
+    if (!code) {
+      return res.status(400).json({ message: "Google authorization code is required" });
     }
 
-    // Verify Google token by calling Google's tokeninfo endpoint
-    const googleRes = await fetch(
-      `https://oauth2.googleapis.com/tokeninfo?id_token=${credential}`
+    // Exchange authorization code for tokens
+    const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        code,
+        client_id: process.env.GOOGLE_CLIENT_ID,
+        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        redirect_uri: redirectUri,
+        grant_type: "authorization_code",
+      }),
+    });
+
+    const tokenData = await tokenRes.json();
+
+    if (tokenData.error) {
+      logger.error({ error: tokenData.error }, "Google token exchange failed");
+      return res.status(401).json({ message: "Google authentication failed: " + tokenData.error_description });
+    }
+
+    // Verify the id_token
+    const verifyRes = await fetch(
+      `https://oauth2.googleapis.com/tokeninfo?id_token=${tokenData.id_token}`
     );
 
-    if (!googleRes.ok) {
+    if (!verifyRes.ok) {
       return res.status(401).json({ message: "Invalid Google token" });
     }
 
-    const googleUser = await googleRes.json();
+    const googleUser = await verifyRes.json();
     const { sub: googleId, email, name, picture } = googleUser;
 
     if (!email) {

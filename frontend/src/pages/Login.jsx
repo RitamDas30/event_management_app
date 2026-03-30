@@ -43,12 +43,14 @@ export default function Login() {
     }
   };
 
-  // Google Sign-In
+  // Google Sign-In (authorization code flow — works on localhost)
   const handleGoogleLogin = () => {
     setOauthLoading("google");
     const redirectUri = `${window.location.origin}/auth/google/callback`;
     const scope = "openid email profile";
-    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=id_token&scope=${encodeURIComponent(scope)}&nonce=${Date.now()}`;
+    const state = crypto.randomUUID();
+    sessionStorage.setItem("oauth_state", state);
+    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&state=${state}&access_type=offline&prompt=consent`;
     window.location.href = url;
   };
 

@@ -14,17 +14,16 @@ export default function OAuthCallback({ provider }) {
     const handleCallback = async () => {
       try {
         if (provider === "google") {
-          // Google returns id_token in URL hash fragment
-          const hash = location.hash.substring(1);
-          const params = new URLSearchParams(hash);
-          const idToken = params.get("id_token");
+          // Google returns authorization code in query params
+          const code = searchParams.get("code");
 
-          if (!idToken) {
-            setError("No token received from Google");
+          if (!code) {
+            setError("No authorization code received from Google");
             return;
           }
 
-          const res = await api.post("/auth/google", { credential: idToken });
+          const redirectUri = `${window.location.origin}/auth/google/callback`;
+          const res = await api.post("/auth/google", { code, redirectUri });
           login(res.data.user, res.data.token);
           navigate("/dashboard");
         } else if (provider === "github") {
