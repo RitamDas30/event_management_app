@@ -63,7 +63,7 @@ const runEventReminderJob = async () => {
                 await sendEventEmail(reg.student.email, {
                     eventName: reg.event.title,
                     eventTime: reg.event.startTime,
-                    venue: reg.event.venue,
+                    venue: reg.event.venueName,
                     status: reg.status, // ⬅️ Required by sendEventEmail
                     qrCodeBase64: reg.qrCode,
                 }, true); // ⬅️ isReminder flag

@@ -125,7 +125,7 @@ export const registerForEvent = async (req, res) => {
                 sendEventEmail(student.email, {
                     eventName: event.title, 
                     eventTime: event.startTime, 
-                    venue: event.venue,
+                    venue: event.venueName,
                     status: registration.status, 
                     qrCodeBase64: registration.qrCode,
                 }, 'confirmation').catch(err => {
@@ -217,7 +217,7 @@ export const cancelRegistration = async (req, res) => {
                         await sendEventEmail(promotedRegistration.student.email, {
                             eventName: promotedRegistration.event.title,
                             eventTime: promotedRegistration.event.startTime,
-                            venue: promotedRegistration.event.venue,
+                            venue: promotedRegistration.event.venueName,
                             status: 'registered',
                             qrCodeBase64: promotedRegistration.qrCode,
                         }, 'confirmation');

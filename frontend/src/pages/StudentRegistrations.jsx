@@ -64,7 +64,7 @@ export default function StudentRegistrations() {
                   </span>
                 </p>
                 <p className="text-sm text-gray-500">
-                  Venue: {r.event?.venue || "N/A"} | {new Date(r.event?.startTime).toLocaleString()}
+                  Venue: {r.event?.venueName || "N/A"} | {r.event?.startTime ? new Date(r.event.startTime).toLocaleString() : "N/A"}
                 </p>
               </div>
               

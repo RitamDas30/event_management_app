@@ -120,7 +120,7 @@ const eventSchema = new mongoose.Schema(
 );
 
 
-eventSchema.index({ category: 1, venue: 1 });
+eventSchema.index({ category: 1, venueName: 1 });
 // Added a separate text index for full-text searching
 eventSchema.index({ title: "text", description: "text" });
 
