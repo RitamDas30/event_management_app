@@ -186,81 +186,108 @@ export default function LiveEvent() {
   }
 
   // ===== LIVE STREAM =====
-  return (
-    <div ref={fullscreenRef} className={isFullscreen ? "fixed inset-0 z-[100] bg-black" : ""}>
-      <div className={`relative bg-black rounded-xl overflow-hidden ${isFullscreen ? "w-full h-full" : ""}`}
-        style={isFullscreen ? {} : { width: "100%", height: "0", paddingBottom: "56.25%" }}>
 
-        {/* Jitsi Video */}
-        <div ref={jitsiContainerRef} className="absolute inset-0" />
-
-        {/* === TOP-LEFT: Back + LIVE badge + viewers + timer === */}
-        <div className="absolute top-3 left-3 z-30 flex items-center gap-2">
-          <Link to={`${rolePrefix}/events/${id}`} className="p-1.5 bg-black/50 backdrop-blur-sm rounded-lg text-white/80 hover:text-white hover:bg-black/70 transition">
-            <ArrowLeft className="w-4 h-4" />
-          </Link>
-          <div className="flex items-center gap-2 bg-black/50 backdrop-blur-sm rounded-lg px-2.5 py-1.5">
-            {isOrganizer ? (
-              <span className="flex items-center gap-1 text-xs font-bold text-red-400">
-                <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span> LIVE
-              </span>
-            ) : (
-              <span className="flex items-center gap-1 text-xs font-medium text-green-400">
-                <Wifi className="w-3 h-3" /> Live
-              </span>
-            )}
-            <span className="w-px h-3 bg-white/20"></span>
-            <span className="flex items-center gap-1 text-xs text-white/80">
-              <Users className="w-3 h-3" /> {viewerCount}
+  // Shared overlay elements (used in both normal and fullscreen)
+  const VideoOverlays = ({ insideFullscreen }) => (
+    <>
+      {/* TOP-LEFT: Back + LIVE + viewers + timer */}
+      <div className="absolute top-3 left-3 z-30 flex items-center gap-2">
+        <Link to={`${rolePrefix}/events/${id}`} className="p-1.5 bg-black/50 backdrop-blur-sm rounded-lg text-white/80 hover:text-white hover:bg-black/70 transition">
+          <ArrowLeft className="w-4 h-4" />
+        </Link>
+        <div className="flex items-center gap-2 bg-black/50 backdrop-blur-sm rounded-lg px-2.5 py-1.5">
+          {isOrganizer ? (
+            <span className="flex items-center gap-1 text-xs font-bold text-red-400">
+              <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span> LIVE
             </span>
-            <span className="w-px h-3 bg-white/20"></span>
-            <span className="text-xs text-white/60 font-mono">{formatElapsed(elapsed)}</span>
-          </div>
-        </div>
-
-        {/* === TOP-RIGHT: Chat toggle + Fullscreen === */}
-        <div className="absolute top-3 right-3 z-30 flex items-center gap-1.5">
-          <button onClick={() => setChatOpen(!chatOpen)}
-            className={`p-2 rounded-lg backdrop-blur-sm transition ${chatOpen ? "bg-blue-500/30 text-blue-300" : "bg-black/50 text-white/70 hover:text-white"}`}
-            title="Toggle chat">
-            <MessageSquare className="w-4 h-4" />
-          </button>
-          <button onClick={toggleFullscreen}
-            className="p-2 bg-black/50 backdrop-blur-sm rounded-lg text-white/70 hover:text-white transition"
-            title="Fullscreen (F)">
-            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-          </button>
-        </div>
-
-        {/* === RIGHT: Glass Chat Overlay === */}
-        {chatOpen && (
-          <div className="absolute top-12 right-3 bottom-12 w-72 z-20 flex flex-col bg-black/40 backdrop-blur-md rounded-xl border border-white/10 overflow-hidden">
-            <LiveChat eventId={id} user={user} isOrganizer={isOrganizer} isFullscreen={isFullscreen} />
-          </div>
-        )}
-
-        {/* === BOTTOM CENTER: Controls === */}
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
-          <button onClick={toggleAudio} className={`p-2 rounded-lg transition ${audioMuted ? "bg-red-500/20 text-red-400" : "text-white hover:bg-white/10"}`} title={audioMuted ? "Unmute" : "Mute"}>
-            {audioMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-          </button>
-          <button onClick={toggleVideo} className={`p-2 rounded-lg transition ${videoMuted ? "bg-red-500/20 text-red-400" : "text-white hover:bg-white/10"}`} title={videoMuted ? "Camera on" : "Camera off"}>
-            {videoMuted ? <VideoOff className="w-4 h-4" /> : <Video className="w-4 h-4" />}
-          </button>
-          <button onClick={toggleScreenShare} className="p-2 rounded-lg text-white hover:bg-white/10 transition" title="Screen share">
-            <MonitorUp className="w-4 h-4" />
-          </button>
-          <div className="w-px h-6 bg-white/20 mx-0.5"></div>
-          <button onClick={hangup} className="p-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition" title="Leave">
-            <PhoneOff className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* === BOTTOM LEFT: Watermark === */}
-        <div className="absolute bottom-3 left-3 z-10 flex items-center gap-1 text-white/15 text-[10px] font-semibold pointer-events-none">
-          <Calendar className="w-3 h-3" /> Evently
+          ) : (
+            <span className="flex items-center gap-1 text-xs font-medium text-green-400">
+              <Wifi className="w-3 h-3" /> Live
+            </span>
+          )}
+          <span className="w-px h-3 bg-white/20"></span>
+          <span className="flex items-center gap-1 text-xs text-white/80"><Users className="w-3 h-3" /> {viewerCount}</span>
+          <span className="w-px h-3 bg-white/20"></span>
+          <span className="text-xs text-white/60 font-mono">{formatElapsed(elapsed)}</span>
         </div>
       </div>
+
+      {/* TOP-RIGHT: Chat toggle + Fullscreen */}
+      <div className="absolute top-3 right-3 z-30 flex items-center gap-1.5">
+        <button onClick={() => setChatOpen(!chatOpen)}
+          className={`p-2 rounded-lg backdrop-blur-sm transition ${chatOpen ? "bg-blue-500/30 text-blue-300" : "bg-black/50 text-white/70 hover:text-white"}`}
+          title="Toggle chat">
+          <MessageSquare className="w-4 h-4" />
+        </button>
+        <button onClick={toggleFullscreen}
+          className="p-2 bg-black/50 backdrop-blur-sm rounded-lg text-white/70 hover:text-white transition"
+          title="Fullscreen (F)">
+          {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+        </button>
+      </div>
+
+      {/* Fullscreen only: Glass chat overlay inside video */}
+      {insideFullscreen && chatOpen && (
+        <div className="absolute top-12 right-3 bottom-12 w-72 z-20 flex flex-col bg-black/40 backdrop-blur-md rounded-xl border border-white/10 overflow-hidden">
+          <LiveChat eventId={id} user={user} isOrganizer={isOrganizer} isFullscreen={true} />
+        </div>
+      )}
+
+      {/* BOTTOM CENTER: Controls */}
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
+        <button onClick={toggleAudio} className={`p-2 rounded-lg transition ${audioMuted ? "bg-red-500/20 text-red-400" : "text-white hover:bg-white/10"}`} title={audioMuted ? "Unmute" : "Mute"}>
+          {audioMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+        </button>
+        <button onClick={toggleVideo} className={`p-2 rounded-lg transition ${videoMuted ? "bg-red-500/20 text-red-400" : "text-white hover:bg-white/10"}`} title={videoMuted ? "Camera on" : "Camera off"}>
+          {videoMuted ? <VideoOff className="w-4 h-4" /> : <Video className="w-4 h-4" />}
+        </button>
+        <button onClick={toggleScreenShare} className="p-2 rounded-lg text-white hover:bg-white/10 transition" title="Screen share">
+          <MonitorUp className="w-4 h-4" />
+        </button>
+        <div className="w-px h-6 bg-white/20 mx-0.5"></div>
+        <button onClick={hangup} className="p-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition" title="Leave">
+          <PhoneOff className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* BOTTOM LEFT: Watermark */}
+      <div className="absolute bottom-3 left-3 z-10 flex items-center gap-1 text-white/15 text-[10px] font-semibold pointer-events-none">
+        <Calendar className="w-3 h-3" /> Evently
+      </div>
+    </>
+  );
+
+  // Fullscreen: video fills screen, chat overlaps as glass
+  if (isFullscreen) {
+    return (
+      <div ref={fullscreenRef} className="fixed inset-0 z-[100] bg-black">
+        <div className="relative w-full h-full">
+          <div ref={jitsiContainerRef} className="absolute inset-0" />
+          <VideoOverlays insideFullscreen={true} />
+        </div>
+      </div>
+    );
+  }
+
+  // Normal: video left, chat right as separate card
+  return (
+    <div ref={fullscreenRef} className="flex gap-3 items-start">
+      {/* Video — takes remaining space */}
+      <div className="flex-1 min-w-0">
+        <div className="relative bg-black rounded-xl overflow-hidden" style={{ width: "100%", height: "0", paddingBottom: "56.25%" }}>
+          <div ref={jitsiContainerRef} className="absolute inset-0" />
+          <VideoOverlays insideFullscreen={false} />
+        </div>
+      </div>
+
+      {/* Chat — right side, separate card */}
+      {chatOpen && (
+        <div className="w-80 flex-shrink-0 bg-gray-900 rounded-xl border border-gray-200 overflow-hidden" style={{ height: "0", paddingBottom: "56.25%", position: "relative" }}>
+          <div className="absolute inset-0 flex flex-col">
+            <LiveChat eventId={id} user={user} isOrganizer={isOrganizer} isFullscreen={false} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
