@@ -27,15 +27,17 @@ export default function DashboardLayout({ allowedRoles }) {
     return <Navigate to={dashPath} replace />;
   }
 
-  // ===== LIVE PAGE: Just sidebar + outlet (LiveEvent handles its own positioning) =====
+  // ===== LIVE PAGE: Sidebar + content with left margin =====
   if (isLivePage) {
     return (
-      <>
+      <div className="min-h-screen bg-gray-50">
         <div className="hidden lg:block">
           <Sidebar collapsed={true} onToggle={() => {}} />
         </div>
-        <Outlet />
-      </>
+        <div className="lg:ml-[68px] p-4">
+          <Outlet />
+        </div>
+      </div>
     );
   }
 
