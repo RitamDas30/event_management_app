@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Outlet, Navigate } from "react-router-dom";
+import { Outlet, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Sidebar from "../components/Sidebar";
 import TopBar from "../components/TopBar";
@@ -8,6 +8,10 @@ export default function DashboardLayout({ allowedRoles }) {
   const { user, loading } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const location = useLocation();
+
+  // Detect if we're on a live event page
+  const isLivePage = location.pathname.endsWith("/live");
 
   if (loading) {
     return (
@@ -22,7 +26,6 @@ export default function DashboardLayout({ allowedRoles }) {
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    // Redirect to the user's own dashboard
     const dashPath =
       user.role === "admin"
         ? "/admin/dashboard"
@@ -42,49 +45,52 @@ export default function DashboardLayout({ allowedRoles }) {
         />
       )}
 
-      {/* Sidebar - hidden on mobile, shown on lg+ */}
+      {/* Sidebar — always visible (desktop) */}
       <div className="hidden lg:block">
         <Sidebar
-          collapsed={sidebarCollapsed}
-          onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+          collapsed={isLivePage ? true : sidebarCollapsed}
+          onToggle={() => isLivePage ? null : setSidebarCollapsed(!sidebarCollapsed)}
         />
       </div>
 
       {/* Mobile Sidebar */}
-      <div
-        className={`lg:hidden fixed inset-y-0 left-0 z-40 transition-transform duration-300 ${
-          mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
-      >
-        <Sidebar
-          collapsed={false}
-          onToggle={() => setMobileMenuOpen(false)}
-        />
-      </div>
+      {!isLivePage && (
+        <div
+          className={`lg:hidden fixed inset-y-0 left-0 z-40 transition-transform duration-300 ${
+            mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          <Sidebar collapsed={false} onToggle={() => setMobileMenuOpen(false)} />
+        </div>
+      )}
 
-      {/* TopBar */}
-      <div className="hidden lg:block">
-        <TopBar
-          sidebarCollapsed={sidebarCollapsed}
-          onMobileMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
-        />
-      </div>
-
-      {/* Mobile TopBar */}
-      <div className="lg:hidden">
-        <TopBar
-          sidebarCollapsed={true}
-          onMobileMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
-        />
-      </div>
+      {/* TopBar — hidden on live pages */}
+      {!isLivePage && (
+        <>
+          <div className="hidden lg:block">
+            <TopBar
+              sidebarCollapsed={sidebarCollapsed}
+              onMobileMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
+            />
+          </div>
+          <div className="lg:hidden">
+            <TopBar
+              sidebarCollapsed={true}
+              onMobileMenuToggle={() => setMobileMenuOpen(!mobileMenuOpen)}
+            />
+          </div>
+        </>
+      )}
 
       {/* Main Content */}
       <main
-        className={`pt-16 min-h-screen transition-all duration-300 ${
-          sidebarCollapsed ? "lg:ml-[68px]" : "lg:ml-64"
+        className={`min-h-screen transition-all duration-300 ${
+          isLivePage
+            ? `lg:ml-[68px]` // Live: collapsed sidebar width, no top padding, no max-width
+            : `pt-16 ${sidebarCollapsed ? "lg:ml-[68px]" : "lg:ml-64"}`
         }`}
       >
-        <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+        <div className={isLivePage ? "h-screen" : "p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto"}>
           <Outlet />
         </div>
       </main>
