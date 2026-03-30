@@ -1,55 +1,56 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
+import { useEffect, useState, useRef } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 
 export default function OAuthCallback({ provider }) {
   const navigate = useNavigate();
-  const location = useLocation();
   const [searchParams] = useSearchParams();
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
   const [error, setError] = useState("");
+  const processedRef = useRef(false); // Prevent StrictMode double-invoke
 
   useEffect(() => {
+    // Guard: only process once (React 19 StrictMode calls effects twice)
+    if (processedRef.current) return;
+    processedRef.current = true;
+
     const handleCallback = async () => {
       try {
-        let res;
+        // Clear any existing session first — OAuth should always start fresh
+        logout();
 
+        const code = searchParams.get("code");
+        if (!code) {
+          setError(`No authorization code received from ${provider}`);
+          return;
+        }
+
+        let res;
         if (provider === "google") {
-          const code = searchParams.get("code");
-          if (!code) {
-            setError("No authorization code received from Google");
-            return;
-          }
           const redirectUri = `${window.location.origin}/auth/google/callback`;
           res = await api.post("/auth/google", { code, redirectUri });
         } else if (provider === "github") {
-          const code = searchParams.get("code");
-          if (!code) {
-            setError("No code received from GitHub");
-            return;
-          }
           res = await api.post("/auth/github", { code });
         }
 
         if (res.data.isNewUser) {
-          // New user — redirect to role selection page with OAuth data
           navigate("/auth/select-role", {
             state: { oauthData: res.data.oauthData },
             replace: true,
           });
         } else {
-          // Existing user — login directly
           login(res.data.user, res.data.token);
           navigate("/dashboard", { replace: true });
         }
       } catch (err) {
-        setError(err.response?.data?.message || `${provider} authentication failed`);
+        const msg = err.response?.data?.message || `${provider} authentication failed`;
+        setError(msg);
       }
     };
 
     handleCallback();
-  }, [provider, location, searchParams]);
+  }, []); // Empty deps — run once on mount only
 
   if (error) {
     return (
