@@ -190,6 +190,50 @@ describe("Admin module", () => {
   });
 });
 
+describe("Payment module", () => {
+  it("payment model imports successfully", async () => {
+    const module = await import("../src/models/payment.model.js");
+    expect(module.default).toBeDefined();
+    expect(module.default.modelName).toBe("Payment");
+  });
+
+  it("payment controller exports all functions", async () => {
+    const module = await import("../src/controllers/payment.controller.js");
+    expect(typeof module.createOrder).toBe("function");
+    expect(typeof module.verifyPayment).toBe("function");
+    expect(typeof module.refundPayment).toBe("function");
+    expect(typeof module.getMyPayments).toBe("function");
+    expect(typeof module.getPaymentByOrderId).toBe("function");
+  });
+
+  it("payment routes module imports successfully", async () => {
+    const module = await import("../src/routes/payment.routes.js");
+    expect(module.default).toBeDefined();
+  });
+
+  it("payment routes require authentication", async () => {
+    const paymentRoutes = (await import("../src/routes/payment.routes.js")).default;
+    const app = express();
+    app.use(express.json());
+    app.use("/api/payments", paymentRoutes);
+
+    const res = await request(app).get("/api/payments");
+    expect(res.status).toBe(401);
+  });
+
+  it("payment model schema has correct fields", async () => {
+    const module = await import("../src/models/payment.model.js");
+    const paths = module.default.schema.paths;
+    expect(paths.orderId).toBeDefined();
+    expect(paths.paymentId).toBeDefined();
+    expect(paths.amount).toBeDefined();
+    expect(paths.status).toBeDefined();
+    expect(paths.method).toBeDefined();
+    expect(paths.refundId).toBeDefined();
+    expect(paths["metadata.cardLast4"]).toBeDefined();
+  });
+});
+
 describe("User model schema has new fields", () => {
   it("user schema includes avatar, bio, interests, socialLinks, notificationPreferences", async () => {
     const module = await import("../src/models/user.model.js");

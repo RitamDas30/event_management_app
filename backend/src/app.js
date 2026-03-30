@@ -14,6 +14,7 @@ import savedEventRoutes from "./routes/savedEvent.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import reviewRoutes from "./routes/review.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
+import paymentRoutes from "./routes/payment.routes.js";
 
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
@@ -80,6 +81,7 @@ app.use("/api/saved-events", savedEventRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/payments", paymentRoutes);
 app.use("/uploads", express.static("uploads"));
 
 // --- Health Check ---

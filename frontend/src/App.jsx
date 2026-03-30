@@ -29,6 +29,7 @@ import StudentNotifications from "./pages/student/StudentNotifications";
 
 // Organizer Pages
 import OrganizerDashboard from "./pages/organizer/OrganizerDashboard";
+import OrganizerRevenue from "./pages/organizer/OrganizerRevenue";
 import Dashboard from "./pages/Dashboard";
 import CreateEvent from "./pages/CreateEvent";
 import EditEvent from "./pages/EditEvent";
@@ -122,7 +123,7 @@ export default function App() {
             <Route path="/organizer/events/create" element={<CreateEvent />} />
             <Route path="/organizer/events/:id/edit" element={<EditEvent />} />
             <Route path="/organizer/analytics" element={<OrganizerAnalytics />} />
-            <Route path="/organizer/revenue" element={<ComingSoon title="Revenue" description="Payment tracking and revenue dashboard coming soon." />} />
+            <Route path="/organizer/revenue" element={<OrganizerRevenue />} />
             <Route path="/organizer/announcements" element={<ComingSoon title="Announcements" description="Send updates to your event attendees. Coming soon." />} />
             <Route path="/organizer/profile" element={<ComingSoon title="Profile" description="Organizer profile editor is coming soon." />} />
             <Route path="/organizer/settings" element={<ComingSoon title="Settings" description="Account settings are coming soon." />} />
