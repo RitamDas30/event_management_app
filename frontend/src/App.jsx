@@ -22,6 +22,10 @@ import NotFound from "./pages/NotFound";
 import StudentDashboard from "./pages/student/StudentDashboard";
 import StudentRegistrations from "./pages/StudentRegistrations";
 import StudentCalendar from "./pages/StudentCalendar";
+import StudentProfile from "./pages/student/StudentProfile";
+import StudentSettings from "./pages/student/StudentSettings";
+import SavedEvents from "./pages/student/SavedEvents";
+import StudentNotifications from "./pages/student/StudentNotifications";
 
 // Organizer Pages
 import OrganizerDashboard from "./pages/organizer/OrganizerDashboard";
@@ -100,10 +104,10 @@ export default function App() {
             <Route path="/student/registrations" element={<StudentRegistrations />} />
             <Route path="/student/tickets" element={<ComingSoon title="My Tickets" description="Digital tickets with QR codes are coming soon." />} />
             <Route path="/student/calendar" element={<StudentCalendar />} />
-            <Route path="/student/saved" element={<ComingSoon title="Saved Events" description="Bookmark your favorite events. Coming soon." />} />
-            <Route path="/student/notifications" element={<ComingSoon title="Notifications" description="In-app notification center is coming soon." />} />
-            <Route path="/student/profile" element={<ComingSoon title="Profile" description="User profile editor is coming soon." />} />
-            <Route path="/student/settings" element={<ComingSoon title="Settings" description="Account settings are coming soon." />} />
+            <Route path="/student/saved" element={<SavedEvents />} />
+            <Route path="/student/notifications" element={<StudentNotifications />} />
+            <Route path="/student/profile" element={<StudentProfile />} />
+            <Route path="/student/settings" element={<StudentSettings />} />
           </Route>
 
           {/* ========================================= */}

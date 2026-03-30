@@ -9,6 +9,9 @@ import { apiLimiter, authLimiter } from "./middleware/rateLimiter.middleware.js"
 import authRoutes from "./routes/auth.routes.js";
 import eventRoutes from "./routes/event.routes.js";
 import registrationRoutes from "./routes/registration.routes.js";
+import userRoutes from "./routes/user.routes.js";
+import savedEventRoutes from "./routes/savedEvent.routes.js";
+import notificationRoutes from "./routes/notification.routes.js";
 
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
@@ -70,6 +73,9 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/registrations", registrationRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/saved-events", savedEventRoutes);
+app.use("/api/notifications", notificationRoutes);
 app.use("/uploads", express.static("uploads"));
 
 // --- Health Check ---

@@ -24,12 +24,36 @@ const userSchema = new mongoose.Schema({
         type: String,
         enum: ["student", "organizer", "admin"],
         default: "student"
-    }, 
-    // Corrected type to be an Array of Strings
-    preferences: { 
-        type: [String], 
+    },
+    avatar: {
+        type: String,
+        default: "",
+    },
+    bio: {
+        type: String,
+        maxlength: 500,
+        default: "",
+    },
+    interests: {
+        type: [String],
         default: [],
-    }, 
+    },
+    socialLinks: {
+        website: { type: String, default: "" },
+        github: { type: String, default: "" },
+        linkedin: { type: String, default: "" },
+        twitter: { type: String, default: "" },
+    },
+    notificationPreferences: {
+        emailReminders: { type: Boolean, default: true },
+        emailUpdates: { type: Boolean, default: true },
+        emailPromotions: { type: Boolean, default: false },
+    },
+    // Legacy field kept for compatibility
+    preferences: {
+        type: [String],
+        default: [],
+    },
     passwordResetToken: String,
     passwordResetExpires: Date,
     

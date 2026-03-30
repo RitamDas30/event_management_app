@@ -4,7 +4,8 @@ import QRCode from "qrcode";
 import { getIO } from "../config/socket.js";
 import { sendEventEmail } from '../services/email.service.js';
 import mongoose from 'mongoose';
-import logger from "../config/logger.js"; 
+import logger from "../config/logger.js";
+import { createNotification } from "./notification.controller.js"; 
 
 const UserModel = mongoose.model('User'); 
 
@@ -156,6 +157,18 @@ export const registerForEvent = async (req, res) => {
             logger.warn("Socket.io not initialized — skipping emit");
         }
 
+        // 7. Create notification
+        createNotification({
+            user: studentId,
+            type: status === "registered" ? "registration" : "waitlist_promotion",
+            title: status === "registered" ? "Registration Confirmed" : "Added to Waitlist",
+            message: status === "registered"
+                ? `You have been registered for "${event.title}".`
+                : `You have been added to the waitlist for "${event.title}".`,
+            link: `/events/${eventId}`,
+            event: eventId,
+        });
+
         const message = status === "registered" ? "Registered successfully" : "Waitlisted";
         return res.status(201).json({ message, registration });
         
@@ -213,6 +226,16 @@ export const cancelRegistration = async (req, res) => {
                     logger.error({ err: emailErr }, "Failed to send promotion email");
                 }
                 
+                // Notify promoted student
+                createNotification({
+                    user: promotedRegistration.student._id,
+                    type: "waitlist_promotion",
+                    title: "Promoted from Waitlist!",
+                    message: `A spot opened up! You are now registered for "${promotedRegistration.event.title}".`,
+                    link: `/events/${eventId}`,
+                    event: eventId,
+                });
+
                 // Emit promotion via Socket
                 try {
                     const io = getIO();

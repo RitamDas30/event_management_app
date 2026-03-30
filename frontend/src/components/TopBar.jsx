@@ -1,12 +1,29 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import api from "../api/axios";
 import { Bell, Search, LogOut, Menu } from "lucide-react";
 
 export default function TopBar({ sidebarCollapsed, onMobileMenuToggle }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const fetchUnread = async () => {
+      try {
+        const res = await api.get("/notifications/unread-count");
+        setUnreadCount(res.data.unreadCount);
+      } catch (err) {
+        // Silently fail - notification count is non-critical
+      }
+    };
+    fetchUnread();
+    // Poll every 30 seconds
+    const interval = setInterval(fetchUnread, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -52,14 +69,18 @@ export default function TopBar({ sidebarCollapsed, onMobileMenuToggle }) {
 
       {/* Right: Notifications + Profile + Logout */}
       <div className="flex items-center gap-2">
-        <button
+        <Link
+          to={user?.role === "admin" ? "/admin/dashboard" : user?.role === "organizer" ? "/organizer/dashboard" : "/student/notifications"}
           className="relative p-2 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 transition-colors"
           title="Notifications"
         >
           <Bell className="w-5 h-5" />
-          {/* Notification dot - will be dynamic later */}
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
-        </button>
+          {unreadCount > 0 && (
+            <span className="absolute top-1 right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
+        </Link>
 
         <div className="hidden sm:flex items-center gap-2 pl-2 ml-2 border-l border-gray-200">
           <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-semibold">

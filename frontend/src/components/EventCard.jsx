@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 import toast from "react-hot-toast"; 
-import { CheckCircle, Clock, Share2, Calendar, MapPin } from 'lucide-react'; 
+import { CheckCircle, Clock, Share2, Calendar, MapPin, Bookmark, BookmarkCheck } from 'lucide-react'; 
 
 // ✅ Helper function to generate a professional placeholder image
 const generatePlaceholderUrl = (category, width = 400, height = 200) => {
@@ -51,7 +51,8 @@ export default function EventCard({ event, refresh }) {
   const [loading, setLoading] = useState(false); 
   const [registrationStatus, setRegistrationStatus] = useState(null); 
   const [localWaitlistCount, setLocalWaitlistCount] = useState(0); 
-  const [copied, setCopied] = useState(false); 
+  const [copied, setCopied] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
   
   const isWaitlistActive = event.seatsAvailable <= 0;
 
@@ -88,8 +89,19 @@ export default function EventCard({ event, refresh }) {
         }
       }
     };
-    
+
+    const checkSavedStatus = async () => {
+      if (!user || !event._id) return;
+      try {
+        const res = await api.get(`/saved-events/${event._id}/check`);
+        setIsSaved(res.data.saved);
+      } catch (error) {
+        // Silently ignore - saved feature is non-critical
+      }
+    };
+
     checkUserRegistration();
+    checkSavedStatus();
   }, [user, event._id, refresh]); 
 
   const handleRegister = async () => {
@@ -226,13 +238,38 @@ export default function EventCard({ event, refresh }) {
                     e.target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200'%3E%3Crect fill='%234B5563' width='400' height='200'/%3E%3Ctext fill='%23FFF' font-size='24' font-family='Arial' x='50%25' y='50%25' text-anchor='middle' dy='.3em'%3E${event.category || 'EVENT'}%3C/text%3E%3C/svg%3E`;
                 }}
             />
-            <button 
-                onClick={handleShare}
-                className="absolute top-2 right-2 p-2 bg-black bg-opacity-60 rounded-full text-white hover:bg-opacity-80 transition duration-150"
-                title="Share Event"
-            >
-                {copied ? <CheckCircle size={20} className="text-green-400" /> : <Share2 size={20} />}
-            </button>
+            <div className="absolute top-2 right-2 flex gap-1.5">
+                {user && (
+                    <button
+                        onClick={async () => {
+                            try {
+                                if (isSaved) {
+                                    await api.delete(`/saved-events/${event._id}`);
+                                    setIsSaved(false);
+                                    toast.success("Removed from saved");
+                                } else {
+                                    await api.post(`/saved-events/${event._id}`);
+                                    setIsSaved(true);
+                                    toast.success("Event saved!");
+                                }
+                            } catch (err) {
+                                toast.error("Failed to update saved status");
+                            }
+                        }}
+                        className="p-2 bg-black bg-opacity-60 rounded-full text-white hover:bg-opacity-80 transition duration-150"
+                        title={isSaved ? "Remove bookmark" : "Save event"}
+                    >
+                        {isSaved ? <BookmarkCheck size={20} className="text-blue-400" /> : <Bookmark size={20} />}
+                    </button>
+                )}
+                <button
+                    onClick={handleShare}
+                    className="p-2 bg-black bg-opacity-60 rounded-full text-white hover:bg-opacity-80 transition duration-150"
+                    title="Share Event"
+                >
+                    {copied ? <CheckCircle size={20} className="text-green-400" /> : <Share2 size={20} />}
+                </button>
+            </div>
         </div>
         
         <h3 className="text-lg font-semibold">{event.title}</h3>

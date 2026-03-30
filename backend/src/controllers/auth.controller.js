@@ -39,7 +39,16 @@ export const register = async (req, res) => {
     res.status(201).json({
       message: "User registered successfully",
       token,
-      user: { id: user._id, name: user.name, email: user.email, role: user.role },
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        avatar: user.avatar,
+        bio: user.bio,
+        interests: user.interests,
+        socialLinks: user.socialLinks,
+      },
     });
   } catch (error) {
     logger.error({ err: error, email: req.body.email }, "Registration failed");
@@ -67,7 +76,16 @@ export const login = async (req, res) => {
     res.json({
       message: "Login successful",
       token,
-      user: { id: user._id, name: user.name, email: user.email, role: user.role },
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        avatar: user.avatar,
+        bio: user.bio,
+        interests: user.interests,
+        socialLinks: user.socialLinks,
+      },
     });
   } catch (error) {
     logger.error({ err: error, email: req.body.email }, "Login failed");
