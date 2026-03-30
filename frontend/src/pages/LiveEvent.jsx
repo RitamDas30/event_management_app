@@ -179,24 +179,33 @@ export default function LiveEvent() {
   return (
     <div ref={fullscreenRef} className={isFullscreen ? "fixed inset-0 z-[100] bg-gray-950 flex flex-col" : ""}>
       {/* Top Bar */}
-      <div className={`flex items-center justify-between px-4 py-2 ${isFullscreen ? "bg-gray-900" : "mb-3"}`}>
-        <div className="flex items-center gap-3">
-          <Link to={`${rolePrefix}/events/${id}`} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition">
-            <ArrowLeft className="w-4 h-4" />
+      <div className={`flex items-center justify-between px-4 py-3 ${isFullscreen ? "bg-gray-900" : "mb-3"}`}>
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <Link to={`${rolePrefix}/events/${id}`} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-900 hover:bg-gray-100 transition flex-shrink-0">
+            <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div>
-            <h1 className={`font-semibold text-sm ${isFullscreen ? "text-white" : "text-gray-900"}`}>{event.title}</h1>
-            <div className="flex items-center gap-2 text-[11px] text-gray-500">
-              {isOrganizer ? <span className="flex items-center gap-1 text-red-500 font-semibold"><span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span> LIVE</span>
-                : <span className="flex items-center gap-1 text-green-500"><Wifi className="w-3 h-3" /> Connected</span>}
-              <span>·</span>
-              <span><Users className="w-3 h-3 inline" /> {viewerCount}</span>
-              <span>·</span>
-              <span className="font-mono">{formatElapsed(elapsed)}</span>
+          <div className="min-w-0 flex-1">
+            <h1 className={`font-semibold text-sm truncate ${isFullscreen ? "text-white" : "text-gray-900"}`}>{event.title}</h1>
+            <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5 flex-wrap">
+              {isOrganizer ? (
+                <span className="flex items-center gap-1 text-red-500 font-semibold flex-shrink-0">
+                  <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span> LIVE
+                </span>
+              ) : (
+                <span className="flex items-center gap-1 text-green-500 flex-shrink-0">
+                  <Wifi className="w-3 h-3" /> Connected
+                </span>
+              )}
+              <span className="text-gray-300">·</span>
+              <span className="flex items-center gap-1 flex-shrink-0">
+                <Users className="w-3 h-3" /> {viewerCount}
+              </span>
+              <span className="text-gray-300">·</span>
+              <span className="font-mono flex-shrink-0">{formatElapsed(elapsed)}</span>
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-shrink-0 ml-2">
           <button onClick={() => setChatOpen(!chatOpen)} className={`p-2 rounded-lg transition ${chatOpen ? "bg-blue-100 text-blue-600" : "text-gray-400 hover:bg-gray-100"}`}><MessageSquare className="w-4 h-4" /></button>
           <button onClick={toggleFullscreen} className="p-2 rounded-lg text-gray-400 hover:bg-gray-100 transition">{isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}</button>
         </div>
@@ -210,9 +219,9 @@ export default function LiveEvent() {
           {/* Jitsi Video */}
           <div ref={jitsiContainerRef} className="w-full h-full" />
 
-          {/* Glass Chat Overlay — left side, floating inside video */}
+          {/* Glass Chat Overlay — right side, floating inside video */}
           {chatOpen && (
-            <div className="absolute top-0 left-0 bottom-0 w-72 z-20 flex flex-col bg-black/40 backdrop-blur-md border-r border-white/10">
+            <div className="absolute top-0 right-0 bottom-0 w-72 z-20 flex flex-col bg-black/40 backdrop-blur-md border-l border-white/10">
               <LiveChat eventId={id} user={user} isOrganizer={isOrganizer} isFullscreen={isFullscreen} />
             </div>
           )}
