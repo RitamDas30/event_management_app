@@ -22,6 +22,50 @@ const buildUserResponse = (user) => ({
   authProvider: user.authProvider,
 });
 
+// Helper: login existing user or signal new user needs role selection
+const handleOAuthUser = async ({ provider, providerId, email, name, avatar, res }) => {
+  const providerIdField = provider === "google" ? "googleId" : "githubId";
+
+  // Check if user exists
+  let user = await User.findOne({
+    $or: [{ [providerIdField]: providerId }, { email }],
+  });
+
+  if (user) {
+    // Existing user — link provider if needed, then login
+    if (!user[providerIdField]) {
+      user[providerIdField] = providerId;
+      if (!user.avatar && avatar) user.avatar = avatar;
+      await user.save({ validateBeforeSave: false });
+    }
+
+    const token = generateToken(user);
+    logger.info({ userId: user._id, provider }, "OAuth login (existing user)");
+
+    return res.json({
+      message: "Login successful",
+      token,
+      user: buildUserResponse(user),
+      isNewUser: false,
+    });
+  }
+
+  // New user — return OAuth data for role selection
+  logger.info({ email, provider }, "New OAuth user — needs role selection");
+
+  return res.json({
+    message: "New user — please select a role",
+    isNewUser: true,
+    oauthData: {
+      provider,
+      providerId,
+      email,
+      name,
+      avatar,
+    },
+  });
+};
+
 // =========================================================
 // 1. GOOGLE OAuth
 // =========================================================
@@ -33,14 +77,22 @@ export const googleAuth = async (req, res) => {
       return res.status(400).json({ message: "Google authorization code is required" });
     }
 
+    const googleClientId = process.env.GOOGLE_CLIENT_ID;
+    const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+    if (!googleClientId || !googleClientSecret) {
+      logger.error("Missing GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET in env");
+      return res.status(500).json({ message: "Server OAuth configuration error" });
+    }
+
     // Exchange authorization code for tokens
     const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
         code,
-        client_id: process.env.GOOGLE_CLIENT_ID,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        client_id: googleClientId,
+        client_secret: googleClientSecret,
         redirect_uri: redirectUri,
         grant_type: "authorization_code",
       }),
@@ -49,8 +101,8 @@ export const googleAuth = async (req, res) => {
     const tokenData = await tokenRes.json();
 
     if (tokenData.error) {
-      logger.error({ error: tokenData.error }, "Google token exchange failed");
-      return res.status(401).json({ message: "Google authentication failed: " + tokenData.error_description });
+      logger.error({ error: tokenData.error, desc: tokenData.error_description, redirectUri }, "Google token exchange failed");
+      return res.status(401).json({ message: "Google authentication failed: " + (tokenData.error_description || tokenData.error) });
     }
 
     // Verify the id_token
@@ -69,39 +121,13 @@ export const googleAuth = async (req, res) => {
       return res.status(400).json({ message: "Could not get email from Google" });
     }
 
-    // Check if user exists by googleId or email
-    let user = await User.findOne({
-      $or: [{ googleId }, { email }],
-    });
-
-    if (user) {
-      // Link Google account if not already linked
-      if (!user.googleId) {
-        user.googleId = googleId;
-        user.authProvider = user.authProvider === "local" ? "local" : "google";
-        if (!user.avatar && picture) user.avatar = picture;
-        await user.save({ validateBeforeSave: false });
-      }
-    } else {
-      // Create new user
-      user = await User.create({
-        name,
-        email,
-        googleId,
-        authProvider: "google",
-        avatar: picture || "",
-        role: "student", // Default role for OAuth users
-      });
-    }
-
-    const token = generateToken(user);
-
-    logger.info({ userId: user._id, provider: "google" }, "OAuth login");
-
-    res.json({
-      message: "Login successful",
-      token,
-      user: buildUserResponse(user),
+    await handleOAuthUser({
+      provider: "google",
+      providerId: googleId,
+      email,
+      name,
+      avatar: picture || "",
+      res,
     });
   } catch (error) {
     logger.error({ err: error }, "Google OAuth failed");
@@ -137,7 +163,7 @@ export const githubAuth = async (req, res) => {
     const tokenData = await tokenRes.json();
 
     if (tokenData.error) {
-      return res.status(401).json({ message: "Invalid GitHub code: " + tokenData.error_description });
+      return res.status(401).json({ message: "GitHub auth failed: " + tokenData.error_description });
     }
 
     const accessToken = tokenData.access_token;
@@ -159,49 +185,79 @@ export const githubAuth = async (req, res) => {
     const name = githubUser.name || githubUser.login;
     const avatar = githubUser.avatar_url || "";
 
-    // Get primary email
     const primaryEmail = Array.isArray(emails)
       ? emails.find((e) => e.primary)?.email || emails[0]?.email
       : githubUser.email;
 
     if (!primaryEmail) {
-      return res.status(400).json({ message: "Could not get email from GitHub. Make sure your email is public or grant email permission." });
+      return res.status(400).json({ message: "Could not get email from GitHub" });
     }
 
-    // Check if user exists
-    let user = await User.findOne({
-      $or: [{ githubId }, { email: primaryEmail }],
-    });
-
-    if (user) {
-      if (!user.githubId) {
-        user.githubId = githubId;
-        user.authProvider = user.authProvider === "local" ? "local" : "github";
-        if (!user.avatar && avatar) user.avatar = avatar;
-        await user.save({ validateBeforeSave: false });
-      }
-    } else {
-      user = await User.create({
-        name,
-        email: primaryEmail,
-        githubId,
-        authProvider: "github",
-        avatar,
-        role: "student",
-      });
-    }
-
-    const token = generateToken(user);
-
-    logger.info({ userId: user._id, provider: "github" }, "OAuth login");
-
-    res.json({
-      message: "Login successful",
-      token,
-      user: buildUserResponse(user),
+    await handleOAuthUser({
+      provider: "github",
+      providerId: githubId,
+      email: primaryEmail,
+      name,
+      avatar,
+      res,
     });
   } catch (error) {
     logger.error({ err: error }, "GitHub OAuth failed");
     res.status(500).json({ message: "GitHub authentication failed" });
+  }
+};
+
+// =========================================================
+// 3. COMPLETE OAuth Registration (with role selection)
+// =========================================================
+export const completeOAuthRegistration = async (req, res) => {
+  try {
+    const { provider, providerId, email, name, avatar, role } = req.body;
+
+    if (!provider || !providerId || !email || !name || !role) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    if (!["student", "organizer"].includes(role)) {
+      return res.status(400).json({ message: "Invalid role. Choose student or organizer." });
+    }
+
+    // Double-check user doesn't already exist
+    const providerIdField = provider === "google" ? "googleId" : "githubId";
+    const existing = await User.findOne({
+      $or: [{ [providerIdField]: providerId }, { email }],
+    });
+
+    if (existing) {
+      // User was created between steps — just login
+      const token = generateToken(existing);
+      return res.json({
+        message: "Login successful",
+        token,
+        user: buildUserResponse(existing),
+      });
+    }
+
+    const user = await User.create({
+      name,
+      email,
+      [providerIdField]: providerId,
+      authProvider: provider,
+      avatar: avatar || "",
+      role,
+    });
+
+    const token = generateToken(user);
+
+    logger.info({ userId: user._id, provider, role }, "OAuth registration completed");
+
+    res.status(201).json({
+      message: "Account created successfully",
+      token,
+      user: buildUserResponse(user),
+    });
+  } catch (error) {
+    logger.error({ err: error }, "Complete OAuth registration failed");
+    res.status(500).json({ message: "Registration failed: " + error.message });
   }
 };

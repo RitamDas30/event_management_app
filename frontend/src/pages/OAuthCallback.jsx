@@ -13,30 +13,35 @@ export default function OAuthCallback({ provider }) {
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        if (provider === "google") {
-          // Google returns authorization code in query params
-          const code = searchParams.get("code");
+        let res;
 
+        if (provider === "google") {
+          const code = searchParams.get("code");
           if (!code) {
             setError("No authorization code received from Google");
             return;
           }
-
           const redirectUri = `${window.location.origin}/auth/google/callback`;
-          const res = await api.post("/auth/google", { code, redirectUri });
-          login(res.data.user, res.data.token);
-          navigate("/dashboard");
+          res = await api.post("/auth/google", { code, redirectUri });
         } else if (provider === "github") {
           const code = searchParams.get("code");
-
           if (!code) {
             setError("No code received from GitHub");
             return;
           }
+          res = await api.post("/auth/github", { code });
+        }
 
-          const res = await api.post("/auth/github", { code });
+        if (res.data.isNewUser) {
+          // New user — redirect to role selection page with OAuth data
+          navigate("/auth/select-role", {
+            state: { oauthData: res.data.oauthData },
+            replace: true,
+          });
+        } else {
+          // Existing user — login directly
           login(res.data.user, res.data.token);
-          navigate("/dashboard");
+          navigate("/dashboard", { replace: true });
         }
       } catch (err) {
         setError(err.response?.data?.message || `${provider} authentication failed`);
