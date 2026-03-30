@@ -93,9 +93,9 @@ export default function LiveChat({ eventId, user, isOrganizer, isFullscreen }) {
   // Link detection regex
   const urlRegex = /(https?:\/\/[^\s<]+)/g;
 
-  const renderMessageText = (text) => {
-    if (!urlRegex.test(text)) return text;
-    // Reset regex lastIndex
+  // Only render clickable links for host messages
+  const renderMessageText = (text, msgIsHost) => {
+    if (!msgIsHost || !urlRegex.test(text)) return text;
     urlRegex.lastIndex = 0;
     const parts = text.split(urlRegex);
     return parts.map((part, i) => {
@@ -365,7 +365,7 @@ export default function LiveChat({ eventId, user, isOrganizer, isFullscreen }) {
                     </div>
                   ) : (
                     <p className={`text-sm break-words leading-relaxed ${msg.isSystem ? "text-gray-500 italic" : "text-gray-200"}`}>
-                      {renderMessageText(msg.message)}
+                      {renderMessageText(msg.message, msg.isHost)}
                     </p>
                   )}
 
@@ -410,21 +410,19 @@ export default function LiveChat({ eventId, user, isOrganizer, isFullscreen }) {
         </div>
       )}
 
-      {/* Plus Menu (pops up above input) */}
-      {showPlusMenu && (
+      {/* Plus Menu (organizer only — pops up above input) */}
+      {showPlusMenu && isOrganizer && (
         <div className="px-2 pb-1 pt-2 border-t border-gray-800">
           <div className="bg-gray-800 rounded-xl p-2 space-y-1">
             <button onClick={() => { fileInputRef.current?.click(); setShowPlusMenu(false); }}
               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-200 hover:bg-gray-700 transition">
               <Paperclip className="w-4 h-4 text-blue-400" /> Send File
             </button>
-            {isOrganizer && (
-              <button onClick={() => { setShowPollForm(!showPollForm); setShowPlusMenu(false); }}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-200 hover:bg-gray-700 transition">
-                <BarChart3 className="w-4 h-4 text-purple-400" /> Create Poll
-              </button>
-            )}
-            {isOrganizer && pinnedMessage && (
+            <button onClick={() => { setShowPollForm(!showPollForm); setShowPlusMenu(false); }}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-200 hover:bg-gray-700 transition">
+              <BarChart3 className="w-4 h-4 text-purple-400" /> Create Poll
+            </button>
+            {pinnedMessage && (
               <button onClick={() => { unpinMessage(); setShowPlusMenu(false); }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-200 hover:bg-gray-700 transition">
                 <PinOff className="w-4 h-4 text-amber-400" /> Unpin Message
@@ -434,8 +432,10 @@ export default function LiveChat({ eventId, user, isOrganizer, isFullscreen }) {
         </div>
       )}
 
-      {/* Hidden file input */}
-      <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept="image/*,video/*,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.rar,.txt" />
+      {/* Hidden file input (organizer only) */}
+      {isOrganizer && (
+        <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept="image/*,video/*,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.rar,.txt" />
+      )}
 
       {/* Upload indicator */}
       {uploading && (
@@ -448,10 +448,12 @@ export default function LiveChat({ eventId, user, isOrganizer, isFullscreen }) {
       {/* Input */}
       <form onSubmit={sendMessage} className="p-2 border-t border-gray-800">
         <div className="flex items-center gap-1.5">
-          <button type="button" onClick={() => setShowPlusMenu(!showPlusMenu)}
-            className={`p-2 rounded-lg transition flex-shrink-0 ${showPlusMenu ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white hover:bg-gray-800"}`}>
-            <Plus className={`w-5 h-5 transition-transform duration-200 ${showPlusMenu ? "rotate-45" : ""}`} />
-          </button>
+          {isOrganizer && (
+            <button type="button" onClick={() => setShowPlusMenu(!showPlusMenu)}
+              className={`p-2 rounded-lg transition flex-shrink-0 ${showPlusMenu ? "bg-blue-600 text-white" : "text-gray-400 hover:text-white hover:bg-gray-800"}`}>
+              <Plus className={`w-5 h-5 transition-transform duration-200 ${showPlusMenu ? "rotate-45" : ""}`} />
+            </button>
+          )}
           <input type="text" value={newMessage} onChange={(e) => { setNewMessage(e.target.value); if (showPlusMenu) setShowPlusMenu(false); }}
             placeholder={isOrganizer ? "Message or /poll Question? A, B, C" : "Type a message..."}
             className="flex-1 bg-gray-800 text-white text-sm px-3 py-2.5 rounded-lg placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
