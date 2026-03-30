@@ -248,7 +248,7 @@ export default function LiveChat({ eventId, user, isOrganizer, isFullscreen }) {
   const activeStackedKeys = Object.entries(stackedReactions).filter(([, v]) => v.count > 0);
 
   return (
-    <div className={`bg-gray-900 border-l border-gray-800 flex flex-col flex-shrink-0 ${isFullscreen ? "w-80" : "w-72"}`}>
+    <div className={`flex flex-col h-full ${isFullscreen ? "bg-gray-900 w-80" : "bg-gray-900 w-full"}`}>
       {/* Header */}
       <div className="px-3 py-2 border-b border-gray-800 flex items-center justify-between">
         <h3 className="text-white font-semibold text-sm">Live Chat</h3>
