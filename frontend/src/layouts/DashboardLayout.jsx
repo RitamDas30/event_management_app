@@ -27,18 +27,14 @@ export default function DashboardLayout({ allowedRoles }) {
     return <Navigate to={dashPath} replace />;
   }
 
-  // ===== LIVE PAGE: Fixed fullscreen with only collapsed sidebar =====
+  // ===== LIVE PAGE: Just sidebar + outlet (LiveEvent handles its own positioning) =====
   if (isLivePage) {
     return (
       <>
-        {/* Collapsed sidebar — fixed left */}
         <div className="hidden lg:block">
           <Sidebar collapsed={true} onToggle={() => {}} />
         </div>
-        {/* Content takes remaining space */}
-        <div className="fixed inset-0 lg:left-[68px] bg-gray-950">
-          <Outlet />
-        </div>
+        <Outlet />
       </>
     );
   }
