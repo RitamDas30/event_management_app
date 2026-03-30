@@ -25,3 +25,9 @@ dist-ssr
 .env 
 package-lock.json
 uploads
+/Upcoming_Features_Planning/
+/project-docs/
+dev-log.md
+/test-results/
+/playwright-report/
+/playwright/.cache/

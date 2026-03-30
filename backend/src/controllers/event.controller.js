@@ -1,14 +1,14 @@
 import Event from "../models/event.model.js";
 import Registration from "../models/registration.model.js";
 import { sendEventEmail } from '../services/email.service.js';
+import logger from "../config/logger.js";
 
-// ➕ Create a new event (organizer only)
+// Create a new event (organizer only)
 export const createEvent = async (req, res) => {
   try {
     const { title, description, category, fullAddress, venueName, startTime, endTime, capacity, price } = req.body;
     
     const imagePath = req.file ? req.file.path : null; 
-    
     const isPaid = price > 0;
     const seatsAvailable = capacity; 
 
@@ -30,7 +30,7 @@ export const createEvent = async (req, res) => {
 
     res.status(201).json({ message: "Event created successfully", event });
   } catch (error) {
-    console.error("Create Event Error:", error);
+    logger.error({ err: error }, "Create event error");
     res.status(500).json({ message: "Failed to create event" }); 
   }
 };
@@ -50,7 +50,7 @@ export const getEvents = async (req, res) => {
     const events = await Event.find(filter).populate("organizer", "name email role");
     res.json(events);
   } catch (error) {
-    console.error("Get Events Error:", error);
+    logger.error({ err: error }, "Get events error");
     res.status(500).json({ message: error.message });
   }
 };
@@ -64,7 +64,7 @@ export const getEventById = async (req, res) => {
     if (!event) return res.status(404).json({ message: "Event not found" });
     res.json(event);
   } catch (error) {
-    console.error("Get Event By ID Error:", error);
+    logger.error({ err: error }, "Get event by ID error");
     res.status(500).json({ message: error.message });
   }
 };
@@ -123,7 +123,7 @@ export const updateEvent = async (req, res) => {
 
     res.json({ message: "Event updated successfully", event });
   } catch (error) {
-    console.error("Update Event Error:", error); 
+    logger.error({ err: error }, "Update event error"); 
     
     let errorMessage = "Event update failed.";
     
@@ -165,7 +165,7 @@ export const deleteEvent = async (req, res) => {
     }).populate('student', 'email');
     
     if (registeredAttendees.length > 0) {
-        console.log(`[Event Delete] Notifying ${registeredAttendees.length} attendees about cancellation.`);
+        logger.info({ count: registeredAttendees.length, eventId: req.params.id }, "Notifying attendees about cancellation");
         
         // Send email concurrently to all registered students
         const emailPromises = registeredAttendees.map(async (reg) => {
@@ -178,7 +178,7 @@ export const deleteEvent = async (req, res) => {
                         venue: event.venueName,
                     }, 'cancellation');
                 } catch (emailError) {
-                    console.error(`Failed to send cancellation email to ${reg.student.email}:`, emailError);
+                    logger.error({ err: emailError, email: reg.student.email }, "Failed to send cancellation email");
                 }
             }
         });
@@ -194,7 +194,7 @@ export const deleteEvent = async (req, res) => {
         message: `Event '${event.title}' and all ${registeredAttendees.length} registrations were successfully cancelled and deleted.` 
     });
   } catch (error) {
-    console.error("Delete Event Error:", error);
+    logger.error({ err: error }, "Delete event error");
     res.status(500).json({ message: "Event deletion failed: " + error.message });
   }
 };

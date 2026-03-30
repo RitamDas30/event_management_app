@@ -1,17 +1,12 @@
-import express from "express";
-import cors from "cors";
-import authRoutes from "./routes/auth.routes.js";
-import eventRoutes from "./routes/event.routes.js";
-import registrationRoutes from "./routes/registration.routes.js";
+import logger from "../config/logger.js";
 
-const app = express();
+const errorHandler = (err, req, res, next) => {
+  logger.error({ err, path: req.path, method: req.method }, "Unhandled error");
 
-app.use(cors());
-app.use(express.json());
+  const statusCode = res.statusCode !== 200 ? res.statusCode : 500;
+  res.status(statusCode).json({
+    error: err.message || "Internal Server Error",
+  });
+};
 
-// Route mounting
-app.use("/api/auth", authRoutes);
-app.use("/api/events", eventRoutes);
-app.use("/api/registrations", registrationRoutes);
-
-export default app;
+export default errorHandler;

@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import logger from "../config/logger.js";
 
 // ✅ Lazy initialization - transporter created only when needed (after dotenv loads)
 let transporter = null;
@@ -22,7 +23,7 @@ const getTransporter = () => {
             }
         });
         
-        console.log(`[Email Service] Transporter initialized (Host: ${process.env.EMAIL_HOST}, Port: ${port})`);
+        logger.info({ host: process.env.EMAIL_HOST, port }, "Email transporter initialized");
     }
     return transporter;
 };
@@ -40,7 +41,6 @@ export const sendEventEmail = async (toEmail, data, type = 'confirmation') => {
     const isPromotion = type === 'promotion';
     const isCancellation = type === 'cancellation';
 
-    // --- 1. Construct Subject and Title ---
     let emailSubject;
     if (isReset) {
         emailSubject = `🔑 Password Reset Request for Smart Campus`;
@@ -60,9 +60,11 @@ export const sendEventEmail = async (toEmail, data, type = 'confirmation') => {
                       : isPromotion ? 'Waitlist Promotion'
                       : 'Registration Confirmed';
 
-    // --- 2. Validation ---
+
+
+                      // --- 2. Validation ---
     if (!isReset && !isCancellation && !data.qrCodeBase64) {
-        console.warn(`[Email Service] Skipping email for ${toEmail}: Missing QR code.`);
+        logger.warn({ toEmail }, "Skipping email: missing QR code");
         return;
     }
 
@@ -142,7 +144,7 @@ export const sendEventEmail = async (toEmail, data, type = 'confirmation') => {
             html: htmlBody,
         };
 
-        // --- 4. Add QR Code as CID Attachment (for non-reset, non-cancellation emails) ---
+        // --- Add QR Code as CID Attachment (for non-reset, non-cancellation emails) ---
         if (!isReset && !isCancellation && data.qrCodeBase64) {
             const base64Data = data.qrCodeBase64.replace(/^data:image\/\w+;base64,/, '');
             const imageBuffer = Buffer.from(base64Data, 'base64');
@@ -158,10 +160,10 @@ export const sendEventEmail = async (toEmail, data, type = 'confirmation') => {
         const emailTransporter = getTransporter();
         await emailTransporter.sendMail(mailOptions);
         
-        console.log(`[Email Service] ✅ ${headerTitle} sent successfully to ${toEmail}`);
+        logger.info({ toEmail, type: headerTitle }, "Email sent successfully");
 
     } catch (error) {
-        console.error(`[Email Service] ❌ Failed to send ${type} email to ${toEmail}:`, error.message);
+        logger.error({ err: error, toEmail, type }, "Failed to send email");
         throw error;
     }
 };

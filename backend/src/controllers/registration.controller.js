@@ -1,9 +1,10 @@
 import Event from "../models/event.model.js";
 import Registration from "../models/registration.model.js";
 import QRCode from "qrcode";
-import { getIO } from "../config/socket.js"; 
+import { getIO } from "../config/socket.js";
 import { sendEventEmail } from '../services/email.service.js';
-import mongoose from 'mongoose'; 
+import mongoose from 'mongoose';
+import logger from "../config/logger.js"; 
 
 const UserModel = mongoose.model('User'); 
 
@@ -42,7 +43,7 @@ export const registerForEvent = async (req, res) => {
                     const remainingTimeMs = banDurationMs - timeSinceCancellation;
                     const minutes = Math.ceil(remainingTimeMs / (60 * 1000));
                     
-                    console.log(`[BAN ACTIVE] User ${studentId} blocked from event ${eventId}. ${minutes} min remaining.`);
+                    logger.info({ studentId, eventId, remainingMinutes: minutes }, "Ban active");
                     
                     return res.status(403).json({ 
                         message: `You must wait ${minutes} minute(s) before re-registering for this event due to a recent cancellation.`,
@@ -53,7 +54,7 @@ export const registerForEvent = async (req, res) => {
             }
             
             // Ban expired or no cancelledAt - allow re-registration
-            console.log(`[BAN EXPIRED] User ${studentId} can now re-register for event ${eventId}.`);
+            logger.info({ studentId, eventId }, "Ban expired, allowing re-registration");
             await Registration.deleteOne({ _id: alreadyRegistered._id });
         } 
         else if (alreadyRegistered) {
@@ -127,11 +128,11 @@ export const registerForEvent = async (req, res) => {
                     status: registration.status, 
                     qrCodeBase64: registration.qrCode,
                 }, 'confirmation').catch(err => {
-                    console.error("Failed to send confirmation email (non-fatal):", err.message);
+                    logger.error({ err }, "Failed to send confirmation email (non-fatal)");
                 });
             }
         }).catch(err => {
-            console.error("Failed to fetch user for email:", err.message);
+            logger.error({ err }, "Failed to fetch user for email");
         });
 
         // 6. Socket Emit
@@ -152,14 +153,14 @@ export const registerForEvent = async (req, res) => {
                 status,
             });
         } catch (sockErr) {
-            console.warn("Socket.io not initialized — skipping emit");
+            logger.warn("Socket.io not initialized — skipping emit");
         }
 
         const message = status === "registered" ? "Registered successfully" : "Waitlisted";
         return res.status(201).json({ message, registration });
         
     } catch (err) {
-        console.error("registerForEvent error:", err);
+        logger.error({ err }, "registerForEvent error");
         res.status(500).json({ message: "Registration failed: " + err.message });
     }
 };
@@ -209,7 +210,7 @@ export const cancelRegistration = async (req, res) => {
                         }, 'confirmation');
                     }
                 } catch (emailErr) {
-                    console.error("Failed to send promotion email:", emailErr.message);
+                    logger.error({ err: emailErr }, "Failed to send promotion email");
                 }
                 
                 // Emit promotion via Socket
@@ -221,7 +222,7 @@ export const cancelRegistration = async (req, res) => {
                         studentId: promotedRegistration.student._id.toString() 
                     });
                 } catch (e) {
-                    console.warn("Socket not ready (promotion emit skipped)");
+                    logger.warn("Socket not ready (promotion emit skipped)");
                 }
             }
             
@@ -235,7 +236,7 @@ export const cancelRegistration = async (req, res) => {
         registration.cancellationDetails = otherDetails; 
         await registration.save(); 
 
-        console.log(`[CANCELLATION] User ${studentId} cancelled event ${eventId}. Ban set until ${new Date(Date.now() + 15 * 60 * 1000).toLocaleTimeString()}`);
+        logger.info({ studentId, eventId }, "Registration cancelled, 15-min ban set");
 
         // 3. Emit event update
         try {
@@ -250,7 +251,7 @@ export const cancelRegistration = async (req, res) => {
                 cancelledRegistrationId: registration._id.toString() 
             });
         } catch (sockErr) {
-            console.warn("Socket.io not initialized — skipping emit");
+            logger.warn("Socket.io not initialized — skipping emit");
         }
 
         const responseMessage = promotedRegistration 
@@ -262,7 +263,7 @@ export const cancelRegistration = async (req, res) => {
         return res.json({ message: responseMessage + banMessage });
         
     } catch (err) {
-        console.error("cancelRegistration error:", err);
+        logger.error({ err }, "cancelRegistration error");
         return res.status(500).json({ message: "Cancellation failed: " + err.message });
     }
 };
@@ -283,7 +284,7 @@ export const getMyRegistrations = async (req, res) => {
 
         return res.status(200).json(registrations);
     } catch (err) {
-        console.error("getMyRegistrations error:", err);
+        logger.error({ err }, "getMyRegistrations error");
         res.status(500).json({ message: "Failed to fetch registrations" });
     }
 };

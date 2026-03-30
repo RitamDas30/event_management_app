@@ -1,9 +1,9 @@
 import cron from 'node-cron';
 import { startOfDay, endOfDay } from 'date-fns';
-import Registration from '../models/registration.model.js'; // Assuming model path
-import mongoose from 'mongoose'; 
-// 🛑 FIX 1: Correctly import the unified function name
-import { sendEventEmail } from './email.service.js'; 
+import Registration from '../models/registration.model.js';
+import mongoose from 'mongoose';
+import { sendEventEmail } from './email.service.js';
+import logger from "../config/logger.js"; 
 
 // Helper to check if Mongoose is connected before running DB query
 const isDbConnected = () => mongoose.connection.readyState === 1;
@@ -13,11 +13,11 @@ const isDbConnected = () => mongoose.connection.readyState === 1;
  */
 const runEventReminderJob = async () => {
     if (!isDbConnected()) {
-        console.warn('[Cron Service] DB not connected. Skipping reminder job.');
+        logger.warn("DB not connected, skipping reminder job");
         return;
     }
     
-    console.log('--- Running daily event reminder check ---');
+    logger.info("Running daily event reminder check");
     
     try {
         const tomorrow = new Date();
@@ -51,11 +51,11 @@ const runEventReminderJob = async () => {
 
 
         if (relevantRegistrations.length === 0) {
-            console.log('[Cron Service] No events scheduled for tomorrow.');
+            logger.info("No events scheduled for tomorrow");
             return;
         }
 
-        console.log(`[Cron Service] Found ${relevantRegistrations.length} reminders to send.`);
+        logger.info({ count: relevantRegistrations.length }, "Sending event reminders");
 
         for (const reg of relevantRegistrations) {
             if (reg.student && reg.event) {
@@ -71,7 +71,7 @@ const runEventReminderJob = async () => {
         }
         
     } catch (error) {
-        console.error('[Cron Service] CRON JOB ERROR:', error);
+        logger.error({ err: error }, "Cron job error");
     }
 };
 
@@ -84,7 +84,7 @@ export const startCronJobs = () => {
     cron.schedule('0 0 * * *', runEventReminderJob, {
         timezone: "Asia/Kolkata" // Use a static timezone for reliable scheduling
     });
-    console.log('[Cron Service] Daily reminder job scheduled.');
+    logger.info("Daily reminder job scheduled");
     
     // Optional: Run once immediately after startup for testing purposes
     // runEventReminderJob();

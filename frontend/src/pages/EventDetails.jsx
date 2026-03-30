@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../api/axios';
 import toast from 'react-hot-toast';
-import { Clock, MapPin, Calendar, Users, DollarSign, Share2 } from 'lucide-react';
+import { Clock, MapPin, Calendar, Users, IndianRupee, Share2 } from 'lucide-react';
 
 // ✅ Helper function for colored placeholders
 const generatePlaceholderUrl = (category, width = 800, height = 400) => {
@@ -154,13 +154,13 @@ export default function EventDetails() {
                         {/* Capacity & Price */}
                         <div className="space-y-2 pt-4 md:pt-0 border-t md:border-t-0">
                             <h3 className="text-lg font-bold text-gray-700 mb-1">Details</h3>
-                            <div className="flex items-center gap-3 text-gray-700">
+                            <div className="flex items-center gap-2.5 text-gray-700">
                                 <Users size={18} className="text-green-500 flex-shrink-0" />
                                 <span>Seats: {event.seatsAvailable} / {event.capacity}</span>
                             </div>
-                            <div className="flex items-center gap-3 text-gray-700">
-                                <DollarSign size={18} className="text-green-500 flex-shrink-0" />
-                                <span>Price: {event.price > 0 ? `₹${event.price}` : 'Free'}</span>
+                            <div className="flex items-center gap-2.5 text-gray-700">
+                                <IndianRupee size={18} className="text-green-500 flex-shrink-0" />
+                                <span>Price: {event.price > 0 ? `${event.price}` : 'Free'}</span>
                             </div>
                         </div>
                     </div>
