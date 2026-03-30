@@ -36,7 +36,7 @@ export default function DashboardLayout({ allowedRoles }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={isLivePage ? "h-screen bg-gray-950 overflow-hidden" : "min-h-screen bg-gray-50"}>
       {/* Mobile Overlay */}
       {mobileMenuOpen && (
         <div
@@ -84,7 +84,7 @@ export default function DashboardLayout({ allowedRoles }) {
 
       {/* Main Content */}
       {isLivePage ? (
-        <main className="h-screen overflow-hidden transition-all duration-300 lg:ml-[68px]">
+        <main className="overflow-hidden transition-all duration-300 lg:ml-[68px]" style={{ height: "100dvh" }}>
           <Outlet />
         </main>
       ) : (
