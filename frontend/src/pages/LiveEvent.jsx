@@ -70,11 +70,19 @@ export default function LiveEvent() {
     const roomId = event.streamConfig?.roomId || `evently-${id}`;
 
     const domain = "meet.jit.si";
+    // Ensure container has dimensions before creating Jitsi
+    const container = jitsiContainerRef.current;
+    if (!container || container.offsetHeight < 50) {
+      // Retry after layout settles
+      const timer = setTimeout(() => setJitsiLoaded((v) => v), 200);
+      return () => clearTimeout(timer);
+    }
+
     const options = {
       roomName: roomId,
-      parentNode: jitsiContainerRef.current,
+      parentNode: container,
       width: "100%",
-      height: "100%",
+      height: container.offsetHeight || 600,
       configOverwrite: {
         startWithAudioMuted: !isOrganizer,
         startWithVideoMuted: !isOrganizer,
@@ -175,7 +183,7 @@ export default function LiveEvent() {
   }
 
   return (
-    <div className="h-[calc(100vh-64px)] flex flex-col -m-4 sm:-m-6 lg:-m-8">
+    <div className="flex flex-col" style={{ height: "calc(100vh - 80px)", margin: "-1rem -1rem -1rem -1rem" }}>
       {/* Top Bar */}
       <div className="bg-gray-900 border-b border-gray-800 px-4 py-2.5 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
@@ -207,8 +215,8 @@ export default function LiveEvent() {
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Video Area */}
-        <div className={`flex-1 bg-gray-950 ${chatOpen ? "" : "w-full"}`}>
-          <div ref={jitsiContainerRef} className="w-full h-full" />
+        <div className={`flex-1 bg-gray-950 relative ${chatOpen ? "" : "w-full"}`}>
+          <div ref={jitsiContainerRef} style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }} />
         </div>
 
         {/* Chat Panel */}
