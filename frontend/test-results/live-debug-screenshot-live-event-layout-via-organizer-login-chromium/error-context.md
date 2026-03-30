@@ -1,0 +1,122 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - navigation [ref=e4]:
+    - link "Evently" [ref=e5] [cursor=pointer]:
+      - /url: /
+      - img [ref=e6]
+      - text: Evently
+    - generic [ref=e8]:
+      - link "Log in" [ref=e9] [cursor=pointer]:
+        - /url: /login
+      - link "Sign up" [ref=e10] [cursor=pointer]:
+        - /url: /register
+  - main [ref=e11]:
+    - generic [ref=e13]:
+      - heading "Welcome back" [level=2] [ref=e14]
+      - paragraph [ref=e15]: Sign in to your account
+      - generic [ref=e16]: User not found
+      - generic [ref=e17]:
+        - button "Continue with Google" [ref=e18] [cursor=pointer]:
+          - img [ref=e19]
+          - text: Continue with Google
+        - button "Continue with GitHub" [ref=e24] [cursor=pointer]:
+          - img [ref=e25]
+          - text: Continue with GitHub
+      - generic [ref=e31]: or continue with email
+      - generic [ref=e32]:
+        - generic [ref=e33]:
+          - generic [ref=e34]: Email
+          - generic [ref=e35]:
+            - img [ref=e36]
+            - textbox "you@example.com" [ref=e39]: organizer@organizer.com
+        - generic [ref=e40]:
+          - generic [ref=e41]: Password
+          - generic [ref=e42]:
+            - img [ref=e43]
+            - textbox "Enter your password" [ref=e46]: organizer
+            - button [ref=e47] [cursor=pointer]:
+              - img [ref=e48]
+        - link "Forgot password?" [ref=e52] [cursor=pointer]:
+          - /url: /forgot-password
+        - button "Sign in" [ref=e53] [cursor=pointer]
+      - paragraph [ref=e54]:
+        - text: Don't have an account?
+        - link "Sign up" [ref=e55] [cursor=pointer]:
+          - /url: /register
+      - generic [ref=e56]:
+        - paragraph [ref=e57]: Demo Accounts (click to fill)
+        - generic [ref=e58]:
+          - button "Student student@student.com" [ref=e59] [cursor=pointer]:
+            - generic [ref=e60]: Student
+            - generic [ref=e61]: student@student.com
+          - button "Organizer organizer@organizer.com" [ref=e62] [cursor=pointer]:
+            - generic [ref=e63]: Organizer
+            - generic [ref=e64]: organizer@organizer.com
+          - button "Admin admin@admin.com" [ref=e65] [cursor=pointer]:
+            - generic [ref=e66]: Admin
+            - generic [ref=e67]: admin@admin.com
+  - contentinfo [ref=e68]:
+    - generic [ref=e69]:
+      - generic [ref=e70]:
+        - generic [ref=e71]:
+          - link "Evently" [ref=e72] [cursor=pointer]:
+            - /url: /
+            - img [ref=e73]
+            - text: Evently
+          - paragraph [ref=e75]: Discover, create, and manage events effortlessly. Your all-in-one platform for campus and community events.
+        - generic [ref=e76]:
+          - heading "Platform" [level=3] [ref=e77]
+          - list [ref=e78]:
+            - listitem [ref=e79]:
+              - link "Browse Events" [ref=e80] [cursor=pointer]:
+                - /url: /explore
+            - listitem [ref=e81]:
+              - link "Create Event" [ref=e82] [cursor=pointer]:
+                - /url: /login
+            - listitem [ref=e83]:
+              - link "About Us" [ref=e84] [cursor=pointer]:
+                - /url: /about
+            - listitem [ref=e85]:
+              - link "Contact" [ref=e86] [cursor=pointer]:
+                - /url: /contact
+        - generic [ref=e87]:
+          - heading "Categories" [level=3] [ref=e88]
+          - list [ref=e89]:
+            - listitem [ref=e90]:
+              - link "Technical" [ref=e91] [cursor=pointer]:
+                - /url: /explore?category=Technical
+            - listitem [ref=e92]:
+              - link "Cultural" [ref=e93] [cursor=pointer]:
+                - /url: /explore?category=Cultural
+            - listitem [ref=e94]:
+              - link "Sports" [ref=e95] [cursor=pointer]:
+                - /url: /explore?category=Sports
+            - listitem [ref=e96]:
+              - link "Academic" [ref=e97] [cursor=pointer]:
+                - /url: /explore?category=Academic
+            - listitem [ref=e98]:
+              - link "Social" [ref=e99] [cursor=pointer]:
+                - /url: /explore?category=Social
+        - generic [ref=e100]:
+          - heading "Get in Touch" [level=3] [ref=e101]
+          - list [ref=e102]:
+            - listitem [ref=e103]:
+              - img [ref=e104]
+              - generic [ref=e107]: support@evently.app
+            - listitem [ref=e108]:
+              - img [ref=e109]
+              - generic [ref=e112]: Built for Campus Communities
+            - listitem [ref=e113]:
+              - img [ref=e114]
+              - link "GitHub" [ref=e118] [cursor=pointer]:
+                - /url: https://github.com
+      - generic [ref=e119]:
+        - paragraph [ref=e120]: © 2026 Evently. All rights reserved.
+        - generic [ref=e121]:
+          - link "Privacy Policy" [ref=e122] [cursor=pointer]:
+            - /url: /about
+          - link "Terms of Service" [ref=e123] [cursor=pointer]:
+            - /url: /about
+```

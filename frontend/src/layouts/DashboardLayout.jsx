@@ -83,17 +83,21 @@ export default function DashboardLayout({ allowedRoles }) {
       )}
 
       {/* Main Content */}
-      <main
-        className={`min-h-screen transition-all duration-300 ${
-          isLivePage
-            ? `lg:ml-[68px]` // Live: collapsed sidebar width, no top padding, no max-width
-            : `pt-16 ${sidebarCollapsed ? "lg:ml-[68px]" : "lg:ml-64"}`
-        }`}
-      >
-        <div className={isLivePage ? "h-screen" : "p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto"}>
+      {isLivePage ? (
+        <main className="h-screen overflow-hidden transition-all duration-300 lg:ml-[68px]">
           <Outlet />
-        </div>
-      </main>
+        </main>
+      ) : (
+        <main
+          className={`min-h-screen pt-16 transition-all duration-300 ${
+            sidebarCollapsed ? "lg:ml-[68px]" : "lg:ml-64"
+          }`}
+        >
+          <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+            <Outlet />
+          </div>
+        </main>
+      )}
     </div>
   );
 }

@@ -259,7 +259,7 @@ export default function LiveEvent() {
   // ===== POST-STREAM SCREEN (organizer only) =====
   if (streamEnded && isOrganizer) {
     return (
-      <div className="flex flex-col bg-gray-950 h-screen">
+      <div className="flex flex-col bg-gray-950 h-full">
         <div className="bg-gray-900 border-b border-gray-800 px-4 py-2 flex items-center gap-3 flex-shrink-0">
           <h1 className="text-white font-semibold text-sm">{event.title}</h1>
           <span className="text-xs text-gray-500">Stream ended</span>
@@ -319,7 +319,7 @@ export default function LiveEvent() {
   // ===== WAITING ROOM =====
   if (!isOrganizer && !streamStatus.isLive) {
     return (
-      <div className="flex flex-col h-screen">
+      <div className="flex flex-col h-full">
         <div className="bg-gray-900 border-b border-gray-800 px-4 py-2 flex items-center gap-3 flex-shrink-0">
           <Link to={`${rolePrefix}/events/${id}`} className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800"><ArrowLeft className="w-5 h-5" /></Link>
           <div>
