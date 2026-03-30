@@ -188,11 +188,11 @@ export default function LiveEvent() {
   // ===== LIVE STREAM =====
   return (
     <div ref={fullscreenRef} className={isFullscreen ? "fixed inset-0 z-[100] bg-black" : ""}>
-      <div className={`relative bg-black rounded-xl overflow-hidden ${isFullscreen ? "w-full h-full" : "mx-auto"}`}
-        style={isFullscreen ? {} : { aspectRatio: "16/9", maxHeight: "80vh", maxWidth: "100%" }}>
+      <div className={`relative bg-black rounded-xl overflow-hidden ${isFullscreen ? "w-full h-full" : ""}`}
+        style={isFullscreen ? {} : { width: "100%", height: "0", paddingBottom: "56.25%" }}>
 
         {/* Jitsi Video */}
-        <div ref={jitsiContainerRef} className="w-full h-full" />
+        <div ref={jitsiContainerRef} className="absolute inset-0" />
 
         {/* === TOP-LEFT: Back + LIVE badge + viewers + timer === */}
         <div className="absolute top-3 left-3 z-30 flex items-center gap-2">

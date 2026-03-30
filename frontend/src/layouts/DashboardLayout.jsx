@@ -34,8 +34,10 @@ export default function DashboardLayout({ allowedRoles }) {
         <div className="hidden lg:block">
           <Sidebar collapsed={true} onToggle={() => {}} />
         </div>
-        <div className="lg:ml-[68px] p-4">
-          <Outlet />
+        <div className="lg:ml-[68px] min-h-screen flex items-center justify-center p-3">
+          <div className="w-full max-w-[1400px]">
+            <Outlet />
+          </div>
         </div>
       </div>
     );
