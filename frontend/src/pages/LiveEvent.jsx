@@ -269,21 +269,21 @@ export default function LiveEvent() {
     );
   }
 
-  // Normal: video left, chat right as separate card
+  // Normal: video left (max space), chat right (flush to edge)
   return (
-    <div ref={fullscreenRef} className="flex gap-3 items-start">
-      {/* Video — takes remaining space */}
-      <div className="flex-1 min-w-0">
-        <div className="relative bg-black rounded-xl overflow-hidden" style={{ width: "100%", height: "0", paddingBottom: "56.25%" }}>
+    <div ref={fullscreenRef} className="flex h-full">
+      {/* Video — takes all available space */}
+      <div className="flex-1 min-w-0 flex items-center p-3 pr-0">
+        <div className="relative bg-black rounded-l-xl overflow-hidden w-full" style={{ height: "0", paddingBottom: chatOpen ? "50%" : "56.25%" }}>
           <div ref={jitsiContainerRef} className="absolute inset-0" />
           <VideoOverlays insideFullscreen={false} />
         </div>
       </div>
 
-      {/* Chat — right side, separate card */}
+      {/* Chat — right edge, no gap, full height matching video */}
       {chatOpen && (
-        <div className="w-80 flex-shrink-0 bg-gray-900 rounded-xl border border-gray-200 overflow-hidden" style={{ height: "0", paddingBottom: "56.25%", position: "relative" }}>
-          <div className="absolute inset-0 flex flex-col">
+        <div className="w-72 flex-shrink-0 bg-gray-900 flex flex-col border-l border-gray-800 py-3 pr-3">
+          <div className="flex-1 rounded-r-xl overflow-hidden border border-gray-700 border-l-0 flex flex-col">
             <LiveChat eventId={id} user={user} isOrganizer={isOrganizer} isFullscreen={false} />
           </div>
         </div>
