@@ -202,15 +202,23 @@ export default function LiveEvent() {
         </div>
       </div>
 
-      {/* Video + Chat — side by side */}
-      <div className={`flex gap-3 ${isFullscreen ? "flex-1 px-3 pb-3" : ""}`}>
-        {/* Video Panel */}
-        <div className={`relative bg-black rounded-xl overflow-hidden ${isFullscreen ? "flex-1" : chatOpen ? "flex-1" : "w-full"}`}
-          style={isFullscreen ? {} : { aspectRatio: "16/9", maxHeight: "calc(100vh - 200px)" }}>
+      {/* Video with overlapping glass chat */}
+      <div className={`${isFullscreen ? "flex-1 px-3 pb-3" : ""}`}>
+        <div className={`relative bg-black rounded-xl overflow-hidden ${isFullscreen ? "w-full h-full" : "mx-auto"}`}
+          style={isFullscreen ? {} : { aspectRatio: "16/9", maxHeight: "70vh", maxWidth: "90%" }}>
+
+          {/* Jitsi Video */}
           <div ref={jitsiContainerRef} className="w-full h-full" />
 
-          {/* Controls */}
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 bg-gray-900/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-gray-700/40">
+          {/* Glass Chat Overlay — left side, floating inside video */}
+          {chatOpen && (
+            <div className="absolute top-0 left-0 bottom-0 w-72 z-20 flex flex-col bg-black/40 backdrop-blur-md border-r border-white/10">
+              <LiveChat eventId={id} user={user} isOrganizer={isOrganizer} isFullscreen={isFullscreen} />
+            </div>
+          )}
+
+          {/* Controls — bottom center */}
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 bg-gray-900/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-gray-700/40">
             <button onClick={toggleAudio} className={`p-2 rounded-lg transition ${audioMuted ? "bg-red-500/20 text-red-400" : "text-white hover:bg-white/10"}`}>{audioMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}</button>
             <button onClick={toggleVideo} className={`p-2 rounded-lg transition ${videoMuted ? "bg-red-500/20 text-red-400" : "text-white hover:bg-white/10"}`}>{videoMuted ? <VideoOff className="w-4 h-4" /> : <Video className="w-4 h-4" />}</button>
             <button onClick={toggleScreenShare} className="p-2 rounded-lg text-white hover:bg-white/10 transition"><MonitorUp className="w-4 h-4" /></button>
@@ -218,20 +226,11 @@ export default function LiveEvent() {
             <button onClick={hangup} className="p-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition"><PhoneOff className="w-4 h-4" /></button>
           </div>
 
-          {/* Watermark */}
+          {/* Watermark — bottom right */}
           <div className="absolute bottom-3 right-3 z-10 flex items-center gap-1 text-white/20 text-[10px] font-semibold pointer-events-none">
             <Calendar className="w-3 h-3" /> Evently
           </div>
         </div>
-
-        {/* Chat */}
-        {chatOpen && (
-          <div className={`flex-shrink-0 ${isFullscreen ? "w-80" : "w-72"}`} style={isFullscreen ? {} : { height: "min(calc(100vh - 200px), 500px)" }}>
-            <div className="h-full rounded-xl overflow-hidden border border-gray-200">
-              <LiveChat eventId={id} user={user} isOrganizer={isOrganizer} isFullscreen={isFullscreen} />
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

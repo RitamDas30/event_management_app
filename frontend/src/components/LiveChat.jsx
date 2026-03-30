@@ -248,11 +248,11 @@ export default function LiveChat({ eventId, user, isOrganizer, isFullscreen }) {
   const activeStackedKeys = Object.entries(stackedReactions).filter(([, v]) => v.count > 0);
 
   return (
-    <div className={`flex flex-col h-full ${isFullscreen ? "bg-gray-900 w-80" : "bg-gray-900 w-full"}`}>
+    <div className="flex flex-col h-full w-full">
       {/* Header */}
-      <div className="px-3 py-2 border-b border-gray-800 flex items-center justify-between">
-        <h3 className="text-white font-semibold text-sm">Live Chat</h3>
-        <span className="text-[10px] text-gray-500">{messages.length} messages</span>
+      <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between">
+        <h3 className="text-white font-semibold text-sm drop-shadow">Live Chat</h3>
+        <span className="text-[10px] text-white/50">{messages.length}</span>
       </div>
 
       {/* Pinned Message */}
@@ -302,13 +302,13 @@ export default function LiveChat({ eventId, user, isOrganizer, isFullscreen }) {
 
       {/* Poll Creation Form */}
       {showPollForm && isOrganizer && (
-        <div className="px-3 py-2 bg-gray-800/50 border-b border-gray-700">
+        <div className="px-3 py-2 bg-white/5 border-b border-white/10">
           <form onSubmit={createPoll} className="space-y-1.5">
-            <input type="text" value={pollForm.question} onChange={(e) => setPollForm({ ...pollForm, question: e.target.value })} placeholder="Poll question..." className="w-full bg-gray-800 text-white text-xs px-2 py-1.5 rounded placeholder-gray-500 focus:outline-none" />
+            <input type="text" value={pollForm.question} onChange={(e) => setPollForm({ ...pollForm, question: e.target.value })} placeholder="Poll question..." className="w-full bg-white/10 text-white text-xs px-2 py-1.5 rounded placeholder-gray-500 focus:outline-none" />
             {pollForm.options.map((opt, idx) => (
               <div key={idx} className="flex gap-1">
                 <input type="text" value={opt} onChange={(e) => { const o = [...pollForm.options]; o[idx] = e.target.value; setPollForm({ ...pollForm, options: o }); }}
-                  placeholder={`Option ${idx + 1}`} className="flex-1 bg-gray-800 text-white text-xs px-2 py-1 rounded placeholder-gray-500 focus:outline-none" />
+                  placeholder={`Option ${idx + 1}`} className="flex-1 bg-white/10 text-white text-xs px-2 py-1 rounded placeholder-gray-500 focus:outline-none" />
                 {pollForm.options.length > 2 && <button type="button" onClick={() => setPollForm({ ...pollForm, options: pollForm.options.filter((_, i) => i !== idx) })} className="text-gray-500 hover:text-red-400"><X className="w-3 h-3" /></button>}
               </div>
             ))}
@@ -401,7 +401,7 @@ export default function LiveChat({ eventId, user, isOrganizer, isFullscreen }) {
 
       {/* Stacked Quick Reactions (floating above input) */}
       {activeStackedKeys.length > 0 && (
-        <div className="px-3 py-1.5 border-t border-gray-800 flex flex-wrap gap-1.5">
+        <div className="px-3 py-1.5 border-t border-white/10 flex flex-wrap gap-1.5">
           {activeStackedKeys.map(([key, data]) => (
             <span key={key} className="inline-flex items-center gap-1 bg-gray-800 text-gray-300 text-xs px-2 py-1 rounded-full animate-pulse">
               {key} <span className="text-blue-400 font-bold">×{data.count}</span>
@@ -412,8 +412,8 @@ export default function LiveChat({ eventId, user, isOrganizer, isFullscreen }) {
 
       {/* Plus Menu (organizer only — pops up above input) */}
       {showPlusMenu && isOrganizer && (
-        <div className="px-2 pb-1 pt-2 border-t border-gray-800">
-          <div className="bg-gray-800 rounded-xl p-2 space-y-1">
+        <div className="px-2 pb-1 pt-2 border-t border-white/10">
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-2 space-y-1">
             <button onClick={() => { fileInputRef.current?.click(); setShowPlusMenu(false); }}
               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-200 hover:bg-gray-700 transition">
               <Paperclip className="w-4 h-4 text-blue-400" /> Send File
@@ -439,14 +439,14 @@ export default function LiveChat({ eventId, user, isOrganizer, isFullscreen }) {
 
       {/* Upload indicator */}
       {uploading && (
-        <div className="px-3 py-1.5 border-t border-gray-800 flex items-center gap-2 text-xs text-blue-400">
+        <div className="px-3 py-1.5 border-t border-white/10 flex items-center gap-2 text-xs text-blue-400">
           <div className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
           Uploading file...
         </div>
       )}
 
       {/* Input */}
-      <form onSubmit={sendMessage} className="p-2 border-t border-gray-800">
+      <form onSubmit={sendMessage} className="p-2 border-t border-white/10">
         <div className="flex items-center gap-1.5">
           {isOrganizer && (
             <button type="button" onClick={() => setShowPlusMenu(!showPlusMenu)}
@@ -456,7 +456,7 @@ export default function LiveChat({ eventId, user, isOrganizer, isFullscreen }) {
           )}
           <input type="text" value={newMessage} onChange={(e) => { setNewMessage(e.target.value); if (showPlusMenu) setShowPlusMenu(false); }}
             placeholder={isOrganizer ? "Message or /poll Question? A, B, C" : "Type a message..."}
-            className="flex-1 bg-gray-800 text-white text-sm px-3 py-2.5 rounded-lg placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500" />
+            className="flex-1 bg-white/10 text-white text-sm px-3 py-2.5 rounded-lg placeholder-white/40 focus:outline-none focus:ring-1 focus:ring-blue-500" />
           <button type="submit" className="p-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex-shrink-0">
             <Send className="w-4 h-4" />
           </button>
