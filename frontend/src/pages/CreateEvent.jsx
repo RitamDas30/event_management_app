@@ -140,8 +140,12 @@ export default function CreateEvent() {
         }
         return true;
       case 2:
-        if (!form.venueName || !form.fullAddress || !form.startTime || !form.endTime) {
-          toast.error("Please fill in venue and time details");
+        if (!form.startTime || !form.endTime) {
+          toast.error("Please fill in time details");
+          return false;
+        }
+        if (form.eventMode !== "online" && (!form.venueName || !form.fullAddress)) {
+          toast.error("Please fill in venue details");
           return false;
         }
         if (new Date(form.endTime) <= new Date(form.startTime)) {
@@ -171,14 +175,21 @@ export default function CreateEvent() {
 
       if (form.imageFile) formData.append("image", form.imageFile);
 
+      // Auto-fill venue for online events
+      const submissionData = { ...form };
+      if (submissionData.eventMode === "online") {
+        submissionData.venueName = "Virtual Event";
+        submissionData.fullAddress = "Online";
+      }
+
       // Basic fields
       const basicFields = [
         "title", "description", "category", "fullAddress", "venueName",
         "startTime", "endTime", "capacity", "price", "eventMode",
       ];
       basicFields.forEach((key) => {
-        if (form[key] !== null && form[key] !== undefined) {
-          formData.append(key, form[key]);
+        if (submissionData[key] !== null && submissionData[key] !== undefined) {
+          formData.append(key, submissionData[key]);
         }
       });
 
@@ -347,21 +358,55 @@ export default function CreateEvent() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Venue Name *</label>
-                <input type="text" name="venueName" value={form.venueName} onChange={handleChange} placeholder="e.g., Main Auditorium" required className={inputClass} />
+            {/* Venue — conditional based on event mode */}
+            {form.eventMode === "online" ? (
+              <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 10l4.553-2.276A1 1 0 0 1 21 8.618v6.764a1 1 0 0 1-1.447.894L15 14M5 18h8a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" /></svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-purple-800">Virtual Event</p>
+                    <p className="text-xs text-purple-600">A streaming link will be auto-generated. Attendees join via the Live Events page.</p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Capacity *</label>
-                <input type="number" name="capacity" value={form.capacity} onChange={handleChange} min="1" required className={inputClass} />
-              </div>
-            </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Venue Name *</label>
+                    <input type="text" name="venueName" value={form.venueName} onChange={handleChange} placeholder="e.g., Main Auditorium" required className={inputClass} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {form.eventMode === "hybrid" ? "In-Person Capacity *" : "Capacity *"}
+                    </label>
+                    <input type="number" name="capacity" value={form.capacity} onChange={handleChange} min="1" required className={inputClass} />
+                  </div>
+                </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Full Address *</label>
-              <input type="text" name="fullAddress" value={form.fullAddress} onChange={handleChange} placeholder="e.g., 123 University Road, City, State" required className={inputClass} />
-            </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Address *</label>
+                  <input type="text" name="fullAddress" value={form.fullAddress} onChange={handleChange} placeholder="e.g., 123 University Road, City, State" required className={inputClass} />
+                </div>
+
+                {form.eventMode === "hybrid" && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-center gap-2">
+                    <svg className="w-4 h-4 text-blue-600 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 10l4.553-2.276A1 1 0 0 1 21 8.618v6.764a1 1 0 0 1-1.447.894L15 14M5 18h8a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" /></svg>
+                    <p className="text-xs text-blue-700">Hybrid event — a virtual streaming link will also be generated for remote attendees.</p>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Capacity for online-only (no venue) */}
+            {form.eventMode === "online" && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Max Viewers *</label>
+                <input type="number" name="capacity" value={form.capacity} onChange={handleChange} min="1" required className={inputClass} placeholder="Maximum online attendees" />
+              </div>
+            )}
 
             {/* Agenda Builder */}
             <div>
