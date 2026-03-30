@@ -16,6 +16,7 @@ import reviewRoutes from "./routes/review.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import paymentRoutes from "./routes/payment.routes.js";
 import oauthRoutes from "./routes/oauth.routes.js";
+import streamRoutes from "./routes/stream.routes.js";
 
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
@@ -84,6 +85,7 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/auth", oauthRoutes);
+app.use("/api/events", streamRoutes);
 app.use("/uploads", express.static("uploads"));
 
 // --- Health Check ---
