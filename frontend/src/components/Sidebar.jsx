@@ -21,12 +21,14 @@ import {
   ClipboardList,
   Compass,
   DollarSign,
+  Radio,
 } from "lucide-react";
 
 const studentLinks = [
   { name: "Dashboard", path: "/student/dashboard", icon: LayoutDashboard },
   { name: "Explore Events", path: "/student/explore", icon: Compass },
   { name: "My Events", path: "/student/my-events", icon: Ticket },
+  { name: "Live Events", path: "/student/live", icon: Radio },
   { name: "Calendar", path: "/student/calendar", icon: CalendarDays },
   { name: "Saved Events", path: "/student/saved", icon: Bookmark },
   { name: "Notifications", path: "/student/notifications", icon: Bell },
@@ -39,6 +41,7 @@ const organizerLinks = [
   { name: "Explore Events", path: "/organizer/explore", icon: Compass },
   { name: "My Events", path: "/organizer/events", icon: CalendarDays },
   { name: "Create Event", path: "/organizer/events/create", icon: PlusCircle },
+  { name: "Live / Streaming", path: "/organizer/live", icon: Radio },
   { name: "Analytics", path: "/organizer/analytics", icon: BarChart3 },
   { name: "Revenue", path: "/organizer/revenue", icon: DollarSign },
   { name: "Announcements", path: "/organizer/announcements", icon: Megaphone },
@@ -49,6 +52,7 @@ const organizerLinks = [
 const adminLinks = [
   { name: "Overview", path: "/admin/dashboard", icon: LayoutDashboard },
   { name: "Explore Events", path: "/admin/explore", icon: Compass },
+  { name: "Live Events", path: "/admin/live", icon: Radio },
   { name: "User Management", path: "/admin/users", icon: Users },
   { name: "Event Moderation", path: "/admin/events", icon: Shield },
   { name: "Categories", path: "/admin/categories", icon: Tags },

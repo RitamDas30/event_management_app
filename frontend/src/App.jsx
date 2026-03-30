@@ -24,6 +24,7 @@ import EventDetails from "./pages/EventDetails";
 import LiveEvent from "./pages/LiveEvent";
 import Profile from "./pages/shared/Profile";
 import Settings from "./pages/shared/Settings";
+import LiveEvents from "./pages/shared/LiveEvents";
 
 // Student Pages
 import StudentDashboard from "./pages/student/StudentDashboard";
@@ -118,6 +119,7 @@ export default function App() {
             <Route path="/student/events/:id" element={<EventDetails />} />
             <Route path="/student/events/:id/live" element={<LiveEvent />} />
             <Route path="/student/my-events" element={<MyEvents />} />
+            <Route path="/student/live" element={<LiveEvents />} />
             <Route path="/student/calendar" element={<StudentCalendar />} />
             <Route path="/student/saved" element={<SavedEvents />} />
             <Route path="/student/notifications" element={<StudentNotifications />} />
@@ -133,6 +135,7 @@ export default function App() {
             <Route path="/organizer/explore" element={<Explore />} />
             <Route path="/organizer/events/:id" element={<EventDetails />} />
             <Route path="/organizer/events" element={<OrganizerEvents />} />
+            <Route path="/organizer/live" element={<LiveEvents />} />
             <Route path="/organizer/events/create" element={<CreateEvent />} />
             <Route path="/organizer/events/:id/edit" element={<EditEvent />} />
             <Route path="/organizer/events/:id/live" element={<LiveEvent />} />
@@ -150,6 +153,7 @@ export default function App() {
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/admin/explore" element={<Explore />} />
             <Route path="/admin/events/:id" element={<EventDetails />} />
+            <Route path="/admin/live" element={<LiveEvents />} />
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/admin/events" element={<AdminEvents />} />
             <Route path="/admin/categories" element={<AdminCategories />} />
