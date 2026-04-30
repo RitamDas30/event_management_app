@@ -25,9 +25,13 @@
   }
 
   body {
-    @apply bg-[var(--background)] text-[var(--foreground)] antialiased selection:bg-brand-500 selection:text-white transition-colors duration-300;
-    /* Film grain noise */
+    @apply bg-[var(--background)] text-[var(--foreground)] antialiased transition-colors duration-300;
     position: relative;
+  }
+
+  ::selection {
+    background-color: #6366f1;
+    color: #ffffff;
   }
 
   body::before {
