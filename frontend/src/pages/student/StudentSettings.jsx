@@ -1,160 +1,124 @@
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import api from "../../api/axios";
 import toast from "react-hot-toast";
-import { Lock, Bell, Save } from "lucide-react";
+import { Lock, Bell, ArrowRight } from "lucide-react";
+import clsx from "clsx";
+
+const fadeUp = { hidden: { opacity: 0, y: 10 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4 } } };
 
 export default function StudentSettings() {
-  const [passwordForm, setPasswordForm] = useState({
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
-  });
-  const [notifPrefs, setNotifPrefs] = useState({
-    emailReminders: true,
-    emailUpdates: true,
-    emailPromotions: false,
-  });
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  const [notifPrefs, setNotifPrefs] = useState({ emailReminders: true, emailUpdates: true, emailPromotions: false });
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [notifLoading, setNotifLoading] = useState(false);
 
   useEffect(() => {
-    const fetchPrefs = async () => {
-      try {
-        const res = await api.get("/auth/me");
-        if (res.data.notificationPreferences) {
-          setNotifPrefs(res.data.notificationPreferences);
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
-    fetchPrefs();
+    api.get("/auth/me").then(res => { if (res.data.notificationPreferences) setNotifPrefs(res.data.notificationPreferences); }).catch(()=>{});
   }, []);
 
   const handlePasswordChange = async (e) => {
     e.preventDefault();
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      toast.error("New passwords don't match");
-      return;
-    }
-    if (passwordForm.newPassword.length < 6) {
-      toast.error("Password must be at least 6 characters");
-      return;
-    }
-
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) return toast.error("New passwords don't match");
+    if (passwordForm.newPassword.length < 6) return toast.error("Password must be at least 6 characters");
     setPasswordLoading(true);
     try {
-      await api.put("/users/password", {
-        currentPassword: passwordForm.currentPassword,
-        newPassword: passwordForm.newPassword,
-      });
-      toast.success("Password changed successfully!");
+      await api.put("/users/password", { currentPassword: passwordForm.currentPassword, newPassword: passwordForm.newPassword });
+      toast.success("Security credentials updated.");
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to change password");
-    } finally {
-      setPasswordLoading(false);
-    }
+    } catch (err) { toast.error(err.response?.data?.message || "Failed to update security credentials"); } finally { setPasswordLoading(false); }
   };
 
   const handleNotifSave = async () => {
     setNotifLoading(true);
     try {
       await api.put("/users/notification-preferences", { notificationPreferences: notifPrefs });
-      toast.success("Preferences saved!");
-    } catch (err) {
-      toast.error("Failed to save preferences");
-    } finally {
-      setNotifLoading(false);
-    }
+      toast.success("Preferences synchronized.");
+    } catch (err) { toast.error("Failed to sync preferences"); } finally { setNotifLoading(false); }
   };
 
   return (
-    <div className="max-w-2xl space-y-8">
-      <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+    <div className="w-full max-w-3xl">
+      <motion.div initial="hidden" animate="visible" variants={fadeUp} className="mb-10">
+        <h1 className="text-3xl font-semibold text-surface-950 dark:text-surface-50 mb-2">Settings</h1>
+        <p className="text-surface-500">Manage your security credentials and communication preferences.</p>
+      </motion.div>
 
-      {/* Change Password */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Lock className="w-5 h-5 text-gray-600" />
-          <h2 className="text-lg font-semibold text-gray-900">Change Password</h2>
-        </div>
-        <form onSubmit={handlePasswordChange} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
-            <input
-              type="password"
-              value={passwordForm.currentPassword}
-              onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
-              required
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none"
-            />
+      <div className="space-y-8">
+        {/* Password */}
+        <motion.div initial="hidden" animate="visible" variants={fadeUp} className="bg-surface-50 dark:bg-surface-900 border border-border rounded-[2.5rem] p-8 sm:p-12 shadow-surface">
+          <div className="flex items-center gap-4 mb-8">
+            <div className="w-12 h-12 rounded-xl bg-surface-100 dark:bg-surface-800 border border-border flex items-center justify-center">
+              <Lock className="w-5 h-5 text-surface-950 dark:text-surface-50" />
+            </div>
+            <div>
+              <h2 className="text-xl font-medium text-surface-950 dark:text-surface-50">Security</h2>
+              <p className="text-sm text-surface-500">Update your account password</p>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
-            <input
-              type="password"
-              value={passwordForm.newPassword}
-              onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
-              required
-              minLength={6}
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
-            <input
-              type="password"
-              value={passwordForm.confirmPassword}
-              onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
-              required
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={passwordLoading}
-            className="flex items-center gap-2 bg-blue-600 text-white font-semibold px-5 py-2.5 rounded-xl hover:bg-blue-700 transition-colors disabled:bg-gray-400"
-          >
-            {passwordLoading ? "Changing..." : "Change Password"}
-          </button>
-        </form>
-      </div>
 
-      {/* Notification Preferences */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Bell className="w-5 h-5 text-gray-600" />
-          <h2 className="text-lg font-semibold text-gray-900">Notification Preferences</h2>
-        </div>
-        <div className="space-y-4">
-          {[
-            { key: "emailReminders", label: "Event Reminders", desc: "Receive reminders 24 hours before your events" },
-            { key: "emailUpdates", label: "Event Updates", desc: "Get notified when events you're registered for are updated" },
-            { key: "emailPromotions", label: "Promotional Emails", desc: "Receive recommendations and featured events" },
-          ].map((pref) => (
-            <label key={pref.key} className="flex items-start gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={notifPrefs[pref.key]}
-                onChange={(e) => setNotifPrefs({ ...notifPrefs, [pref.key]: e.target.checked })}
-                className="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-              />
-              <div>
-                <p className="text-sm font-medium text-gray-900">{pref.label}</p>
-                <p className="text-xs text-gray-500">{pref.desc}</p>
+          <form onSubmit={handlePasswordChange} className="space-y-5">
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-surface-950 dark:text-surface-50">Current Password</label>
+              <input type="password" required value={passwordForm.currentPassword} onChange={e => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })} className="w-full px-5 py-3.5 bg-surface-100 dark:bg-surface-950 border border-transparent rounded-xl text-sm focus:border-brand-500 focus:bg-surface-50 dark:focus:bg-surface-900 outline-none transition-all placeholder:text-surface-400" />
+            </div>
+            <div className="grid sm:grid-cols-2 gap-5">
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-surface-950 dark:text-surface-50">New Password</label>
+                <input type="password" required minLength={6} value={passwordForm.newPassword} onChange={e => setPasswordForm({ ...passwordForm, newPassword: e.target.value })} className="w-full px-5 py-3.5 bg-surface-100 dark:bg-surface-950 border border-transparent rounded-xl text-sm focus:border-brand-500 focus:bg-surface-50 dark:focus:bg-surface-900 outline-none transition-all placeholder:text-surface-400" />
               </div>
-            </label>
-          ))}
-        </div>
-        <button
-          onClick={handleNotifSave}
-          disabled={notifLoading}
-          className="mt-4 flex items-center gap-2 bg-blue-600 text-white font-semibold px-5 py-2.5 rounded-xl hover:bg-blue-700 transition-colors disabled:bg-gray-400"
-        >
-          <Save className="w-4 h-4" />
-          {notifLoading ? "Saving..." : "Save Preferences"}
-        </button>
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-surface-950 dark:text-surface-50">Confirm Password</label>
+                <input type="password" required value={passwordForm.confirmPassword} onChange={e => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })} className="w-full px-5 py-3.5 bg-surface-100 dark:bg-surface-950 border border-transparent rounded-xl text-sm focus:border-brand-500 focus:bg-surface-50 dark:focus:bg-surface-900 outline-none transition-all placeholder:text-surface-400" />
+              </div>
+            </div>
+            <div className="pt-4 flex justify-end">
+              <button type="submit" disabled={passwordLoading} className="group inline-flex items-center justify-center gap-2 bg-surface-950 text-surface-50 dark:bg-surface-50 dark:text-surface-950 hover:bg-surface-800 dark:hover:bg-surface-200 px-6 py-3 rounded-full font-medium transition-all hover:scale-[1.02] active:scale-95 shadow-sm disabled:opacity-50">
+                {passwordLoading ? "Updating..." : <>Update Password <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></>}
+              </button>
+            </div>
+          </form>
+        </motion.div>
+
+        {/* Notifications */}
+        <motion.div initial="hidden" animate="visible" variants={fadeUp} transition={{ delay: 0.1 }} className="bg-surface-50 dark:bg-surface-900 border border-border rounded-[2.5rem] p-8 sm:p-12 shadow-surface">
+          <div className="flex items-center gap-4 mb-8">
+            <div className="w-12 h-12 rounded-xl bg-surface-100 dark:bg-surface-800 border border-border flex items-center justify-center">
+              <Bell className="w-5 h-5 text-surface-950 dark:text-surface-50" />
+            </div>
+            <div>
+              <h2 className="text-xl font-medium text-surface-950 dark:text-surface-50">Communications</h2>
+              <p className="text-sm text-surface-500">Manage what we send to your inbox</p>
+            </div>
+          </div>
+
+          <div className="space-y-4 mb-8">
+            {[
+              { key: "emailReminders", label: "Event Reminders", desc: "Receive reminders 24 hours before your events" },
+              { key: "emailUpdates", label: "Event Updates", desc: "Get notified when events you're registered for are updated" },
+              { key: "emailPromotions", label: "Platform Announcements", desc: "Receive recommendations and featured events" }
+            ].map((pref) => (
+              <label key={pref.key} className="flex items-start gap-4 p-4 rounded-2xl border border-border bg-surface-100/50 dark:bg-surface-950/50 cursor-pointer group hover:border-surface-300 transition-colors">
+                <div className="relative flex items-start pt-1">
+                  <input type="checkbox" checked={notifPrefs[pref.key]} onChange={e => setNotifPrefs({ ...notifPrefs, [pref.key]: e.target.checked })} className="sr-only" />
+                  <div className={clsx("w-5 h-5 rounded border transition-colors flex items-center justify-center", notifPrefs[pref.key] ? "bg-brand-600 border-brand-600" : "bg-surface-50 dark:bg-surface-900 border-border group-hover:border-surface-400")}>
+                    {notifPrefs[pref.key] && <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-surface-950 dark:text-surface-50 mb-0.5">{pref.label}</p>
+                  <p className="text-sm text-surface-500">{pref.desc}</p>
+                </div>
+              </label>
+            ))}
+          </div>
+
+          <div className="flex justify-end border-t border-border pt-8">
+            <button onClick={handleNotifSave} disabled={notifLoading} className="group inline-flex items-center justify-center gap-2 bg-surface-950 text-surface-50 dark:bg-surface-50 dark:text-surface-950 hover:bg-surface-800 dark:hover:bg-surface-200 px-6 py-3 rounded-full font-medium transition-all hover:scale-[1.02] active:scale-95 shadow-sm disabled:opacity-50">
+              {notifLoading ? "Saving..." : <>Save Preferences <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></>}
+            </button>
+          </div>
+        </motion.div>
       </div>
     </div>
   );

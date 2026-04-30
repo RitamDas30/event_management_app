@@ -71,7 +71,7 @@ export default function Profile() {
 
   return (
     <div className="max-w-2xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">
+      <h1 className="text-2xl font-bold text-surface-950 dark:text-surface-50 mb-6">
         {isOrganizer ? "Organizer Profile" : "Edit Profile"}
       </h1>
 
@@ -81,33 +81,33 @@ export default function Profile() {
             {form.name?.charAt(0).toUpperCase() || "?"}
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-900">{form.name || "Your Name"}</p>
+            <p className="text-sm font-medium text-surface-950 dark:text-surface-50">{form.name || "Your Name"}</p>
             <p className={`text-xs font-semibold uppercase text-${accentColor}-600`}>{user?.role}</p>
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">
             {isOrganizer ? "Organization / Name" : "Full Name"}
           </label>
-          <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none" />
+          <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="w-full px-4 py-2.5 bg-surface-50 dark:bg-surface-900 border border-border rounded-lg text-sm text-surface-950 dark:text-surface-50 placeholder-surface-400 dark:placeholder-surface-500 focus:border-brand-500/50 focus:ring-2 focus:ring-brand-500/30 focus:outline-none" />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
-          <textarea value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} rows={3} maxLength={500} placeholder={isOrganizer ? "Tell attendees about you..." : "Tell us about yourself..."} className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none resize-none" />
-          <p className="text-xs text-gray-400 mt-1">{form.bio.length}/500</p>
+          <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Bio</label>
+          <textarea value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} rows={3} maxLength={500} placeholder={isOrganizer ? "Tell attendees about you..." : "Tell us about yourself..."} className="w-full px-4 py-2.5 bg-surface-50 dark:bg-surface-900 border border-border rounded-lg text-sm text-surface-950 dark:text-surface-50 placeholder-surface-400 dark:placeholder-surface-500 focus:border-brand-500/50 focus:ring-2 focus:ring-brand-500/30 focus:outline-none resize-none" />
+          <p className="text-xs text-surface-400 dark:text-surface-500 mt-1">{form.bio.length}/500</p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
             {isOrganizer ? "Focus Areas" : "Interests"}
           </label>
           <div className="flex flex-wrap gap-2">
             {interestOptions.map((interest) => (
               <button key={interest} type="button" onClick={() => toggleInterest(interest)}
                 className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                  form.interests.includes(interest) ? `bg-${accentColor}-600 text-white` : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  form.interests.includes(interest) ? `bg-${accentColor}-600 text-white` : "bg-surface-100 dark:bg-surface-800 text-surface-600 dark:text-surface-400 hover:bg-surface-200 dark:bg-surface-800"
                 }`}>
                 {form.interests.includes(interest) && <span className="mr-1">&#10003;</span>}
                 {interest}
@@ -117,7 +117,7 @@ export default function Profile() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Social Links</label>
+          <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">Social Links</label>
           <div className="space-y-3">
             {[
               { key: "website", label: "Website", placeholder: "https://yoursite.com" },
@@ -126,8 +126,8 @@ export default function Profile() {
               { key: "twitter", label: "Twitter/X", placeholder: "https://x.com/username" },
             ].map((field) => (
               <div key={field.key} className="flex items-center gap-3">
-                <span className="text-sm font-medium text-gray-500 w-20">{field.label}</span>
-                <input type="url" value={form.socialLinks[field.key]} onChange={(e) => setForm({ ...form, socialLinks: { ...form.socialLinks, [field.key]: e.target.value } })} placeholder={field.placeholder} className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-blue-400 focus:outline-none" />
+                <span className="text-sm font-medium text-surface-500 w-20">{field.label}</span>
+                <input type="url" value={form.socialLinks[field.key]} onChange={(e) => setForm({ ...form, socialLinks: { ...form.socialLinks, [field.key]: e.target.value } })} placeholder={field.placeholder} className="flex-1 px-3 py-2 bg-surface-50 dark:bg-surface-900 border border-border rounded-lg text-sm text-surface-950 dark:text-surface-50 placeholder-surface-400 dark:placeholder-surface-500 focus:border-brand-500/50 focus:outline-none" />
               </div>
             ))}
           </div>

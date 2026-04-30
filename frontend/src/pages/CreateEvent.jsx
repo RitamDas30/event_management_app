@@ -213,7 +213,7 @@ export default function CreateEvent() {
   };
 
   const inputClass =
-    "w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none";
+    "w-full px-4 py-2.5 bg-surface-50 dark:bg-surface-900 border border-border rounded-lg text-sm text-surface-950 dark:text-surface-50 placeholder-surface-400 dark:placeholder-surface-500 focus:border-brand-500/50 focus:ring-2 focus:ring-brand-500/30 focus:outline-none transition-colors";
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -233,15 +233,15 @@ export default function CreateEvent() {
                       isCompleted
                         ? "bg-green-500 text-white"
                         : isActive
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-200 text-gray-500"
+                        ? "bg-brand-600 text-white"
+                        : "bg-surface-200 dark:bg-surface-800 text-surface-500"
                     }`}
                   >
                     {isCompleted ? <Check className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
                   </div>
                   <span
                     className={`text-xs mt-1 font-medium ${
-                      isActive ? "text-blue-600" : "text-gray-500"
+                      isActive ? "text-brand-600 dark:text-brand-400" : "text-surface-500"
                     }`}
                   >
                     {step.name}
@@ -250,7 +250,7 @@ export default function CreateEvent() {
                 {idx < steps.length - 1 && (
                   <div
                     className={`flex-1 h-0.5 mx-2 mt-[-12px] ${
-                      currentStep > step.id ? "bg-green-500" : "bg-gray-200"
+                      currentStep > step.id ? "bg-green-500" : "bg-surface-200 dark:bg-surface-800"
                     }`}
                   />
                 )}
@@ -260,14 +260,14 @@ export default function CreateEvent() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
+      <div className="bg-surface-50 dark:bg-surface-900 rounded-xl border border-border p-6 sm:p-8">
         {/* Step 1: Basic Info */}
         {currentStep === 1 && (
           <div className="space-y-5">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Basic Information</h2>
+            <h2 className="text-xl font-bold text-surface-950 dark:text-surface-50 mb-4">Basic Information</h2>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">
                 Event Title *
               </label>
               <input
@@ -282,7 +282,7 @@ export default function CreateEvent() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">
                 Description *
               </label>
               <textarea
@@ -294,11 +294,11 @@ export default function CreateEvent() {
                 required
                 className={inputClass + " resize-none"}
               />
-              <p className="text-xs text-gray-400 mt-1">{form.description.length}/2000</p>
+              <p className="text-xs text-surface-400 dark:text-surface-500 mt-1">{form.description.length}/2000</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Event Mode *</label>
+              <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Event Mode *</label>
               <div className="grid grid-cols-3 gap-2">
                 {["in-person", "online", "hybrid"].map((mode) => (
                   <button
@@ -307,8 +307,8 @@ export default function CreateEvent() {
                     onClick={() => setForm({ ...form, eventMode: mode })}
                     className={`px-3 py-2 rounded-lg text-sm font-medium border transition-all capitalize ${
                       form.eventMode === mode
-                        ? "border-blue-500 bg-blue-50 text-blue-700"
-                        : "border-gray-200 text-gray-600 hover:border-gray-300"
+                        ? "border-blue-500 bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-300"
+                        : "border-border text-surface-600 dark:text-surface-400 hover:border-border"
                     }`}
                   >
                     {mode}
@@ -319,7 +319,7 @@ export default function CreateEvent() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
+                <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Category *</label>
                 <select name="category" value={form.category} onChange={handleChange} className={inputClass}>
                   {categories.map((c) => (
                     <option key={c} value={c}>{c}</option>
@@ -327,7 +327,7 @@ export default function CreateEvent() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹)</label>
+                <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Price (₹)</label>
                 <input
                   type="number"
                   name="price"
@@ -345,29 +345,29 @@ export default function CreateEvent() {
         {/* Step 2: Schedule & Venue */}
         {currentStep === 2 && (
           <div className="space-y-5">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Schedule & Venue</h2>
+            <h2 className="text-xl font-bold text-surface-950 dark:text-surface-50 mb-4">Schedule & Venue</h2>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Start Time *</label>
+                <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Start Time *</label>
                 <input type="datetime-local" name="startTime" value={form.startTime} onChange={handleChange} required className={inputClass} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">End Time *</label>
+                <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">End Time *</label>
                 <input type="datetime-local" name="endTime" value={form.endTime} onChange={handleChange} required className={inputClass} />
               </div>
             </div>
 
             {/* Venue — conditional based on event mode */}
             {form.eventMode === "online" ? (
-              <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+              <div className="bg-violet-50 dark:bg-violet-500/10 border border-purple-200 rounded-xl p-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 10l4.553-2.276A1 1 0 0 1 21 8.618v6.764a1 1 0 0 1-1.447.894L15 14M5 18h8a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" /></svg>
+                  <div className="w-10 h-10 rounded-lg bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-5 h-5 text-violet-600 dark:text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 10l4.553-2.276A1 1 0 0 1 21 8.618v6.764a1 1 0 0 1-1.447.894L15 14M5 18h8a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" /></svg>
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-purple-800">Virtual Event</p>
-                    <p className="text-xs text-purple-600">A streaming link will be auto-generated. Attendees join via the Live Events page.</p>
+                    <p className="text-xs text-violet-600 dark:text-violet-400">A streaming link will be auto-generated. Attendees join via the Live Events page.</p>
                   </div>
                 </div>
               </div>
@@ -375,11 +375,11 @@ export default function CreateEvent() {
               <>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Venue Name *</label>
+                    <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Venue Name *</label>
                     <input type="text" name="venueName" value={form.venueName} onChange={handleChange} placeholder="e.g., Main Auditorium" required className={inputClass} />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">
                       {form.eventMode === "hybrid" ? "In-Person Capacity *" : "Capacity *"}
                     </label>
                     <input type="number" name="capacity" value={form.capacity} onChange={handleChange} min="1" required className={inputClass} />
@@ -387,14 +387,14 @@ export default function CreateEvent() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Address *</label>
+                  <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Full Address *</label>
                   <input type="text" name="fullAddress" value={form.fullAddress} onChange={handleChange} placeholder="e.g., 123 University Road, City, State" required className={inputClass} />
                 </div>
 
                 {form.eventMode === "hybrid" && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 flex items-center gap-2">
-                    <svg className="w-4 h-4 text-blue-600 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 10l4.553-2.276A1 1 0 0 1 21 8.618v6.764a1 1 0 0 1-1.447.894L15 14M5 18h8a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" /></svg>
-                    <p className="text-xs text-blue-700">Hybrid event — a virtual streaming link will also be generated for remote attendees.</p>
+                  <div className="bg-brand-50 dark:bg-brand-500/10 border border-blue-200 rounded-xl p-3 flex items-center gap-2">
+                    <svg className="w-4 h-4 text-brand-600 dark:text-brand-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 10l4.553-2.276A1 1 0 0 1 21 8.618v6.764a1 1 0 0 1-1.447.894L15 14M5 18h8a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" /></svg>
+                    <p className="text-xs text-brand-700 dark:text-brand-300">Hybrid event — a virtual streaming link will also be generated for remote attendees.</p>
                   </div>
                 )}
               </>
@@ -403,7 +403,7 @@ export default function CreateEvent() {
             {/* Capacity for online-only (no venue) */}
             {form.eventMode === "online" && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Max Viewers *</label>
+                <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Max Viewers *</label>
                 <input type="number" name="capacity" value={form.capacity} onChange={handleChange} min="1" required className={inputClass} placeholder="Maximum online attendees" />
               </div>
             )}
@@ -411,18 +411,18 @@ export default function CreateEvent() {
             {/* Agenda Builder */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium text-gray-700">Agenda / Schedule</label>
-                <button type="button" onClick={addAgendaItem} className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
+                <label className="text-sm font-medium text-surface-700 dark:text-surface-300">Agenda / Schedule</label>
+                <button type="button" onClick={addAgendaItem} className="text-sm text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:text-brand-300 font-medium flex items-center gap-1">
                   <Plus className="w-4 h-4" /> Add Item
                 </button>
               </div>
               {form.agenda.map((item, idx) => (
                 <div key={idx} className="flex gap-2 mb-2 items-start">
-                  <input type="text" value={item.time} onChange={(e) => updateAgendaItem(idx, "time", e.target.value)} placeholder="10:00 AM" className="w-24 px-3 py-2 border border-gray-200 rounded-lg text-sm" />
-                  <input type="text" value={item.title} onChange={(e) => updateAgendaItem(idx, "title", e.target.value)} placeholder="Session title" className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm" />
-                  <input type="text" value={item.speaker} onChange={(e) => updateAgendaItem(idx, "speaker", e.target.value)} placeholder="Speaker" className="w-32 px-3 py-2 border border-gray-200 rounded-lg text-sm" />
-                  <input type="text" value={item.duration} onChange={(e) => updateAgendaItem(idx, "duration", e.target.value)} placeholder="30m" className="w-16 px-3 py-2 border border-gray-200 rounded-lg text-sm" />
-                  <button type="button" onClick={() => removeAgendaItem(idx)} className="p-2 text-gray-400 hover:text-red-500">
+                  <input type="text" value={item.time} onChange={(e) => updateAgendaItem(idx, "time", e.target.value)} placeholder="10:00 AM" className="w-24 px-3 py-2 bg-surface-50 dark:bg-surface-900 border border-border rounded-lg text-sm text-surface-950 dark:text-surface-50 placeholder-surface-400 dark:placeholder-surface-500" />
+                  <input type="text" value={item.title} onChange={(e) => updateAgendaItem(idx, "title", e.target.value)} placeholder="Session title" className="flex-1 px-3 py-2 bg-surface-50 dark:bg-surface-900 border border-border rounded-lg text-sm text-surface-950 dark:text-surface-50 placeholder-surface-400 dark:placeholder-surface-500" />
+                  <input type="text" value={item.speaker} onChange={(e) => updateAgendaItem(idx, "speaker", e.target.value)} placeholder="Speaker" className="w-32 px-3 py-2 bg-surface-50 dark:bg-surface-900 border border-border rounded-lg text-sm text-surface-950 dark:text-surface-50 placeholder-surface-400 dark:placeholder-surface-500" />
+                  <input type="text" value={item.duration} onChange={(e) => updateAgendaItem(idx, "duration", e.target.value)} placeholder="30m" className="w-16 px-3 py-2 bg-surface-50 dark:bg-surface-900 border border-border rounded-lg text-sm text-surface-950 dark:text-surface-50 placeholder-surface-400 dark:placeholder-surface-500" />
+                  <button type="button" onClick={() => removeAgendaItem(idx)} className="p-2 text-surface-400 dark:text-surface-500 hover:text-red-500">
                     <X className="w-4 h-4" />
                   </button>
                 </div>
@@ -434,16 +434,16 @@ export default function CreateEvent() {
         {/* Step 3: Details (Tags, FAQ, Speakers) */}
         {currentStep === 3 && (
           <div className="space-y-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Additional Details</h2>
+            <h2 className="text-xl font-bold text-surface-950 dark:text-surface-50 mb-4">Additional Details</h2>
 
             {/* Tags */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-2">
                 <Tag className="w-4 h-4 inline mr-1" /> Tags
               </label>
               <div className="flex gap-2 mb-2 flex-wrap">
                 {form.tags.map((tag) => (
-                  <span key={tag} className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
+                  <span key={tag} className="inline-flex items-center gap-1 px-3 py-1 bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-300 rounded-full text-sm font-medium">
                     {tag}
                     <button type="button" onClick={() => removeTag(tag)} className="hover:text-red-500"><X className="w-3 h-3" /></button>
                   </span>
@@ -458,29 +458,29 @@ export default function CreateEvent() {
                   placeholder="Add a tag and press Enter"
                   className={inputClass}
                 />
-                <button type="button" onClick={addTag} className="px-4 py-2 bg-gray-100 rounded-lg text-sm font-medium hover:bg-gray-200">Add</button>
+                <button type="button" onClick={addTag} className="px-4 py-2 bg-surface-100 dark:bg-surface-800 rounded-lg text-sm font-medium hover:bg-surface-200 dark:bg-surface-800">Add</button>
               </div>
             </div>
 
             {/* Speakers */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-sm font-medium text-surface-700 dark:text-surface-300">
                   <Mic className="w-4 h-4 inline mr-1" /> Speakers
                 </label>
-                <button type="button" onClick={addSpeaker} className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
+                <button type="button" onClick={addSpeaker} className="text-sm text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:text-brand-300 font-medium flex items-center gap-1">
                   <Plus className="w-4 h-4" /> Add Speaker
                 </button>
               </div>
               {form.speakers.map((speaker, idx) => (
-                <div key={idx} className="border border-gray-200 rounded-lg p-3 mb-2 space-y-2">
+                <div key={idx} className="border border-border rounded-lg p-3 mb-2 space-y-2">
                   <div className="flex gap-2">
-                    <input type="text" value={speaker.name} onChange={(e) => updateSpeaker(idx, "name", e.target.value)} placeholder="Speaker name" className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm" />
-                    <input type="text" value={speaker.role} onChange={(e) => updateSpeaker(idx, "role", e.target.value)} placeholder="Role / Title" className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm" />
-                    <button type="button" onClick={() => removeSpeaker(idx)} className="p-2 text-gray-400 hover:text-red-500"><X className="w-4 h-4" /></button>
+                    <input type="text" value={speaker.name} onChange={(e) => updateSpeaker(idx, "name", e.target.value)} placeholder="Speaker name" className="flex-1 px-3 py-2 bg-surface-50 dark:bg-surface-900 border border-border rounded-lg text-sm text-surface-950 dark:text-surface-50 placeholder-surface-400 dark:placeholder-surface-500" />
+                    <input type="text" value={speaker.role} onChange={(e) => updateSpeaker(idx, "role", e.target.value)} placeholder="Role / Title" className="flex-1 px-3 py-2 bg-surface-50 dark:bg-surface-900 border border-border rounded-lg text-sm text-surface-950 dark:text-surface-50 placeholder-surface-400 dark:placeholder-surface-500" />
+                    <button type="button" onClick={() => removeSpeaker(idx)} className="p-2 text-surface-400 dark:text-surface-500 hover:text-red-500"><X className="w-4 h-4" /></button>
                   </div>
-                  <input type="text" value={speaker.bio} onChange={(e) => updateSpeaker(idx, "bio", e.target.value)} placeholder="Short bio" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
-                  <input type="url" value={speaker.socialLink} onChange={(e) => updateSpeaker(idx, "socialLink", e.target.value)} placeholder="LinkedIn/Twitter URL" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+                  <input type="text" value={speaker.bio} onChange={(e) => updateSpeaker(idx, "bio", e.target.value)} placeholder="Short bio" className="w-full px-3 py-2 bg-surface-50 dark:bg-surface-900 border border-border rounded-lg text-sm text-surface-950 dark:text-surface-50 placeholder-surface-400 dark:placeholder-surface-500" />
+                  <input type="url" value={speaker.socialLink} onChange={(e) => updateSpeaker(idx, "socialLink", e.target.value)} placeholder="LinkedIn/Twitter URL" className="w-full px-3 py-2 bg-surface-50 dark:bg-surface-900 border border-border rounded-lg text-sm text-surface-950 dark:text-surface-50 placeholder-surface-400 dark:placeholder-surface-500" />
                 </div>
               ))}
             </div>
@@ -488,20 +488,20 @@ export default function CreateEvent() {
             {/* FAQ */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-sm font-medium text-surface-700 dark:text-surface-300">
                   <HelpCircle className="w-4 h-4 inline mr-1" /> FAQ
                 </label>
-                <button type="button" onClick={addFaq} className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
+                <button type="button" onClick={addFaq} className="text-sm text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:text-brand-300 font-medium flex items-center gap-1">
                   <Plus className="w-4 h-4" /> Add Question
                 </button>
               </div>
               {form.faqs.map((faq, idx) => (
-                <div key={idx} className="border border-gray-200 rounded-lg p-3 mb-2 space-y-2">
+                <div key={idx} className="border border-border rounded-lg p-3 mb-2 space-y-2">
                   <div className="flex gap-2 items-start">
-                    <input type="text" value={faq.question} onChange={(e) => updateFaq(idx, "question", e.target.value)} placeholder="Question" className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm" />
-                    <button type="button" onClick={() => removeFaq(idx)} className="p-2 text-gray-400 hover:text-red-500"><X className="w-4 h-4" /></button>
+                    <input type="text" value={faq.question} onChange={(e) => updateFaq(idx, "question", e.target.value)} placeholder="Question" className="flex-1 px-3 py-2 bg-surface-50 dark:bg-surface-900 border border-border rounded-lg text-sm text-surface-950 dark:text-surface-50 placeholder-surface-400 dark:placeholder-surface-500" />
+                    <button type="button" onClick={() => removeFaq(idx)} className="p-2 text-surface-400 dark:text-surface-500 hover:text-red-500"><X className="w-4 h-4" /></button>
                   </div>
-                  <textarea value={faq.answer} onChange={(e) => updateFaq(idx, "answer", e.target.value)} placeholder="Answer" rows={2} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none" />
+                  <textarea value={faq.answer} onChange={(e) => updateFaq(idx, "answer", e.target.value)} placeholder="Answer" rows={2} className="w-full px-3 py-2 bg-surface-50 dark:bg-surface-900 border border-border rounded-lg text-sm text-surface-950 dark:text-surface-50 placeholder-surface-400 dark:placeholder-surface-500 resize-none" />
                 </div>
               ))}
             </div>
@@ -511,50 +511,50 @@ export default function CreateEvent() {
         {/* Step 4: Media & Review */}
         {currentStep === 4 && (
           <div className="space-y-5">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Media & Review</h2>
+            <h2 className="text-xl font-bold text-surface-950 dark:text-surface-50 mb-4">Media & Review</h2>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Event Image</label>
+              <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Event Image</label>
               <input
                 type="file"
                 name="imageFile"
                 accept="image/jpeg,image/png,image/webp"
                 onChange={handleChange}
-                className="w-full border border-gray-200 p-3 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 rounded-lg bg-gray-50"
+                className="w-full border border-border p-3 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-50 dark:bg-brand-500/10 file:text-brand-700 dark:text-brand-300 hover:file:bg-brand-100 dark:bg-brand-500/20 rounded-lg bg-surface-100 dark:bg-surface-900/50"
               />
               {form.imageFile && (
-                <p className="text-xs text-green-600 mt-1">Selected: {form.imageFile.name}</p>
+                <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">Selected: {form.imageFile.name}</p>
               )}
             </div>
 
             {/* Summary */}
-            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-              <h3 className="font-semibold text-gray-900">Event Summary</h3>
+            <div className="bg-surface-100 dark:bg-surface-900/50 rounded-lg p-4 space-y-3">
+              <h3 className="font-semibold text-surface-950 dark:text-surface-50">Event Summary</h3>
               <div className="grid grid-cols-2 gap-2 text-sm">
-                <div><span className="text-gray-500">Title:</span> <span className="font-medium">{form.title || "—"}</span></div>
-                <div><span className="text-gray-500">Category:</span> <span className="font-medium">{form.category}</span></div>
-                <div><span className="text-gray-500">Venue:</span> <span className="font-medium">{form.venueName || "—"}</span></div>
-                <div><span className="text-gray-500">Capacity:</span> <span className="font-medium">{form.capacity}</span></div>
-                <div><span className="text-gray-500">Price:</span> <span className="font-medium">{form.price > 0 ? `₹${form.price}` : "Free"}</span></div>
-                <div><span className="text-gray-500">Tags:</span> <span className="font-medium">{form.tags.length > 0 ? form.tags.join(", ") : "None"}</span></div>
-                <div><span className="text-gray-500">Start:</span> <span className="font-medium">{form.startTime ? new Date(form.startTime).toLocaleString() : "—"}</span></div>
-                <div><span className="text-gray-500">End:</span> <span className="font-medium">{form.endTime ? new Date(form.endTime).toLocaleString() : "—"}</span></div>
-                <div><span className="text-gray-500">Agenda Items:</span> <span className="font-medium">{form.agenda.length}</span></div>
-                <div><span className="text-gray-500">Speakers:</span> <span className="font-medium">{form.speakers.length}</span></div>
-                <div><span className="text-gray-500">FAQs:</span> <span className="font-medium">{form.faqs.length}</span></div>
-                <div><span className="text-gray-500">Image:</span> <span className="font-medium">{form.imageFile ? "Yes" : "No"}</span></div>
+                <div><span className="text-surface-500">Title:</span> <span className="font-medium">{form.title || "—"}</span></div>
+                <div><span className="text-surface-500">Category:</span> <span className="font-medium">{form.category}</span></div>
+                <div><span className="text-surface-500">Venue:</span> <span className="font-medium">{form.venueName || "—"}</span></div>
+                <div><span className="text-surface-500">Capacity:</span> <span className="font-medium">{form.capacity}</span></div>
+                <div><span className="text-surface-500">Price:</span> <span className="font-medium">{form.price > 0 ? `₹${form.price}` : "Free"}</span></div>
+                <div><span className="text-surface-500">Tags:</span> <span className="font-medium">{form.tags.length > 0 ? form.tags.join(", ") : "None"}</span></div>
+                <div><span className="text-surface-500">Start:</span> <span className="font-medium">{form.startTime ? new Date(form.startTime).toLocaleString() : "—"}</span></div>
+                <div><span className="text-surface-500">End:</span> <span className="font-medium">{form.endTime ? new Date(form.endTime).toLocaleString() : "—"}</span></div>
+                <div><span className="text-surface-500">Agenda Items:</span> <span className="font-medium">{form.agenda.length}</span></div>
+                <div><span className="text-surface-500">Speakers:</span> <span className="font-medium">{form.speakers.length}</span></div>
+                <div><span className="text-surface-500">FAQs:</span> <span className="font-medium">{form.faqs.length}</span></div>
+                <div><span className="text-surface-500">Image:</span> <span className="font-medium">{form.imageFile ? "Yes" : "No"}</span></div>
               </div>
             </div>
           </div>
         )}
 
         {/* Navigation Buttons */}
-        <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
+        <div className="flex justify-between mt-8 pt-6 border-t border-border">
           <button
             type="button"
             onClick={prevStep}
             disabled={currentStep === 1}
-            className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-surface-700 dark:text-surface-300 bg-surface-100 dark:bg-surface-800 rounded-xl hover:bg-surface-200 dark:bg-surface-800 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ChevronLeft className="w-4 h-4" /> Back
           </button>
@@ -563,7 +563,7 @@ export default function CreateEvent() {
             <button
               type="button"
               onClick={nextStep}
-              className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition"
+              className="flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-brand-600 rounded-xl hover:bg-brand-700 transition"
             >
               Next <ChevronRight className="w-4 h-4" />
             </button>

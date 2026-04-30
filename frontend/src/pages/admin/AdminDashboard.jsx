@@ -39,21 +39,21 @@ export default function AdminDashboard() {
       title: "Total Events",
       value: totalEvents,
       icon: CalendarDays,
-      color: "bg-blue-50 text-blue-600",
+      color: "bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400",
       link: "/admin/events",
     },
     {
       title: "Upcoming",
       value: upcomingEvents,
       icon: Activity,
-      color: "bg-green-50 text-green-600",
+      color: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
       link: "/admin/events",
     },
     {
       title: "Total Registrations",
       value: totalRegistrations,
       icon: Users,
-      color: "bg-purple-50 text-purple-600",
+      color: "bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400",
       link: "/admin/reports",
     },
     {
@@ -70,10 +70,10 @@ export default function AdminDashboard() {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-2 mb-2">
-          <Shield className="w-6 h-6 text-red-600" />
-          <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+          <Shield className="w-6 h-6 text-rose-600 dark:text-rose-400" />
+          <h1 className="text-2xl font-bold text-surface-950 dark:text-surface-50">Admin Dashboard</h1>
         </div>
-        <p className="text-gray-600">
+        <p className="text-surface-600 dark:text-surface-400">
           Welcome, {user?.name}. Platform overview and management tools.
         </p>
       </div>
@@ -86,15 +86,15 @@ export default function AdminDashboard() {
             <Link
               key={card.title}
               to={card.link}
-              className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-all"
+              className="bg-surface-50 dark:bg-surface-900 rounded-xl border border-border p-5 hover:shadow-md transition-all"
             >
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-gray-600">{card.title}</span>
+                <span className="text-sm font-medium text-surface-600 dark:text-surface-400">{card.title}</span>
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${card.color}`}>
                   <Icon className="w-4 h-4" />
                 </div>
               </div>
-              <p className="text-2xl font-bold text-gray-900">{loading ? "..." : card.value}</p>
+              <p className="text-2xl font-bold text-surface-950 dark:text-surface-50">{loading ? "..." : card.value}</p>
             </Link>
           );
         })}
@@ -104,37 +104,37 @@ export default function AdminDashboard() {
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         <Link
           to="/admin/users"
-          className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-all"
+          className="bg-surface-50 dark:bg-surface-900 rounded-xl border border-border p-5 hover:shadow-md transition-all"
         >
-          <Users className="w-6 h-6 text-blue-600 mb-3" />
-          <h3 className="font-semibold text-gray-900">User Management</h3>
-          <p className="text-sm text-gray-500 mt-1">Manage users, roles, and permissions</p>
+          <Users className="w-6 h-6 text-brand-600 dark:text-brand-400 mb-3" />
+          <h3 className="font-semibold text-surface-950 dark:text-surface-50">User Management</h3>
+          <p className="text-sm text-surface-500 mt-1">Manage users, roles, and permissions</p>
         </Link>
         <Link
           to="/admin/events"
-          className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-all"
+          className="bg-surface-50 dark:bg-surface-900 rounded-xl border border-border p-5 hover:shadow-md transition-all"
         >
-          <Shield className="w-6 h-6 text-purple-600 mb-3" />
-          <h3 className="font-semibold text-gray-900">Event Moderation</h3>
-          <p className="text-sm text-gray-500 mt-1">Review and moderate platform events</p>
+          <Shield className="w-6 h-6 text-violet-600 dark:text-violet-400 mb-3" />
+          <h3 className="font-semibold text-surface-950 dark:text-surface-50">Event Moderation</h3>
+          <p className="text-sm text-surface-500 mt-1">Review and moderate platform events</p>
         </Link>
         <Link
           to="/admin/reports"
-          className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-all"
+          className="bg-surface-50 dark:bg-surface-900 rounded-xl border border-border p-5 hover:shadow-md transition-all"
         >
-          <TrendingUp className="w-6 h-6 text-green-600 mb-3" />
-          <h3 className="font-semibold text-gray-900">Reports</h3>
-          <p className="text-sm text-gray-500 mt-1">View platform-wide analytics</p>
+          <TrendingUp className="w-6 h-6 text-emerald-600 dark:text-emerald-400 mb-3" />
+          <h3 className="font-semibold text-surface-950 dark:text-surface-50">Reports</h3>
+          <p className="text-sm text-surface-500 mt-1">View platform-wide analytics</p>
         </Link>
       </div>
 
       {/* Recent Events */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-surface-50 dark:bg-surface-900 rounded-xl border border-border p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Recent Events</h2>
+          <h2 className="text-lg font-semibold text-surface-950 dark:text-surface-50">Recent Events</h2>
           <Link
             to="/admin/events"
-            className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+            className="text-sm text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:text-brand-300 font-medium flex items-center gap-1"
           >
             View all <ArrowRight className="w-4 h-4" />
           </Link>
@@ -143,38 +143,38 @@ export default function AdminDashboard() {
         {loading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-14 bg-gray-100 rounded-lg animate-pulse"></div>
+              <div key={i} className="h-14 bg-surface-100 dark:bg-surface-800 rounded-lg animate-pulse"></div>
             ))}
           </div>
         ) : events.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100">
-                  <th className="text-left py-2 px-3 text-gray-500 font-medium">Event</th>
-                  <th className="text-left py-2 px-3 text-gray-500 font-medium">Category</th>
-                  <th className="text-left py-2 px-3 text-gray-500 font-medium">Date</th>
-                  <th className="text-left py-2 px-3 text-gray-500 font-medium">Registrations</th>
-                  <th className="text-left py-2 px-3 text-gray-500 font-medium">Status</th>
+                <tr className="border-b border-border">
+                  <th className="text-left py-2 px-3 text-surface-500 font-medium">Event</th>
+                  <th className="text-left py-2 px-3 text-surface-500 font-medium">Category</th>
+                  <th className="text-left py-2 px-3 text-surface-500 font-medium">Date</th>
+                  <th className="text-left py-2 px-3 text-surface-500 font-medium">Registrations</th>
+                  <th className="text-left py-2 px-3 text-surface-500 font-medium">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {events.slice(0, 10).map((event) => (
-                  <tr key={event._id} className="border-b border-gray-50 hover:bg-gray-50">
-                    <td className="py-3 px-3 font-medium text-gray-900">{event.title}</td>
-                    <td className="py-3 px-3 text-gray-600">{event.category}</td>
-                    <td className="py-3 px-3 text-gray-600">
+                  <tr key={event._id} className="border-b border-border hover:bg-surface-100 dark:bg-surface-900/50">
+                    <td className="py-3 px-3 font-medium text-surface-950 dark:text-surface-50">{event.title}</td>
+                    <td className="py-3 px-3 text-surface-600 dark:text-surface-400">{event.category}</td>
+                    <td className="py-3 px-3 text-surface-600 dark:text-surface-400">
                       {new Date(event.startTime).toLocaleDateString()}
                     </td>
-                    <td className="py-3 px-3 text-gray-600">
+                    <td className="py-3 px-3 text-surface-600 dark:text-surface-400">
                       {event.capacity - event.seatsAvailable}/{event.capacity}
                     </td>
                     <td className="py-3 px-3">
                       <span
                         className={`text-xs font-medium px-2 py-1 rounded-full ${
                           new Date(event.startTime) > new Date()
-                            ? "text-green-600 bg-green-50"
-                            : "text-gray-600 bg-gray-100"
+                            ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10"
+                            : "text-surface-600 dark:text-surface-400 bg-surface-100 dark:bg-surface-800"
                         }`}
                       >
                         {new Date(event.startTime) > new Date() ? "Upcoming" : "Completed"}
@@ -186,7 +186,7 @@ export default function AdminDashboard() {
             </table>
           </div>
         ) : (
-          <p className="text-center py-8 text-gray-500">No events on the platform yet.</p>
+          <p className="text-center py-8 text-surface-500">No events on the platform yet.</p>
         )}
       </div>
     </div>

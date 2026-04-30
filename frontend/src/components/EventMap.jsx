@@ -45,8 +45,8 @@ export default function EventMap({ address, venueName, className = "h-64 w-full 
   }, [address]);
 
   if (loading) {
-    return <div className={`${className} bg-gray-100 animate-pulse flex items-center justify-center`}>
-      <span className="text-sm text-gray-400">Loading map...</span>
+    return <div className={`${className} bg-surface-100 dark:bg-surface-800 animate-pulse flex items-center justify-center`}>
+      <span className="text-sm text-surface-400 dark:text-surface-500">Loading map...</span>
     </div>;
   }
 

@@ -1,28 +1,26 @@
-import { Outlet, Link } from "react-router-dom";
-import { Calendar } from "lucide-react";
+import { Outlet, useLocation } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import Footer from "../components/Footer";
+import PublicNavbar from "../components/PublicNavbar";
 
 export default function GuestLayout() {
+  const location = useLocation();
+
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      {/* Minimal top bar for guests */}
-      <nav className="bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors">
-          <Calendar className="w-6 h-6 text-blue-600" />
-          Evently
-        </Link>
-        <div className="flex items-center gap-3">
-          <Link to="/login" className="text-sm font-medium text-gray-700 hover:text-blue-600 px-3 py-2 rounded-lg transition-colors">
-            Log in
-          </Link>
-          <Link to="/register" className="text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors shadow-sm">
-            Sign up
-          </Link>
-        </div>
-      </nav>
-      <main className="flex-1">
-        <Outlet />
-      </main>
+    <div className="min-h-screen flex flex-col bg-surface-50 dark:bg-surface-950 transition-colors duration-500 selection:bg-brand-500 selection:text-white">
+      <PublicNavbar />
+      <AnimatePresence mode="wait">
+        <motion.main
+          key={location.pathname}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          className="flex-1 flex flex-col relative z-10"
+        >
+          <Outlet />
+        </motion.main>
+      </AnimatePresence>
       <Footer />
     </div>
   );

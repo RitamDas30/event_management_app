@@ -31,10 +31,10 @@ export default function StudentRegistrations() {
   };
 
 
-  if (loading) return <div className="text-center mt-10 text-gray-500">Loading...</div>;
+  if (loading) return <div className="text-center mt-10 text-surface-500">Loading...</div>;
 
   if (registrations.length === 0)
-    return <div className="text-center mt-10 text-gray-500">You have not registered for any events yet.</div>;
+    return <div className="text-center mt-10 text-surface-500">You have not registered for any events yet.</div>;
 
   return (
     <div className="max-w-4xl mx-auto p-4">
@@ -44,26 +44,26 @@ export default function StudentRegistrations() {
         {registrations.map((r) => (
           <div
             key={r._id}
-            className="p-4 border border-gray-200 rounded-xl shadow-sm bg-white hover:shadow-md transition"
+            className="p-4 border border-border rounded-xl shadow-sm bg-surface-50 dark:bg-surface-900 hover:shadow-md transition"
           >
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex-1">
                 <h2 className="text-lg font-medium">{r.event?.title || "Untitled Event"}</h2>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-surface-500">
                   Status:{" "}
                   <span
                     className={`font-medium ${
                       r.status === "registered"
-                        ? "text-green-600"
+                        ? "text-emerald-600 dark:text-emerald-400"
                         : r.status === "waitlisted"
                         ? "text-yellow-600"
-                        : "text-red-600"
+                        : "text-rose-600 dark:text-rose-400"
                     }`}
                   >
                     {r.status}
                   </span>
                 </p>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-surface-500">
                   Venue: {r.event?.venueName || "N/A"} | {r.event?.startTime ? new Date(r.event.startTime).toLocaleString() : "N/A"}
                 </p>
               </div>
@@ -79,9 +79,9 @@ export default function StudentRegistrations() {
                                 src={r.qrCode}
                                 alt="Expired QR Code"
                                 // Apply grayscale and opacity for 'Expired' look
-                                className="w-28 h-28 border border-gray-300 rounded-lg grayscale opacity-50"
+                                className="w-28 h-28 border border-border rounded-lg grayscale opacity-50"
                             />
-                            <span className="absolute inset-0 flex items-center justify-center text-red-600 font-bold text-xs bg-black bg-opacity-40 rounded-lg">
+                            <span className="absolute inset-0 flex items-center justify-center text-rose-600 dark:text-rose-400 font-bold text-xs bg-black bg-opacity-40 rounded-lg">
                                 EXPIRED
                             </span>
                         </div>
@@ -90,7 +90,7 @@ export default function StudentRegistrations() {
                         <img
                             src={r.qrCode}
                             alt="QR Code"
-                            className="w-28 h-28 border border-gray-300 rounded-lg"
+                            className="w-28 h-28 border border-border rounded-lg"
                         />
                     )}
                     
@@ -99,7 +99,7 @@ export default function StudentRegistrations() {
                         <a
                             href={r.qrCode}
                             download={`ticket-${r.event?._id || "registration"}.png`}
-                            className="text-blue-600 text-sm underline hover:text-blue-800"
+                            className="text-brand-600 dark:text-brand-400 text-sm underline hover:text-blue-800"
                         >
                             Download Ticket
                         </a>

@@ -62,16 +62,16 @@ export default function EventDeleteModal({ event, onClose, onDeleteSuccess }) {
         <div className="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center p-4">
             
             {/* Modal Content */}
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 transform transition-all">
+            <div className="bg-surface-50 dark:bg-surface-900 rounded-2xl shadow-2xl w-full max-w-lg p-6 transform transition-all">
                 <div className="flex justify-between items-start mb-4 border-b pb-3">
                     <div className="flex items-center gap-2">
-                        <AlertTriangle size={24} className="text-red-600" />
-                        <h2 className="text-xl font-bold text-gray-800">Confirm Deletion</h2>
+                        <AlertTriangle size={24} className="text-rose-600 dark:text-rose-400" />
+                        <h2 className="text-xl font-bold text-surface-800 dark:text-surface-100">Confirm Deletion</h2>
                     </div>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-800">&times;</button>
+                    <button onClick={onClose} className="text-surface-500 hover:text-surface-800 dark:text-surface-100">&times;</button>
                 </div>
 
-                <p className="text-red-700 font-medium mb-4">
+                <p className="text-rose-700 dark:text-rose-300 font-medium mb-4">
                     Deleting **{event.title}** is permanent and will notify all registered attendees.
                 </p>
 
@@ -80,7 +80,7 @@ export default function EventDeleteModal({ event, onClose, onDeleteSuccess }) {
                     <div className="space-y-3 mb-4 p-3 bg-red-50 rounded-lg border border-red-200">
                         <h3 className="text-sm font-semibold text-red-800">Reason for Cancellation (Required for Audit):</h3>
                         {REASONS.map((reason) => (
-                            <label key={reason} className="flex items-center space-x-2 text-sm text-gray-800">
+                            <label key={reason} className="flex items-center space-x-2 text-sm text-surface-800 dark:text-surface-100">
                                 <input
                                     type="radio"
                                     name="reason"
@@ -90,7 +90,7 @@ export default function EventDeleteModal({ event, onClose, onDeleteSuccess }) {
                                         setSelectedReason(e.target.value);
                                         if (e.target.value !== "Other") setOtherDetails('');
                                     }}
-                                    className="text-red-600 focus:ring-red-500"
+                                    className="text-rose-600 dark:text-rose-400 focus:ring-red-500"
                                     required
                                 />
                                 <span>{reason}</span>
@@ -115,7 +115,7 @@ export default function EventDeleteModal({ event, onClose, onDeleteSuccess }) {
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition"
+                            className="px-4 py-2 text-sm font-medium text-surface-700 dark:text-surface-300 rounded-lg hover:bg-surface-100 dark:bg-surface-800 transition"
                             disabled={loading}
                         >
                             No, Keep Event

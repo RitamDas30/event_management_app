@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 import EventCard from "../components/EventCard";
@@ -15,41 +16,51 @@ import {
   BarChart3,
   ChevronRight,
 } from "lucide-react";
+import clsx from "clsx";
 
-const categories = [
-  { name: "Technical", color: "bg-emerald-100 text-emerald-700 border-emerald-200", icon: "💻" },
-  { name: "Cultural", color: "bg-amber-100 text-amber-700 border-amber-200", icon: "🎭" },
-  { name: "Sports", color: "bg-red-100 text-red-700 border-red-200", icon: "🏆" },
-  { name: "Academic", color: "bg-indigo-100 text-indigo-700 border-indigo-200", icon: "📚" },
-  { name: "Social", color: "bg-pink-100 text-pink-700 border-pink-200", icon: "🎉" },
+const CATEGORIES = [
+  { name: "Technical", icon: "💻" },
+  { name: "Cultural", icon: "🎭" },
+  { name: "Sports", icon: "🏆" },
+  { name: "Academic", icon: "📚" },
+  { name: "Social", icon: "🎉" },
 ];
 
-const features = [
+const FEATURES = [
   {
     icon: Zap,
     title: "Real-time Updates",
-    description: "Get instant notifications when events are updated or seats become available.",
-    color: "text-yellow-500 bg-yellow-50",
+    description: "Instant notifications for seat availability and schedule shifts.",
   },
   {
     icon: Shield,
-    title: "Secure Registration",
-    description: "QR-code based tickets with anti-abuse protections and waitlist management.",
-    color: "text-blue-500 bg-blue-50",
+    title: "Secure Access",
+    description: "QR-code tickets with automated waitlist management.",
   },
   {
     icon: BarChart3,
-    title: "Analytics Dashboard",
-    description: "Organizers get powerful insights into registrations, attendance, and engagement.",
-    color: "text-purple-500 bg-purple-50",
+    title: "Deep Analytics",
+    description: "Insights into registrations, attendance, and audience engagement.",
   },
   {
     icon: Calendar,
     title: "Smart Scheduling",
-    description: "Conflict detection prevents double-booking. Calendar sync keeps you on track.",
-    color: "text-green-500 bg-green-50",
+    description: "Zero conflict double-bookings with seamless calendar sync.",
   },
 ];
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } },
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 },
+  },
+};
 
 export default function LandingPage() {
   const { user } = useAuth();
@@ -57,15 +68,25 @@ export default function LandingPage() {
   const [stats, setStats] = useState({ events: 0, users: 0, registrations: 0 });
   const [loadingEvents, setLoadingEvents] = useState(true);
 
+  // Mouse spotlight effect on hero
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
+
   useEffect(() => {
     const fetchFeatured = async () => {
       try {
         const res = await api.get("/events");
-        // Show up to 6 upcoming events sorted by date
         const upcoming = res.data
           .filter((e) => new Date(e.startTime) > new Date())
           .sort((a, b) => new Date(a.startTime) - new Date(b.startTime))
-          .slice(0, 6);
+          .slice(0, 3);
         setFeaturedEvents(upcoming);
         setStats((prev) => ({ ...prev, events: res.data.length }));
       } catch (err) {
@@ -78,230 +99,196 @@ export default function LandingPage() {
   }, []);
 
   return (
-    <div>
+    <div className="relative w-full overflow-hidden">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-40"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28 lg:py-36">
-          <div className="text-center max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm text-blue-100 text-sm font-medium px-4 py-2 rounded-full mb-6">
-              <Sparkles className="w-4 h-4" />
-              Your Campus Event Hub
-            </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-tight tracking-tight">
-              Discover & Manage
-              <span className="block mt-2 text-blue-200">Events Effortlessly</span>
-            </h1>
-            <p className="mt-6 text-lg sm:text-xl text-blue-100 leading-relaxed max-w-2xl mx-auto">
-              From tech workshops to cultural fests — find, register, and manage campus events
-              in one place. Real-time updates, smart scheduling, and QR-coded tickets.
-            </p>
-            <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                to="/explore"
-                className="inline-flex items-center justify-center gap-2 bg-white text-blue-700 font-semibold px-8 py-3.5 rounded-xl hover:bg-blue-50 transition-all shadow-lg hover:shadow-xl"
-              >
-                <Search className="w-5 h-5" />
-                Explore Events
-              </Link>
-              {!user && (
-                <Link
-                  to="/register"
-                  className="inline-flex items-center justify-center gap-2 bg-blue-500/30 backdrop-blur-sm text-white font-semibold px-8 py-3.5 rounded-xl hover:bg-blue-500/40 transition-all border border-white/20"
-                >
-                  Get Started
-                  <ArrowRight className="w-5 h-5" />
-                </Link>
-              )}
-              {user && (
-                <Link
-                  to={
-                    user.role === "organizer"
-                      ? "/organizer/dashboard"
-                      : user.role === "admin"
-                      ? "/admin/dashboard"
-                      : "/student/dashboard"
-                  }
-                  className="inline-flex items-center justify-center gap-2 bg-blue-500/30 backdrop-blur-sm text-white font-semibold px-8 py-3.5 rounded-xl hover:bg-blue-500/40 transition-all border border-white/20"
-                >
-                  Go to Dashboard
-                  <ArrowRight className="w-5 h-5" />
-                </Link>
-              )}
-            </div>
-          </div>
+      <section className="relative min-h-[90vh] flex flex-col items-center justify-center pt-24 pb-20 px-6 lg:px-12 bg-aurora overflow-hidden">
+        {/* Spotlight */}
+        <div
+          className="pointer-events-none fixed inset-0 z-30 transition-opacity duration-300"
+          style={{
+            background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(255,255,255,0.06), transparent 40%)`,
+          }}
+        />
 
-          {/* Stats */}
-          <div className="mt-16 grid grid-cols-3 gap-4 max-w-lg mx-auto">
-            <div className="text-center">
-              <p className="text-3xl sm:text-4xl font-bold text-white">
-                {stats.events}+
-              </p>
-              <p className="text-sm text-blue-200 mt-1">Events</p>
-            </div>
-            <div className="text-center border-x border-white/20">
-              <p className="text-3xl sm:text-4xl font-bold text-white">500+</p>
-              <p className="text-sm text-blue-200 mt-1">Students</p>
-            </div>
-            <div className="text-center">
-              <p className="text-3xl sm:text-4xl font-bold text-white">50+</p>
-              <p className="text-sm text-blue-200 mt-1">Organizers</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Wave bottom */}
-        <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path
-              d="M0 120L60 110C120 100 240 80 360 70C480 60 600 60 720 65C840 70 960 80 1080 85C1200 90 1320 90 1380 90L1440 90V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0Z"
-              fill="#F9FAFB"
-            />
-          </svg>
-        </div>
-      </section>
-
-      {/* Categories Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl font-bold text-gray-900">Browse by Category</h2>
-            <p className="mt-3 text-gray-600 max-w-lg mx-auto">
-              Find events that match your interests
-            </p>
-          </div>
-          <div className="flex flex-wrap justify-center gap-4">
-            {categories.map((cat) => (
-              <Link
-                key={cat.name}
-                to={`/explore?category=${cat.name}`}
-                className={`flex items-center gap-3 px-6 py-4 rounded-xl border-2 ${cat.color} hover:shadow-md transition-all duration-200 hover:-translate-y-0.5`}
-              >
-                <span className="text-2xl">{cat.icon}</span>
-                <span className="font-semibold">{cat.name}</span>
-                <ChevronRight className="w-4 h-4 opacity-60" />
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Events */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-10">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900">Upcoming Events</h2>
-              <p className="mt-2 text-gray-600">Don't miss out on these</p>
-            </div>
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={staggerContainer}
+          className="relative z-10 w-full max-w-5xl mx-auto text-center"
+        >
+          <motion.div variants={fadeUp} className="mb-8 flex justify-center">
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full border-soft bg-surface-50/50 dark:bg-surface-900/50 backdrop-blur-md text-xs font-medium uppercase tracking-widest text-surface-600 dark:text-surface-300">
+              <Sparkles className="w-3.5 h-3.5" /> Event Management, Redefined
+            </span>
+          </motion.div>
+          
+          <motion.h1 variants={fadeUp} className="font-semibold text-6xl sm:text-7xl lg:text-8xl text-surface-950 dark:text-surface-50 leading-[1.1] tracking-tight mb-8 text-balance mx-auto">
+            Design your <span className="italic font-light text-brand-600 dark:text-brand-400">experiences</span> with intention.
+          </motion.h1>
+          
+          <motion.p variants={fadeUp} className="text-lg sm:text-xl text-surface-600 dark:text-surface-400 max-w-2xl mx-auto leading-relaxed mb-12 text-balance">
+            A premium platform to discover, orchestrate, and manage events. Built for forward-thinking campuses and creative communities.
+          </motion.p>
+          
+          <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               to="/explore"
-              className="hidden sm:inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 font-semibold text-sm transition-colors"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-surface-950 text-surface-50 hover:bg-surface-800 dark:bg-surface-50 dark:text-surface-950 dark:hover:bg-surface-200 px-8 py-4 rounded-full font-medium transition-all hover:scale-[1.02] active:scale-95 shadow-lg"
             >
-              View all events
-              <ArrowRight className="w-4 h-4" />
+              Explore Events <ArrowRight className="w-4 h-4" />
             </Link>
+            {!user && (
+              <Link
+                to="/register"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-surface-50 text-surface-900 border-soft hover:bg-surface-100 dark:bg-surface-900 dark:text-surface-50 dark:hover:bg-surface-800 px-8 py-4 rounded-full font-medium transition-all hover:scale-[1.02] active:scale-95"
+              >
+                Create Account
+              </Link>
+            )}
+            {user && (
+              <Link
+                to={user.role === "organizer" ? "/organizer/dashboard" : user.role === "admin" ? "/admin/dashboard" : "/student/dashboard"}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-surface-50 text-surface-900 border-soft hover:bg-surface-100 dark:bg-surface-900 dark:text-surface-50 dark:hover:bg-surface-800 px-8 py-4 rounded-full font-medium transition-all hover:scale-[1.02] active:scale-95"
+              >
+                Enter Dashboard
+              </Link>
+            )}
+          </motion.div>
+        </motion.div>
+      </section>
+
+      {/* Featured Section */}
+      <section className="py-24 lg:py-32 px-6 lg:px-12 max-w-7xl mx-auto">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          variants={staggerContainer}
+        >
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+            <motion.div variants={fadeUp} className="max-w-2xl">
+              <h2 className="font-semibold text-4xl lg:text-5xl text-surface-950 dark:text-surface-50 mb-4">Curated Events</h2>
+              <p className="text-surface-500 text-lg">Hand-picked gatherings happening around you.</p>
+            </motion.div>
+            <motion.div variants={fadeUp}>
+              <Link to="/explore" className="inline-flex items-center gap-2 text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300 transition-colors group">
+                View catalog <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </motion.div>
           </div>
 
           {loadingEvents ? (
-            <div className="flex justify-center py-12">
-              <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <div className="flex justify-center py-20">
+              <div className="w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
             </div>
           ) : featuredEvents.length > 0 ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {featuredEvents.map((event) => (
-                <EventCard key={event._id} event={event} />
+                <motion.div variants={fadeUp} key={event._id}>
+                  <EventCard event={event} />
+                </motion.div>
               ))}
             </div>
           ) : (
-            <div className="text-center py-12 bg-gray-50 rounded-2xl">
-              <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-700">No upcoming events</h3>
-              <p className="text-gray-500 mt-2">Check back soon for new events!</p>
+            <div className="text-center py-24 bg-surface-100/50 dark:bg-surface-900/50 rounded-3xl border-soft">
+              <Calendar className="w-8 h-8 text-surface-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-surface-900 dark:text-surface-50">Quiet right now</h3>
+              <p className="text-surface-500 mt-2">No upcoming events found. Check back later.</p>
             </div>
           )}
-
-          <div className="sm:hidden text-center mt-8">
-            <Link
-              to="/explore"
-              className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 font-semibold text-sm"
-            >
-              View all events
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </div>
+        </motion.div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900">Why Evently?</h2>
-            <p className="mt-3 text-gray-600 max-w-lg mx-auto">
-              Built for students, organizers, and administrators
-            </p>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.map((feature) => {
+      {/* Philosophy / Features */}
+      <section className="py-24 lg:py-32 px-6 lg:px-12 bg-surface-100/50 dark:bg-surface-900/50 border-y border-border">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={staggerContainer}
+            className="mb-20 text-center max-w-3xl mx-auto"
+          >
+            <motion.h2 variants={fadeUp} className="font-semibold text-4xl lg:text-5xl text-surface-950 dark:text-surface-50 mb-6 text-balance">
+              Engineered for absolute clarity.
+            </motion.h2>
+            <motion.p variants={fadeUp} className="text-surface-500 text-lg leading-relaxed">
+              We removed the friction from event management, leaving only what matters: the experience.
+            </motion.p>
+          </motion.div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+            {FEATURES.map((feature, idx) => {
               const Icon = feature.icon;
               return (
-                <div
-                  key={feature.title}
-                  className="bg-white rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+                <motion.div
+                  key={idx}
+                  variants={fadeUp}
+                  className="group relative"
                 >
-                  <div
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${feature.color}`}
-                  >
-                    <Icon className="w-6 h-6" />
+                  <div className="mb-6 inline-flex w-12 h-12 rounded-2xl items-center justify-center bg-surface-50 dark:bg-surface-800 border-soft shadow-surface group-hover:scale-110 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]">
+                    <Icon className="w-5 h-5 text-surface-950 dark:text-surface-50" />
                   </div>
-                  <h3 className="font-semibold text-gray-900 mb-2">{feature.title}</h3>
-                  <p className="text-sm text-gray-600 leading-relaxed">{feature.description}</p>
-                </div>
+                  <h3 className="text-xl font-medium text-surface-950 dark:text-surface-50 mb-3">{feature.title}</h3>
+                  <p className="text-surface-500 leading-relaxed text-sm">
+                    {feature.description}
+                  </p>
+                </motion.div>
               );
             })}
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-indigo-700">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white">
-            Ready to Get Started?
-          </h2>
-          <p className="mt-4 text-lg text-blue-100 max-w-2xl mx-auto">
-            Join hundreds of students and organizers already using Evently to discover
-            and manage campus events.
-          </p>
-          <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-            {!user ? (
-              <>
+      {/* Categories */}
+      <section className="py-24 lg:py-32 px-6 lg:px-12 max-w-7xl mx-auto">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          variants={staggerContainer}
+        >
+          <motion.h2 variants={fadeUp} className="font-semibold text-3xl lg:text-4xl text-center text-surface-950 dark:text-surface-50 mb-16">
+            Find your crowd
+          </motion.h2>
+          
+          <div className="flex flex-wrap justify-center gap-4 lg:gap-6">
+            {CATEGORIES.map((cat, idx) => (
+              <motion.div variants={fadeUp} key={cat.name}>
                 <Link
-                  to="/register"
-                  className="inline-flex items-center justify-center gap-2 bg-white text-blue-700 font-semibold px-8 py-3.5 rounded-xl hover:bg-blue-50 transition-all shadow-lg"
+                  to={`/explore?category=${cat.name}`}
+                  className="flex items-center gap-3 px-6 py-4 rounded-full border-soft bg-surface-50 dark:bg-surface-900 hover:border-surface-300 dark:hover:border-surface-600 transition-all duration-300 hover:shadow-md"
                 >
-                  Create Free Account
-                  <ArrowRight className="w-5 h-5" />
+                  <span className="text-xl">{cat.icon}</span>
+                  <span className="font-medium text-surface-900 dark:text-surface-50 text-sm tracking-wide">{cat.name}</span>
                 </Link>
-                <Link
-                  to="/explore"
-                  className="inline-flex items-center justify-center gap-2 bg-white/10 text-white font-semibold px-8 py-3.5 rounded-xl hover:bg-white/20 transition-all border border-white/20"
-                >
-                  Browse Events
-                </Link>
-              </>
-            ) : (
-              <Link
-                to="/explore"
-                className="inline-flex items-center justify-center gap-2 bg-white text-blue-700 font-semibold px-8 py-3.5 rounded-xl hover:bg-blue-50 transition-all shadow-lg"
-              >
-                Explore Events
-                <ArrowRight className="w-5 h-5" />
-              </Link>
-            )}
+              </motion.div>
+            ))}
           </div>
-        </div>
+        </motion.div>
+      </section>
+
+      {/* CTA Footer */}
+      <section className="py-32 px-6 text-center">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={staggerContainer}
+          className="max-w-2xl mx-auto"
+        >
+          <motion.h2 variants={fadeUp} className="font-semibold text-5xl lg:text-6xl text-surface-950 dark:text-surface-50 mb-8">
+            Ready to shape the culture?
+          </motion.h2>
+          <motion.div variants={fadeUp}>
+            <Link
+              to="/register"
+              className="inline-flex items-center justify-center gap-2 bg-brand-600 text-white hover:bg-brand-500 px-10 py-5 rounded-full font-medium transition-all hover:scale-[1.02] active:scale-95 shadow-glow-lg text-lg"
+            >
+              Start for free
+            </Link>
+          </motion.div>
+        </motion.div>
       </section>
     </div>
   );

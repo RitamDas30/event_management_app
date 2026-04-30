@@ -5,12 +5,13 @@ import api from "../api/axios";
 import toast from "react-hot-toast";
 import {
   CheckCircle, Clock, Share2, Calendar, MapPin, Bookmark, BookmarkCheck,
-  Edit, Users, Radio, BarChart3, Eye,
+  Edit, Users, Radio, ArrowRight
 } from "lucide-react";
+import clsx from "clsx";
 
-const generatePlaceholderUrl = (category, width = 400, height = 200) => {
-  const colors = { Technical: "10B981", Cultural: "F59E0B", Sports: "EF4444", Academic: "6366F1", Social: "EC4899" };
-  const color = colors[category] || "4B5563";
+const generatePlaceholderUrl = (category, width = 800, height = 500) => {
+  const colors = { Technical: "6366f1", Cultural: "f43f5e", Sports: "10b981", Academic: "8b5cf6", Social: "f59e0b" };
+  const color = colors[category] || "64748b";
   return `https://placehold.co/${width}x${height}/${color}/FFFFFF?text=${encodeURIComponent((category || "EVENT").toUpperCase())}`;
 };
 
@@ -30,7 +31,6 @@ export default function EventCard({ event, refresh, initialRegStatus, initialSav
   const booked = event.capacity - event.seatsAvailable;
   const fillPercent = event.capacity > 0 ? Math.round((booked / event.capacity) * 100) : 0;
 
-  // Can go live: online/hybrid, within 15 min of start to end time
   const isOnline = event.eventMode === "online" || event.eventMode === "hybrid";
   const now = new Date();
   const canGoLive = isOnline && isOwnEvent && now >= new Date(new Date(event.startTime).getTime() - 15 * 60000) && now <= new Date(event.endTime);
@@ -55,9 +55,7 @@ export default function EventCard({ event, refresh, initialRegStatus, initialSav
   };
 
   const startTime = new Date(event.startTime);
-  const endTime = new Date(event.endTime);
   const formattedDate = startTime.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-  const formattedTime = `${startTime.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })} – ${endTime.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`;
   const eventImage = event.imageUrl || generatePlaceholderUrl(event.category);
 
   const handleRegister = async () => {
@@ -110,164 +108,143 @@ export default function EventCard({ event, refresh, initialRegStatus, initialSav
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4 flex flex-col justify-between hover:shadow-md transition-shadow">
-      <div>
-        {/* Image + Overlay Buttons */}
-        <div className="relative">
-          <img src={eventImage} alt={event.title} className="rounded-lg w-full h-40 object-cover mb-3" onError={(e) => { e.target.src = generatePlaceholderUrl(event.category); }} />
+    <div className="group relative bg-surface-50 dark:bg-surface-900 rounded-3xl border border-border overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-2 hover:shadow-glow dark:hover:shadow-glow-lg dark:hover:border-brand-500/30 flex flex-col h-full">
+      {/* Image Header */}
+      <div className="relative h-56 overflow-hidden">
+        <img
+          src={eventImage}
+          alt={event.title}
+          className="w-full h-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105"
+          onError={(e) => { e.target.src = generatePlaceholderUrl(event.category); }}
+        />
+        
+        {/* Overlay gradient for readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-surface-950/80 via-transparent to-transparent" />
 
-          {/* Live badge */}
+        {/* Badges */}
+        <div className="absolute top-4 left-4 flex flex-col gap-2">
           {isLiveNow && (
-            <span className="absolute top-2 left-2 flex items-center gap-1 text-xs font-semibold text-white bg-red-600 px-2 py-1 rounded-full">
+            <span className="flex items-center gap-1.5 text-xs font-semibold tracking-wide uppercase text-white bg-red-600/90 backdrop-blur-md px-3 py-1 rounded-full border border-red-500/50">
               <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span> LIVE
             </span>
           )}
-
-          {/* Online/Hybrid badge */}
           {isOnline && !isLiveNow && (
-            <span className="absolute top-2 left-2 text-xs font-medium text-white bg-purple-600 px-2 py-0.5 rounded-full">
+            <span className="text-xs font-semibold tracking-wide uppercase text-white bg-brand-600/90 backdrop-blur-md px-3 py-1 rounded-full border border-brand-500/50">
               {event.eventMode === "online" ? "Online" : "Hybrid"}
             </span>
           )}
+        </div>
 
-          <div className="absolute top-2 right-2 flex gap-1.5">
-            {/* Save — students only */}
-            {isStudent && (
-              <button onClick={handleSaveToggle} className="p-2 bg-black/60 rounded-full text-white hover:bg-black/80 transition" title={isSaved ? "Unsave" : "Save"}>
-                {isSaved ? <BookmarkCheck size={18} className="text-blue-400" /> : <Bookmark size={18} />}
-              </button>
-            )}
-            {/* Share — everyone */}
-            <button onClick={handleShare} className="p-2 bg-black/60 rounded-full text-white hover:bg-black/80 transition" title="Share">
-              {copied ? <CheckCircle size={18} className="text-green-400" /> : <Share2 size={18} />}
+        {/* Actions overlay */}
+        <div className="absolute top-4 right-4 flex gap-2">
+          {isStudent && (
+            <button onClick={handleSaveToggle} className="p-2.5 bg-surface-950/40 backdrop-blur-md rounded-full text-white hover:bg-surface-950/60 transition-colors" title={isSaved ? "Unsave" : "Save"}>
+              {isSaved ? <BookmarkCheck size={16} className="text-brand-400" /> : <Bookmark size={16} />}
             </button>
-          </div>
-        </div>
-
-        {/* Title */}
-        <Link to={getEventPath()} className="text-base font-semibold text-gray-900 hover:text-blue-600 transition-colors line-clamp-1">
-          {event.title}
-        </Link>
-
-        {/* Meta */}
-        <div className="space-y-1 mt-2 text-sm text-gray-600">
-          <div className="flex items-center gap-2">
-            <Calendar size={14} className="text-blue-500 flex-shrink-0" />
-            <span>{formattedDate}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Clock size={14} className="text-blue-500 flex-shrink-0" />
-            <span>{formattedTime}</span>
-          </div>
-          {event.venueName && event.eventMode !== "online" && (
-            <div className="flex items-center gap-1">
-              <MapPin size={14} className="text-gray-400 flex-shrink-0" />
-              <span className="truncate">{event.venueName}</span>
-            </div>
           )}
-          <div className="flex items-center gap-2 pt-1">
-            <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{event.category}</span>
-            <span className="font-semibold text-gray-900">{event.price > 0 ? `₹${event.price}` : "Free"}</span>
-          </div>
+          <button onClick={handleShare} className="p-2.5 bg-surface-950/40 backdrop-blur-md rounded-full text-white hover:bg-surface-950/60 transition-colors" title="Share">
+            {copied ? <CheckCircle size={16} className="text-emerald-400" /> : <Share2 size={16} />}
+          </button>
         </div>
 
-        {/* ====== ORGANIZER VIEW (own event) ====== */}
-        {isOwnEvent && (isOrganizer || isAdmin) && (
-          <div className="mt-3 space-y-2">
-            {/* Fill bar */}
-            <div>
-              <div className="flex justify-between text-xs text-gray-500 mb-1">
-                <span>{booked}/{event.capacity} registered</span>
-                <span>{fillPercent}%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-1.5">
-                <div className={`h-1.5 rounded-full ${fillPercent >= 80 ? "bg-green-500" : fillPercent >= 40 ? "bg-blue-500" : "bg-amber-500"}`} style={{ width: `${fillPercent}%` }} />
-              </div>
-            </div>
-
-            {/* Organizer actions */}
-            <div className="flex flex-wrap gap-2 pt-1">
-              <Link to={`/organizer/events/${event._id}/edit`} className="flex items-center gap-1 text-xs font-medium text-gray-600 hover:text-blue-600 bg-gray-100 hover:bg-blue-50 px-2.5 py-1.5 rounded-lg transition">
-                <Edit size={13} /> Edit
-              </Link>
-              <Link to={getEventPath()} className="flex items-center gap-1 text-xs font-medium text-gray-600 hover:text-blue-600 bg-gray-100 hover:bg-blue-50 px-2.5 py-1.5 rounded-lg transition">
-                <Users size={13} /> Attendees
-              </Link>
-              {canGoLive && (
-                <Link to={getLivePath()} className="flex items-center gap-1 text-xs font-semibold text-white bg-green-600 hover:bg-green-700 px-2.5 py-1.5 rounded-lg transition">
-                  <Radio size={13} /> Go Live
-                </Link>
-              )}
-              {isLiveNow && !canGoLive && (
-                <Link to={getLivePath()} className="flex items-center gap-1 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 px-2.5 py-1.5 rounded-lg transition">
-                  <Radio size={13} /> Live Now
-                </Link>
-              )}
+        {/* Date / Price overlay at bottom of image */}
+        <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between text-white">
+          <div className="flex items-center gap-2">
+            <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md border border-white/20 flex flex-col items-center justify-center text-center">
+              <span className="text-[10px] font-medium uppercase tracking-wider leading-none text-brand-100">{startTime.toLocaleDateString(undefined, { month: "short" })}</span>
+              <span className="text-lg font-bold leading-none mt-0.5">{startTime.getDate()}</span>
             </div>
           </div>
-        )}
-
-        {/* ====== ORGANIZER VIEW (other's event) ====== */}
-        {!isOwnEvent && (isOrganizer || isAdmin) && (
-          <div className="mt-3">
-            <p className="text-xs text-gray-500">{event.seatsAvailable} seats left</p>
-            {isLiveNow && (
-              <Link to={getLivePath()} className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700">
-                <Radio size={13} /> Watch Live
-              </Link>
-            )}
+          <div className="text-sm font-semibold bg-white/20 backdrop-blur-md border border-white/20 px-3 py-1.5 rounded-full">
+            {event.price > 0 ? `₹${event.price}` : "Free"}
           </div>
-        )}
+        </div>
       </div>
 
-      {/* ====== STUDENT VIEW ====== */}
-      {isStudent && (
-        <div className="mt-3">
-          {registrationStatus === "registered" || registrationStatus === "waitlisted" ? (
-            <div className={`p-3 rounded-lg flex flex-col items-center border ${registrationStatus === "registered" ? "bg-green-50 border-green-200" : "bg-amber-50 border-amber-200"}`}>
-              <div className="flex items-center gap-2">
-                {registrationStatus === "registered" ? (
-                  <CheckCircle size={18} className="text-green-600" />
-                ) : (
-                  <Clock size={18} className="text-amber-600" />
-                )}
-                <p className={`text-sm font-semibold ${registrationStatus === "registered" ? "text-green-700" : "text-amber-700"}`}>
-                  {registrationStatus === "registered" ? "Confirmed" : `Waitlisted #${localWaitlistCount}`}
-                </p>
+      {/* Body */}
+      <div className="p-6 flex flex-col flex-grow bg-surface-50 dark:bg-surface-900">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-xs font-semibold tracking-wider uppercase text-brand-600 dark:text-brand-400">
+            {event.category}
+          </span>
+          {event.venueName && event.eventMode !== "online" && (
+            <>
+              <span className="w-1 h-1 rounded-full bg-surface-300 dark:bg-surface-700" />
+              <span className="text-xs text-surface-500 truncate max-w-[120px]">{event.venueName}</span>
+            </>
+          )}
+        </div>
+
+        <Link to={getEventPath()} className="group/link outline-none">
+          <h3 className="font-semibold text-2xl text-surface-950 dark:text-surface-50 leading-tight mb-2 group-hover/link:text-brand-600 dark:group-hover/link:text-brand-400 transition-colors line-clamp-2">
+            {event.title}
+          </h3>
+        </Link>
+        
+        {/* Reveal details on hover using a subtle translation */}
+        <div className="mt-auto pt-6 flex-grow flex flex-col justify-end">
+          
+          {/* Organizer specific */}
+          {isOwnEvent && (isOrganizer || isAdmin) && (
+            <div className="space-y-3 mb-4 border-t border-border pt-4">
+              <div className="flex justify-between text-xs text-surface-500 font-medium">
+                <span>{booked}/{event.capacity} Filled</span>
+                <span>{fillPercent}%</span>
               </div>
-              <Link to="/student/my-events" className="mt-1.5 text-xs text-blue-600 hover:text-blue-700 font-medium">
-                View Ticket
-              </Link>
+              <div className="w-full bg-surface-200 dark:bg-surface-800 rounded-full h-1 overflow-hidden">
+                <div className={clsx("h-full transition-all duration-1000", fillPercent >= 80 ? "bg-emerald-500" : fillPercent >= 40 ? "bg-brand-500" : "bg-amber-500")} style={{ width: `${fillPercent}%` }} />
+              </div>
+              
+              <div className="flex gap-2">
+                <Link to={`/organizer/events/${event._id}/edit`} className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium bg-surface-100 dark:bg-surface-800 text-surface-900 dark:text-surface-50 rounded-lg hover:bg-surface-200 dark:hover:bg-surface-700 transition-colors">
+                  <Edit size={14} /> Edit
+                </Link>
+                <Link to={getEventPath()} className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium bg-surface-100 dark:bg-surface-800 text-surface-900 dark:text-surface-50 rounded-lg hover:bg-surface-200 dark:hover:bg-surface-700 transition-colors">
+                  <Users size={14} /> View
+                </Link>
+              </div>
             </div>
-          ) : (
-            <button disabled={loading} onClick={handleRegister}
-              className={`w-full py-2.5 rounded-lg text-sm font-semibold transition ${
-                loading ? "bg-gray-300 text-gray-500 cursor-wait"
-                  : isWaitlistActive ? "bg-amber-500 hover:bg-amber-600 text-white"
-                  : "bg-blue-600 hover:bg-blue-700 text-white"
-              }`}>
-              {loading ? "Processing..." : isWaitlistActive ? "Join Waitlist" : "Register Now"}
-            </button>
           )}
 
-          {/* Join live stream for registered students */}
-          {isLiveNow && registrationStatus === "registered" && (
-            <Link to={getLivePath()} className="mt-2 w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-semibold bg-green-600 hover:bg-green-700 text-white transition">
-              <Radio size={14} /> Join Live Stream
+          {/* Student Actions */}
+          {isStudent && (
+            <div className="transform transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
+              {registrationStatus === "registered" || registrationStatus === "waitlisted" ? (
+                <div className={clsx("flex items-center justify-between p-3 rounded-xl border", registrationStatus === "registered" ? "bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20" : "bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20")}>
+                  <div className="flex items-center gap-2">
+                    {registrationStatus === "registered" ? <CheckCircle size={16} className="text-emerald-600 dark:text-emerald-400" /> : <Clock size={16} className="text-amber-600 dark:text-amber-400" />}
+                    <span className={clsx("text-sm font-semibold", registrationStatus === "registered" ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-400")}>
+                      {registrationStatus === "registered" ? "Confirmed" : `Waitlisted #${localWaitlistCount}`}
+                    </span>
+                  </div>
+                  <Link to="/student/my-events" className="text-xs font-medium underline underline-offset-2">Ticket</Link>
+                </div>
+              ) : (
+                <button
+                  disabled={loading}
+                  onClick={handleRegister}
+                  className={clsx(
+                    "w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-medium transition-all active:scale-95",
+                    loading ? "bg-surface-200 dark:bg-surface-800 text-surface-500 cursor-wait"
+                      : isWaitlistActive ? "bg-surface-950 text-surface-50 hover:bg-surface-800 dark:bg-surface-50 dark:text-surface-950 dark:hover:bg-surface-200"
+                      : "bg-brand-600 text-white hover:bg-brand-500 shadow-glow"
+                  )}
+                >
+                  {loading ? "Processing..." : isWaitlistActive ? "Join Waitlist" : "Register Now"}
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Guest Actions */}
+          {!user && (
+            <Link to="/login" className="w-full flex items-center justify-center gap-2 py-3 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-500 transition-all active:scale-95 shadow-glow">
+              Register to Attend
             </Link>
           )}
-        </div>
-      )}
 
-      {/* Guest — no user */}
-      {!user && (
-        <div className="mt-3">
-          <p className="text-xs text-gray-500 mb-2">{event.seatsAvailable} seats left</p>
-          <Link to="/login" className="block w-full text-center py-2.5 rounded-lg text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white transition">
-            Log in to Register
-          </Link>
         </div>
-      )}
+      </div>
     </div>
   );
 }

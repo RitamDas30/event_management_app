@@ -56,17 +56,17 @@ export default function ResetPassword() {
 
   return (
     <div className="flex justify-center items-center min-h-[80vh]">
-      <div className="bg-white shadow-xl rounded-2xl p-8 w-full max-w-md border border-gray-100">
-        <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">
+      <div className="bg-surface-50 dark:bg-surface-900 shadow-xl rounded-2xl p-8 w-full max-w-md border border-border">
+        <h2 className="text-3xl font-bold mb-6 text-center text-surface-800 dark:text-surface-100">
           Set New Password
         </h2>
-        <p className="text-gray-600 mb-6 text-center">
-          Account: <span className="font-semibold text-blue-600">{email}</span>
+        <p className="text-surface-600 dark:text-surface-400 mb-6 text-center">
+          Account: <span className="font-semibold text-brand-600 dark:text-brand-400">{email}</span>
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+            <label htmlFor="password" className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">New Password</label>
             <input
               type="password"
               id="password"
@@ -80,7 +80,7 @@ export default function ResetPassword() {
           </div>
           
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Confirm New Password</label>
             <input
               type="password"
               id="confirmPassword"

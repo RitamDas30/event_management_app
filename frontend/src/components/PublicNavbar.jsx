@@ -1,18 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
-import { Menu, X, Calendar, ChevronDown } from "lucide-react";
+import { useTheme } from "../context/ThemeContext";
+import { Menu, X, Sun, Moon } from "lucide-react";
+import clsx from "clsx";
 
 export default function PublicNavbar() {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
-  const isActive = (path) =>
-    location.pathname === path
-      ? "text-blue-600 font-semibold"
-      : "text-gray-600 hover:text-gray-900";
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const closeMobile = () => setMobileOpen(false);
 
@@ -22,162 +28,200 @@ export default function PublicNavbar() {
     navigate("/");
   };
 
-  // Determine dashboard path based on role
   const getDashboardPath = () => {
     if (!user) return "/login";
     switch (user.role) {
-      case "admin":
-        return "/admin/dashboard";
-      case "organizer":
-        return "/organizer/dashboard";
-      default:
-        return "/student/dashboard";
+      case "admin": return "/admin/dashboard";
+      case "organizer": return "/organizer/dashboard";
+      default: return "/student/dashboard";
     }
   };
 
   const navLinks = [
-    { name: "Home", path: "/" },
-    { name: "Explore Events", path: "/explore" },
+    { name: "Explore", path: "/explore" },
     { name: "About", path: "/about" },
     { name: "Contact", path: "/contact" },
   ];
 
   return (
-    <nav className="bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+    <nav
+      className={clsx(
+        "fixed top-0 inset-x-0 z-50 transition-all duration-500 border-b",
+        scrolled
+          ? "bg-surface-50/80 dark:bg-surface-950/80 backdrop-blur-xl border-border"
+          : "bg-transparent border-transparent"
+      )}
+    >
+      <div className="max-w-7xl mx-auto px-6 lg:px-12">
+        <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link
             to="/"
-            className="flex items-center gap-2 text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors"
+            className="flex items-center gap-2 group outline-none focus-visible:ring-2 ring-brand-500/50 rounded-lg p-1"
             onClick={closeMobile}
           >
-            <Calendar className="w-6 h-6 text-blue-600" />
-            <span>Evently</span>
+            <div className="w-8 h-8 rounded-lg bg-surface-900 dark:bg-surface-100 flex items-center justify-center transition-transform group-hover:scale-105 duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
+              <span className="font-semibold text-xl text-surface-50 dark:text-surface-950 leading-none mt-1.5">
+                E
+              </span>
+            </div>
+            <span className="font-sans font-semibold text-lg tracking-tight text-surface-950 dark:text-surface-50">
+              Evently
+            </span>
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-1">
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive(link.path)}`}
-              >
-                {link.name}
-              </Link>
-            ))}
+          <div className="hidden md:flex items-center space-x-1">
+            {navLinks.map((link) => {
+              const active = location.pathname === link.path;
+              return (
+                <Link
+                  key={link.path}
+                  to={link.path}
+                  className={clsx(
+                    "relative px-4 py-2 text-sm font-medium transition-colors outline-none focus-visible:ring-2 ring-brand-500/50 rounded-full",
+                    active
+                      ? "text-surface-950 dark:text-surface-50"
+                      : "text-surface-500 hover:text-surface-900 dark:text-surface-400 dark:hover:text-surface-100"
+                  )}
+                >
+                  {link.name}
+                  {active && (
+                    <motion.div
+                      layoutId="navbar-indicator"
+                      className="absolute inset-0 bg-surface-200/50 dark:bg-surface-800/50 rounded-full -z-10"
+                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                    />
+                  )}
+                </Link>
+              );
+            })}
           </div>
 
-          {/* Desktop Auth */}
-          <div className="hidden md:flex items-center gap-3">
+          {/* Desktop Actions */}
+          <div className="hidden md:flex items-center gap-4">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-full text-surface-500 hover:text-surface-900 dark:text-surface-400 dark:hover:text-surface-100 hover:bg-surface-200/50 dark:hover:bg-surface-800/50 transition-all outline-none focus-visible:ring-2 ring-brand-500/50"
+            >
+              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+
             {user ? (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4 pl-4 border-l border-border">
                 <Link
                   to={getDashboardPath()}
-                  className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors px-3 py-2 rounded-lg hover:bg-blue-50"
+                  className="text-sm font-medium text-surface-600 hover:text-surface-900 dark:text-surface-300 dark:hover:text-surface-50 transition-colors"
                 >
                   Dashboard
                 </Link>
-                <div className="flex items-center gap-2 pl-3 border-l border-gray-200">
-                  <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-semibold">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full bg-brand-500 text-white flex items-center justify-center text-sm font-medium shadow-glow">
                     {user.name?.charAt(0).toUpperCase()}
                   </div>
-                  <span className="text-sm font-medium text-gray-700">
-                    {user.name?.split(" ")[0]}
-                  </span>
                   <button
                     onClick={handleLogout}
-                    className="text-sm text-red-500 hover:text-red-700 font-medium ml-2 transition-colors"
+                    className="text-sm font-medium text-surface-500 hover:text-red-500 transition-colors"
                   >
                     Logout
                   </button>
                 </div>
               </div>
             ) : (
-              <>
+              <div className="flex items-center gap-3 pl-4 border-l border-border">
                 <Link
                   to="/login"
-                  className="text-sm font-medium text-gray-700 hover:text-blue-600 px-3 py-2 rounded-lg transition-colors"
+                  className="text-sm font-medium text-surface-600 hover:text-surface-900 dark:text-surface-300 dark:hover:text-surface-50 transition-colors"
                 >
                   Log in
                 </Link>
                 <Link
                   to="/register"
-                  className="text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors shadow-sm"
+                  className="text-sm font-medium bg-surface-900 text-surface-50 hover:bg-surface-800 dark:bg-surface-100 dark:text-surface-950 dark:hover:bg-surface-200 px-5 py-2.5 rounded-full transition-all hover:scale-105 duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] shadow-sm"
                 >
                   Sign up
                 </Link>
-              </>
+              </div>
             )}
           </div>
 
-          {/* Mobile Hamburger */}
-          <button
-            className="md:hidden p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors"
-            onClick={() => setMobileOpen(!mobileOpen)}
-          >
-            {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          {/* Mobile Toggle */}
+          <div className="flex items-center gap-2 md:hidden">
+            <button
+              onClick={toggleTheme}
+              className="p-2 text-surface-500 dark:text-surface-400"
+            >
+              {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="p-2 text-surface-900 dark:text-surface-50"
+            >
+              {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Mobile Menu */}
-      <div
-        className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
-          mobileOpen ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
-        }`}
-      >
-        <div className="px-4 pb-4 pt-2 space-y-1 border-t border-gray-100">
-          {navLinks.map((link) => (
-            <Link
-              key={link.path}
-              to={link.path}
-              className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive(link.path)}`}
-              onClick={closeMobile}
-            >
-              {link.name}
-            </Link>
-          ))}
-
-          <div className="pt-3 mt-3 border-t border-gray-100 space-y-2">
-            {user ? (
-              <>
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="md:hidden overflow-hidden bg-surface-50 dark:bg-surface-950 border-b border-border"
+          >
+            <div className="px-6 py-6 flex flex-col gap-4">
+              {navLinks.map((link) => (
                 <Link
-                  to={getDashboardPath()}
-                  className="block px-3 py-2 rounded-lg text-sm font-medium text-blue-600 hover:bg-blue-50"
+                  key={link.path}
+                  to={link.path}
+                  className="text-lg font-medium text-surface-900 dark:text-surface-50"
                   onClick={closeMobile}
                 >
-                  Go to Dashboard
+                  {link.name}
                 </Link>
-                <button
-                  onClick={handleLogout}
-                  className="w-full text-left px-3 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50"
-                >
-                  Logout
-                </button>
-              </>
-            ) : (
-              <>
-                <Link
-                  to="/login"
-                  className="block px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100"
-                  onClick={closeMobile}
-                >
-                  Log in
-                </Link>
-                <Link
-                  to="/register"
-                  className="block px-3 py-2 rounded-lg text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 text-center"
-                  onClick={closeMobile}
-                >
-                  Sign up
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
+              ))}
+              <div className="h-px w-full bg-border my-2" />
+              {user ? (
+                <>
+                  <Link
+                    to={getDashboardPath()}
+                    className="text-lg font-medium text-surface-900 dark:text-surface-50"
+                    onClick={closeMobile}
+                  >
+                    Dashboard
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="text-lg font-medium text-left text-red-500"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    className="text-lg font-medium text-surface-600 dark:text-surface-300"
+                    onClick={closeMobile}
+                  >
+                    Log in
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="text-lg font-medium text-brand-600 dark:text-brand-400"
+                    onClick={closeMobile}
+                  >
+                    Sign up
+                  </Link>
+                </>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 }

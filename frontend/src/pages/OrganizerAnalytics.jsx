@@ -144,23 +144,23 @@ export default function OrganizerAnalytics() {
   }, [events, data, selectedEventId, selectedEvent, metrics]);
 
   const insightIcons = { positive: ArrowUpRight, negative: ArrowDownRight, neutral: Minus };
-  const insightColors = { positive: "text-green-600 bg-green-50", negative: "text-red-600 bg-red-50", neutral: "text-blue-600 bg-blue-50" };
+  const insightColors = { positive: "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10", negative: "text-rose-600 dark:text-rose-400 bg-red-50", neutral: "text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/10" };
 
   const statCards = [
-    { title: selectedEvent ? "Capacity" : "Total Events", value: selectedEvent ? selectedEvent.capacity : metrics.totalEvents, icon: CalendarDays, color: "bg-blue-50 text-blue-600" },
-    { title: "Registrations", value: metrics.totalBooked, icon: Users, color: "bg-purple-50 text-purple-600" },
-    { title: selectedEvent ? "Available" : "Upcoming", value: selectedEvent ? selectedEvent.seatsAvailable : metrics.upcomingCount, icon: Ticket, color: "bg-amber-50 text-amber-600" },
+    { title: selectedEvent ? "Capacity" : "Total Events", value: selectedEvent ? selectedEvent.capacity : metrics.totalEvents, icon: CalendarDays, color: "bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400" },
+    { title: "Registrations", value: metrics.totalBooked, icon: Users, color: "bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400" },
+    { title: selectedEvent ? "Available" : "Upcoming", value: selectedEvent ? selectedEvent.seatsAvailable : metrics.upcomingCount, icon: Ticket, color: "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400" },
     { title: "Fill Rate", value: `${metrics.fillRate}%`, icon: TrendingUp, color: "bg-emerald-50 text-emerald-600" },
-    { title: "Revenue", value: `₹${metrics.totalRevenue.toLocaleString()}`, icon: DollarSign, color: "bg-green-50 text-green-600" },
+    { title: "Revenue", value: `₹${metrics.totalRevenue.toLocaleString()}`, icon: DollarSign, color: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
   ];
 
   if (loading) {
     return (
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="bg-white rounded-xl border p-5 animate-pulse">
-            <div className="h-4 bg-gray-200 rounded w-20 mb-3"></div>
-            <div className="h-7 bg-gray-200 rounded w-14"></div>
+          <div key={i} className="bg-surface-50 dark:bg-surface-900 rounded-xl border p-5 animate-pulse">
+            <div className="h-4 bg-surface-200 dark:bg-surface-800 rounded w-20 mb-3"></div>
+            <div className="h-7 bg-surface-200 dark:bg-surface-800 rounded w-14"></div>
           </div>
         ))}
       </div>
@@ -170,9 +170,9 @@ export default function OrganizerAnalytics() {
   if (events.length === 0) {
     return (
       <div className="text-center py-20">
-        <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-gray-700">No analytics data</h3>
-        <p className="text-gray-500 mt-2">Create events to see analytics</p>
+        <BarChart3 className="w-16 h-16 text-surface-300 dark:text-surface-700 mx-auto mb-4" />
+        <h3 className="text-lg font-semibold text-surface-700 dark:text-surface-300">No analytics data</h3>
+        <p className="text-surface-500 mt-2">Create events to see analytics</p>
       </div>
     );
   }
@@ -205,12 +205,12 @@ export default function OrganizerAnalytics() {
                   strokeDasharray={`${metrics.fillRate * 2.64} ${264 - metrics.fillRate * 2.64}`} strokeLinecap="round" />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-3xl font-bold text-gray-900">{metrics.fillRate}%</span>
-                <span className="text-xs text-gray-500">filled</span>
+                <span className="text-3xl font-bold text-surface-950 dark:text-surface-50">{metrics.fillRate}%</span>
+                <span className="text-xs text-surface-500">filled</span>
               </div>
             </div>
-            <p className="mt-4 text-sm text-gray-600">{metrics.totalBooked} of {metrics.totalCapacity} seats</p>
-            <p className="text-xs text-gray-400 mt-1">{selectedEvent.category} · {selectedEvent.eventMode || "in-person"}</p>
+            <p className="mt-4 text-sm text-surface-600 dark:text-surface-400">{metrics.totalBooked} of {metrics.totalCapacity} seats</p>
+            <p className="text-xs text-surface-400 dark:text-surface-500 mt-1">{selectedEvent.category} · {selectedEvent.eventMode || "in-person"}</p>
           </div>
         ) : categoryData.length > 0 ? (
           <ResponsiveContainer width="100%" height={320}>
@@ -249,7 +249,7 @@ export default function OrganizerAnalytics() {
             </AreaChart>
           </ResponsiveContainer>
         ) : (
-          <div className="flex items-center justify-center h-[320px] text-gray-400 text-sm">
+          <div className="flex items-center justify-center h-[320px] text-surface-400 dark:text-surface-500 text-sm">
             No paid events — all events are free
           </div>
         );
@@ -258,15 +258,15 @@ export default function OrganizerAnalytics() {
         return (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b">
+              <thead className="bg-surface-100 dark:bg-surface-900/50 border-b">
                 <tr>
-                  <th className="text-left py-2.5 px-3 font-medium text-gray-500 text-xs uppercase tracking-wider">Event</th>
-                  <th className="text-left py-2.5 px-3 font-medium text-gray-500 text-xs uppercase tracking-wider">Category</th>
-                  <th className="text-left py-2.5 px-3 font-medium text-gray-500 text-xs uppercase tracking-wider">Date</th>
-                  <th className="text-left py-2.5 px-3 font-medium text-gray-500 text-xs uppercase tracking-wider">Registered</th>
-                  <th className="text-left py-2.5 px-3 font-medium text-gray-500 text-xs uppercase tracking-wider">Fill Rate</th>
-                  <th className="text-left py-2.5 px-3 font-medium text-gray-500 text-xs uppercase tracking-wider">Revenue</th>
-                  <th className="text-left py-2.5 px-3 font-medium text-gray-500 text-xs uppercase tracking-wider">Mode</th>
+                  <th className="text-left py-2.5 px-3 font-medium text-surface-500 text-xs uppercase tracking-wider">Event</th>
+                  <th className="text-left py-2.5 px-3 font-medium text-surface-500 text-xs uppercase tracking-wider">Category</th>
+                  <th className="text-left py-2.5 px-3 font-medium text-surface-500 text-xs uppercase tracking-wider">Date</th>
+                  <th className="text-left py-2.5 px-3 font-medium text-surface-500 text-xs uppercase tracking-wider">Registered</th>
+                  <th className="text-left py-2.5 px-3 font-medium text-surface-500 text-xs uppercase tracking-wider">Fill Rate</th>
+                  <th className="text-left py-2.5 px-3 font-medium text-surface-500 text-xs uppercase tracking-wider">Revenue</th>
+                  <th className="text-left py-2.5 px-3 font-medium text-surface-500 text-xs uppercase tracking-wider">Mode</th>
                 </tr>
               </thead>
               <tbody>
@@ -275,32 +275,32 @@ export default function OrganizerAnalytics() {
                   const rate = event.capacity > 0 ? Math.round((booked / event.capacity) * 100) : 0;
                   const rev = event.price > 0 ? booked * event.price : 0;
                   return (
-                    <tr key={event._id} className="border-b border-gray-50 hover:bg-gray-50">
-                      <td className="py-3 px-3 font-medium text-gray-900">{event.title}</td>
-                      <td className="py-3 px-3"><span className="px-2 py-0.5 bg-gray-100 rounded text-xs">{event.category}</span></td>
-                      <td className="py-3 px-3 text-gray-600 text-xs">{new Date(event.startTime).toLocaleDateString()}</td>
+                    <tr key={event._id} className="border-b border-border hover:bg-surface-100 dark:bg-surface-900/50">
+                      <td className="py-3 px-3 font-medium text-surface-950 dark:text-surface-50">{event.title}</td>
+                      <td className="py-3 px-3"><span className="px-2 py-0.5 bg-surface-100 dark:bg-surface-800 rounded text-xs">{event.category}</span></td>
+                      <td className="py-3 px-3 text-surface-600 dark:text-surface-400 text-xs">{new Date(event.startTime).toLocaleDateString()}</td>
                       <td className="py-3 px-3 font-medium">{booked}/{event.capacity}</td>
                       <td className="py-3 px-3">
                         <div className="flex items-center gap-2">
-                          <div className="w-14 bg-gray-200 rounded-full h-1.5">
+                          <div className="w-14 bg-surface-200 dark:bg-surface-800 rounded-full h-1.5">
                             <div className={`h-1.5 rounded-full ${rate >= 80 ? "bg-green-500" : rate >= 50 ? "bg-blue-500" : "bg-amber-500"}`} style={{ width: `${rate}%` }} />
                           </div>
                           <span className="text-xs font-medium">{rate}%</span>
                         </div>
                       </td>
-                      <td className="py-3 px-3 font-medium">{rev > 0 ? `₹${rev.toLocaleString()}` : <span className="text-gray-400">Free</span>}</td>
-                      <td className="py-3 px-3"><span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${event.eventMode === "online" ? "bg-purple-50 text-purple-600" : event.eventMode === "hybrid" ? "bg-blue-50 text-blue-600" : "bg-gray-100 text-gray-600"}`}>{event.eventMode || "in-person"}</span></td>
+                      <td className="py-3 px-3 font-medium">{rev > 0 ? `₹${rev.toLocaleString()}` : <span className="text-surface-400 dark:text-surface-500">Free</span>}</td>
+                      <td className="py-3 px-3"><span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${event.eventMode === "online" ? "bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400" : event.eventMode === "hybrid" ? "bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400" : "bg-surface-100 dark:bg-surface-800 text-surface-600 dark:text-surface-400"}`}>{event.eventMode || "in-person"}</span></td>
                     </tr>
                   );
                 })}
               </tbody>
               {data.length > 1 && (
-                <tfoot className="bg-gray-50 border-t font-semibold">
+                <tfoot className="bg-surface-100 dark:bg-surface-900/50 border-t font-semibold">
                   <tr>
                     <td className="py-3 px-3">Total</td><td></td><td></td>
                     <td className="py-3 px-3">{metrics.totalBooked}/{metrics.totalCapacity}</td>
                     <td className="py-3 px-3">{metrics.fillRate}%</td>
-                    <td className="py-3 px-3 text-green-600">₹{metrics.totalRevenue.toLocaleString()}</td>
+                    <td className="py-3 px-3 text-emerald-600 dark:text-emerald-400">₹{metrics.totalRevenue.toLocaleString()}</td>
                     <td></td>
                   </tr>
                 </tfoot>
@@ -314,26 +314,26 @@ export default function OrganizerAnalytics() {
     }
   };
 
-  const Empty = () => <div className="flex items-center justify-center h-[320px] text-gray-400 text-sm">No data available</div>;
+  const Empty = () => <div className="flex items-center justify-center h-[320px] text-surface-400 dark:text-surface-500 text-sm">No data available</div>;
 
   return (
     <div>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Analytics & Revenue</h1>
-          <p className="text-sm text-gray-600 mt-1">
+          <h1 className="text-2xl font-bold text-surface-950 dark:text-surface-50">Analytics & Revenue</h1>
+          <p className="text-sm text-surface-600 dark:text-surface-400 mt-1">
             {selectedEvent ? selectedEvent.title : `Across ${events.length} events`}
           </p>
         </div>
         <div className="relative">
-          <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400 dark:text-surface-500" />
           <select value={selectedEventId} onChange={(e) => handleEventChange(e.target.value)}
-            className="pl-10 pr-8 py-2.5 border border-gray-200 rounded-xl text-sm font-medium bg-white focus:border-blue-400 focus:outline-none appearance-none cursor-pointer min-w-[220px]">
+            className="pl-10 pr-8 py-2.5 border border-border rounded-xl text-sm font-medium bg-surface-50 dark:bg-surface-900 focus:border-brand-500/50 focus:outline-none appearance-none cursor-pointer min-w-[220px]">
             <option value="all">All Events (Aggregate)</option>
             {events.map((ev) => <option key={ev._id} value={ev._id}>{ev.title}</option>)}
           </select>
-          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400 dark:text-surface-500 pointer-events-none" />
         </div>
       </div>
 
@@ -342,12 +342,12 @@ export default function OrganizerAnalytics() {
         {statCards.map((card) => {
           const Icon = card.icon;
           return (
-            <div key={card.title} className="bg-white rounded-xl border border-gray-200 p-4">
+            <div key={card.title} className="bg-surface-50 dark:bg-surface-900 rounded-xl border border-border p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-medium text-gray-500 uppercase tracking-wider">{card.title}</span>
+                <span className="text-[11px] font-medium text-surface-500 uppercase tracking-wider">{card.title}</span>
                 <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${card.color}`}><Icon className="w-3.5 h-3.5" /></div>
               </div>
-              <p className="text-xl font-bold text-gray-900">{card.value}</p>
+              <p className="text-xl font-bold text-surface-950 dark:text-surface-50">{card.value}</p>
             </div>
           );
         })}
@@ -355,8 +355,8 @@ export default function OrganizerAnalytics() {
 
       {/* Smart Insights */}
       {insights.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
-          <h3 className="text-xs font-semibold text-gray-900 mb-2 flex items-center gap-1.5 uppercase tracking-wider">
+        <div className="bg-surface-50 dark:bg-surface-900 rounded-xl border border-border p-4 mb-6">
+          <h3 className="text-xs font-semibold text-surface-950 dark:text-surface-50 mb-2 flex items-center gap-1.5 uppercase tracking-wider">
             <Lightbulb className="w-3.5 h-3.5 text-amber-500" /> Insights
           </h3>
           <div className="grid sm:grid-cols-2 gap-2">
@@ -374,17 +374,17 @@ export default function OrganizerAnalytics() {
       )}
 
       {/* Chart Section — single chart with dropdown selector */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-surface-50 dark:bg-surface-900 rounded-xl border border-border p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-semibold text-gray-900">
+          <h3 className="text-sm font-semibold text-surface-950 dark:text-surface-50">
             {chartOptions.find((c) => c.id === activeChart)?.label}
           </h3>
           <div className="relative">
             <select value={activeChart} onChange={(e) => setActiveChart(e.target.value)}
-              className="pl-3 pr-8 py-2 border border-gray-200 rounded-lg text-sm font-medium bg-white focus:border-blue-400 focus:outline-none appearance-none cursor-pointer">
+              className="pl-3 pr-8 py-2 bg-surface-50 dark:bg-surface-900 border border-border rounded-lg text-sm text-surface-950 dark:text-surface-50 placeholder-surface-400 dark:placeholder-surface-500 font-medium bg-surface-50 dark:bg-surface-900 focus:border-brand-500/50 focus:outline-none appearance-none cursor-pointer">
               {chartOptions.map((opt) => <option key={opt.id} value={opt.id}>{opt.label}</option>)}
             </select>
-            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
+            <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-surface-400 dark:text-surface-500 pointer-events-none" />
           </div>
         </div>
         {renderChart()}

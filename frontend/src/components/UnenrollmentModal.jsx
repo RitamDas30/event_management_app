@@ -50,22 +50,22 @@ export default function UnenrollmentModal({ event, onClose, onUnenrollSuccess })
         <div className="fixed inset-0 bg-gray-900 bg-opacity-75 z-50 flex items-center justify-center p-4">
             
             {/* Modal Content */}
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6">
+            <div className="bg-surface-50 dark:bg-surface-900 rounded-2xl shadow-2xl w-full max-w-lg p-6">
                 <div className="flex justify-between items-start mb-4">
-                    <h2 className="text-xl font-bold text-red-600">Cancel Registration: {event.title}</h2>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-800">
+                    <h2 className="text-xl font-bold text-rose-600 dark:text-rose-400">Cancel Registration: {event.title}</h2>
+                    <button onClick={onClose} className="text-surface-500 hover:text-surface-800 dark:text-surface-100">
                         &times;
                     </button>
                 </div>
 
-                <p className="text-gray-600 mb-4 border-b pb-3">
+                <p className="text-surface-600 dark:text-surface-400 mb-4 border-b pb-3">
                     We are sad to see you go! Please tell us why you are unenrolling.
                 </p>
 
                 <form onSubmit={handleSubmit}>
                     {/* Reason Selection (Radio Buttons) */}
                     <div className="space-y-2 mb-4">
-                        <h3 className="text-sm font-medium text-gray-700">Select a Reason:</h3>
+                        <h3 className="text-sm font-medium text-surface-700 dark:text-surface-300">Select a Reason:</h3>
                         {REASONS.map((reason) => (
                             <label key={reason} className="flex items-center space-x-2">
                                 <input
@@ -77,10 +77,10 @@ export default function UnenrollmentModal({ event, onClose, onUnenrollSuccess })
                                         setSelectedReason(reason);
                                         if (reason !== "Other") setOtherDetails('');
                                     }}
-                                    className="text-red-600 focus:ring-red-500"
+                                    className="text-rose-600 dark:text-rose-400 focus:ring-red-500"
                                     required
                                 />
-                                <span className="text-gray-800 text-sm">{reason}</span>
+                                <span className="text-surface-800 dark:text-surface-100 text-sm">{reason}</span>
                             </label>
                         ))}
                         
@@ -92,10 +92,10 @@ export default function UnenrollmentModal({ event, onClose, onUnenrollSuccess })
                                 value="Other"
                                 checked={selectedReason === "Other"}
                                 onChange={() => setSelectedReason("Other")}
-                                className="text-red-600 focus:ring-red-500"
+                                className="text-rose-600 dark:text-rose-400 focus:ring-red-500"
                                 required
                             />
-                            <span className="text-gray-800 text-sm">Other</span>
+                            <span className="text-surface-800 dark:text-surface-100 text-sm">Other</span>
                         </label>
                     </div>
 
@@ -116,7 +116,7 @@ export default function UnenrollmentModal({ event, onClose, onUnenrollSuccess })
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2 text-sm font-medium text-gray-700 rounded-lg hover:bg-gray-100 transition"
+                            className="px-4 py-2 text-sm font-medium text-surface-700 dark:text-surface-300 rounded-lg hover:bg-surface-100 dark:bg-surface-800 transition"
                             disabled={loading}
                         >
                             Keep Registration
