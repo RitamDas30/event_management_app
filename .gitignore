@@ -29,6 +29,7 @@ uploads
 /Upcoming_Features_Planning/
 /project-docs/
 dev-log.md
+INTERVIEW_PREP.md
 /test-results/
 /playwright-report/
 /playwright/.cache/*.png

@@ -11,12 +11,8 @@ export default function DashboardLayout({ allowedRoles }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
 
-  // Close mobile menu on route change
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [location.pathname]);
-
-  const isLivePage = location.pathname.endsWith("/live");
+  // Only match actual streaming pages: /*/events/:id/live (not /student/live which is the list page)
+  const isLivePage = /\/events\/[^/]+\/live$/.test(location.pathname);
 
   if (loading) {
     return (
