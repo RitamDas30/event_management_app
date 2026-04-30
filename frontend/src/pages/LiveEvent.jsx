@@ -5,9 +5,10 @@ import api from "../api/axios";
 import socket from "../utils/socket";
 import LiveChat from "../components/LiveChat";
 import {
-  ArrowLeft, Wifi, Users, MessageSquare, Radio, Clock, Loader2,
+  ArrowLeft, Wifi, Users, MessageSquare, Clock, Loader2,
   Maximize2, Minimize2, Mic, MicOff, Video, VideoOff, MonitorUp, PhoneOff, Calendar,
 } from "lucide-react";
+import clsx from "clsx";
 
 export default function LiveEvent() {
   const { id } = useParams();
@@ -25,6 +26,7 @@ export default function LiveEvent() {
   const [streamEnded, setStreamEnded] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [recordingUploaded, setRecordingUploaded] = useState(false);
+  
   const jitsiContainerRef = useRef(null);
   const jitsiApiRef = useRef(null);
   const pollRef = useRef(null);
@@ -67,17 +69,17 @@ export default function LiveEvent() {
     if (!isFullscreen) { fullscreenRef.current.requestFullscreen?.(); setIsFullscreen(true); }
     else { document.exitFullscreen?.(); setIsFullscreen(false); }
   };
+
   useEffect(() => {
     const h = () => {
       const fs = !!document.fullscreenElement;
       setIsFullscreen(fs);
-      if (!fs) setChatOpen(true); // Always show chat in normal mode
+      if (!fs) setChatOpen(true); 
     };
     document.addEventListener("fullscreenchange", h);
     return () => document.removeEventListener("fullscreenchange", h);
   }, []);
 
-  // Keyboard shortcut: F for fullscreen
   useEffect(() => {
     const handler = (e) => {
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
@@ -86,6 +88,23 @@ export default function LiveEvent() {
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, [isFullscreen]);
+
+  useEffect(() => {
+    const wrap = fullscreenRef.current;
+    if (!wrap) return;
+    const reclaim = () => {
+      if (document.activeElement?.tagName === "IFRAME") {
+        try { document.activeElement.blur(); } catch {}
+        window.focus();
+      }
+    };
+    wrap.addEventListener("mousemove", reclaim);
+    wrap.addEventListener("mousedown", reclaim);
+    return () => {
+      wrap.removeEventListener("mousemove", reclaim);
+      wrap.removeEventListener("mousedown", reclaim);
+    };
+  }, []);
 
   const toggleAudio = () => { jitsiApiRef.current?.executeCommand("toggleAudio"); setAudioMuted((m) => !m); };
   const toggleVideo = () => { jitsiApiRef.current?.executeCommand("toggleVideo"); setVideoMuted((m) => !m); };
@@ -98,10 +117,35 @@ export default function LiveEvent() {
     jitsiContainerRef.current.innerHTML = "";
     try {
       const jitsi = new window.JitsiMeetExternalAPI("meet.jit.si", {
-        roomName: roomId, parentNode: jitsiContainerRef.current,
-        configOverwrite: { startWithAudioMuted: !isOrganizer, startWithVideoMuted: !isOrganizer, prejoinPageEnabled: false, prejoinConfig: { enabled: false }, disableDeepLinking: true, requireDisplayName: false, disableProfile: true, hideLoginButton: true, disableThirdPartyRequests: true, disableInviteFunctions: true, enableClosePage: false, feedbackPercentage: 0, notifications: [], startSilent: !isOrganizer, toolbarButtons: [] },
-        interfaceConfigOverwrite: { SHOW_JITSI_WATERMARK: false, SHOW_WATERMARK_FOR_GUESTS: false, SHOW_BRAND_WATERMARK: false, SHOW_POWERED_BY: false, SHOW_PROMOTIONAL_CLOSE_PAGE: false, DEFAULT_REMOTE_DISPLAY_NAME: "Attendee", TOOLBAR_ALWAYS_VISIBLE: false, TOOLBAR_TIMEOUT: 0, DISABLE_JOIN_LEAVE_NOTIFICATIONS: true, HIDE_INVITE_MORE_HEADER: true, SETTINGS_SECTIONS: [], VIDEO_LAYOUT_FIT: "both", HIDE_DEEP_LINKING_LOGO: true, JITSI_WATERMARK_LINK: "" },
+        roomName: roomId,
+        parentNode: jitsiContainerRef.current,
         userInfo: { displayName: user?.name || "Guest", email: user?.email || "" },
+        configOverwrite: {
+          startWithAudioMuted: !isOrganizer,
+          startWithVideoMuted: !isOrganizer,
+          startSilent: !isOrganizer,
+          prejoinPageEnabled: false,
+          disableProfile: true,
+          hideLoginButton: true,
+          disableInviteFunctions: true,
+          enableLobbyChat: false,
+          hideConferenceSubject: true,
+          hideConferenceTimer: true,
+          hideParticipantsStats: true,
+          hideRecordingLabel: true,
+          disablePolls: true,
+          disableReactions: true,
+          toolbarButtons: [],
+        },
+        interfaceConfigOverwrite: {
+          SHOW_JITSI_WATERMARK: false,
+          SHOW_BRAND_WATERMARK: false,
+          SHOW_POWERED_BY: false,
+          DEFAULT_REMOTE_DISPLAY_NAME: "Attendee",
+          TOOLBAR_ALWAYS_VISIBLE: false,
+          DISABLE_JOIN_LEAVE_NOTIFICATIONS: true,
+          VIDEO_LAYOUT_FIT: "both",
+        },
       });
       jitsiApiRef.current = jitsi;
       setAudioMuted(!isOrganizer);
@@ -109,8 +153,8 @@ export default function LiveEvent() {
 
       jitsi.addEventListener("videoConferenceJoined", async () => {
         jitsi.executeCommand("displayName", user?.name || "Guest");
-        if (user?.email) jitsi.executeCommand("email", user.email);
         if (isOrganizer) { jitsi.executeCommand("subject", event.title); try { await api.patch(`/events/${id}/stream/start`); } catch {} }
+        setTimeout(() => { try { jitsi.getIFrame()?.blur(); } catch {} window.focus(); }, 250);
       });
       jitsi.addEventListener("audioMuteStatusChanged", ({ muted }) => setAudioMuted(muted));
       jitsi.addEventListener("videoMuteStatusChanged", ({ muted }) => setVideoMuted(muted));
@@ -143,33 +187,37 @@ export default function LiveEvent() {
     try { const fd = new FormData(); fd.append("recording", file); await api.post(`/events/${id}/stream/recording`, fd, { headers: { "Content-Type": "multipart/form-data" } }); setRecordingUploaded(true); } catch {} finally { setUploading(false); }
   };
 
-  if (loading) return <div className="flex items-center justify-center py-20"><div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div></div>;
-  if (!event) return <div className="text-center py-20 text-gray-500">Event not found</div>;
+  if (loading) return <div className="flex items-center justify-center py-32"><div className="w-8 h-8 border-4 border-brand-500/30 border-t-brand-500 rounded-full animate-spin"></div></div>;
+  if (!event) return <div className="text-center py-32 text-surface-500">Event not found</div>;
 
   // ===== POST-STREAM =====
   if (streamEnded && isOrganizer) {
     return (
-      <div className="max-w-lg mx-auto py-16 text-center">
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+      <div className="max-w-xl mx-auto py-24 text-center">
+        <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-8 border border-emerald-200 dark:border-emerald-500/20">
+          <svg className="w-10 h-10 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Stream Completed</h2>
-        <p className="text-gray-500 mb-1">Duration: {formatElapsed(elapsed)} · Peak: {viewerCount} viewers</p>
-        <div className="bg-white border border-gray-200 rounded-xl p-6 mt-6 text-left">
-          <h3 className="font-semibold text-gray-900 mb-2">Upload Recording</h3>
-          <p className="text-sm text-gray-500 mb-4">Upload so attendees can watch later.</p>
+        <h2 className="font-semibold text-4xl text-surface-950 dark:text-surface-50 mb-3">Broadcast Concluded</h2>
+        <p className="text-surface-500 text-lg mb-10">Duration: {formatElapsed(elapsed)} <span className="mx-2">·</span> Peak: {viewerCount} viewers</p>
+        
+        <div className="bg-surface-50 dark:bg-surface-900 border border-border rounded-3xl p-8 text-left mb-8 shadow-surface">
+          <h3 className="font-medium text-surface-950 dark:text-surface-50 mb-2">Preserve Recording</h3>
+          <p className="text-sm text-surface-500 mb-6">Upload the recording archive for attendees who missed the live session.</p>
           {recordingUploaded ? (
-            <p className="text-sm text-green-600 font-medium flex items-center gap-1"><svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg> Uploaded</p>
+            <div className="flex items-center gap-2 p-4 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 rounded-2xl border border-emerald-200 dark:border-emerald-500/20 text-sm font-medium">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg> Archive Uploaded Successfully
+            </div>
           ) : (
-            <label className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold cursor-pointer transition ${uploading ? "bg-gray-100 text-gray-400" : "bg-blue-600 text-white hover:bg-blue-700"}`}>
-              {uploading ? <><Loader2 className="w-4 h-4 animate-spin" /> Uploading...</> : <><Video className="w-4 h-4" /> Choose File</>}
+            <label className={clsx("flex items-center justify-center gap-2 w-full py-3.5 rounded-2xl text-sm font-medium cursor-pointer transition-colors border", uploading ? "bg-surface-100 dark:bg-surface-800 text-surface-400 border-transparent" : "bg-surface-50 dark:bg-surface-950 text-surface-950 dark:text-surface-50 border-border hover:border-surface-400")}>
+              {uploading ? <><Loader2 className="w-4 h-4 animate-spin" /> Uploading...</> : <><Video className="w-4 h-4" /> Select Video File</>}
               <input type="file" accept="video/*" onChange={handleRecordingUpload} disabled={uploading} className="hidden" />
             </label>
           )}
         </div>
-        <div className="flex gap-3 justify-center mt-6">
-          <Link to={`${rolePrefix}/events/${id}`} className="px-4 py-2 rounded-xl text-sm font-medium bg-gray-100 hover:bg-gray-200 transition">View Event</Link>
-          <Link to="/organizer/dashboard" className="px-4 py-2 rounded-xl text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition">Dashboard</Link>
+
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Link to={`${rolePrefix}/events/${id}`} className="px-6 py-3 rounded-full text-sm font-medium bg-surface-50 dark:bg-surface-900 border border-border text-surface-900 dark:text-surface-50 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors">Event Details</Link>
+          <Link to="/organizer/dashboard" className="px-6 py-3 rounded-full text-sm font-medium bg-brand-600 text-white hover:bg-brand-500 transition-colors shadow-glow">Return to Dashboard</Link>
         </div>
       </div>
     );
@@ -178,15 +226,15 @@ export default function LiveEvent() {
   // ===== WAITING ROOM =====
   if (!isOrganizer && !streamStatus.isLive) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="text-center max-w-md">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            {streamStatus.checking ? <Loader2 className="w-7 h-7 text-blue-500 animate-spin" /> : <Clock className="w-7 h-7 text-gray-400" />}
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center max-w-md bg-surface-50 dark:bg-surface-900 border border-border p-12 rounded-[2.5rem] shadow-surface">
+          <div className="w-20 h-20 bg-surface-100 dark:bg-surface-800 border border-border rounded-full flex items-center justify-center mx-auto mb-8">
+            {streamStatus.checking ? <Loader2 className="w-8 h-8 text-brand-500 animate-spin" /> : <Clock className="w-8 h-8 text-surface-400" />}
           </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Waiting for host</h2>
-          <p className="text-gray-500 text-sm mb-4">You'll be connected once the organizer starts streaming.</p>
-          <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
-            <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div> Checking...
+          <h2 className="font-semibold text-3xl text-surface-950 dark:text-surface-50 mb-3">Awaiting Broadcast</h2>
+          <p className="text-surface-500 text-sm mb-8 leading-relaxed">The event stream will commence shortly. You will be connected automatically once the organizer initiates the broadcast.</p>
+          <div className="flex items-center justify-center gap-2 text-xs font-semibold tracking-widest uppercase text-surface-400">
+            <div className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-pulse"></div> Polling status
           </div>
         </div>
       </div>
@@ -194,107 +242,93 @@ export default function LiveEvent() {
   }
 
   // ===== LIVE STREAM =====
-
-  // Shared overlay elements (used in both normal and fullscreen)
   const VideoOverlays = ({ insideFullscreen }) => (
     <>
-      {/* TOP-LEFT: Back + LIVE + viewers + timer */}
-      <div className="absolute top-3 left-3 z-30 flex items-center gap-2">
-        <Link to={`${rolePrefix}/events/${id}`} className="p-1.5 bg-black/50 backdrop-blur-sm rounded-lg text-white/80 hover:text-white hover:bg-black/70 transition">
+      <div className="absolute top-4 left-4 z-30 flex items-center gap-3">
+        <Link to={`${rolePrefix}/events/${id}`} className="w-10 h-10 flex items-center justify-center bg-surface-950/60 backdrop-blur-md border border-white/10 rounded-full text-white/80 hover:text-white hover:bg-surface-950/80 transition-colors shadow-lg">
           <ArrowLeft className="w-4 h-4" />
         </Link>
-        <div className="flex items-center gap-2 bg-black/50 backdrop-blur-sm rounded-lg px-2.5 py-1.5">
+        <div className="flex items-center gap-3 bg-surface-950/60 backdrop-blur-md border border-white/10 rounded-full px-4 py-2 shadow-lg">
           {isOrganizer ? (
-            <span className="flex items-center gap-1 text-xs font-bold text-red-400">
+            <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-red-400">
               <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span> LIVE
             </span>
           ) : (
-            <span className="flex items-center gap-1 text-xs font-medium text-green-400">
-              <Wifi className="w-3 h-3" /> Live
+            <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+              <Wifi className="w-3 h-3" /> Connected
             </span>
           )}
-          <span className="w-px h-3 bg-white/20"></span>
-          <span className="flex items-center gap-1 text-xs text-white/80"><Users className="w-3 h-3" /> {viewerCount}</span>
-          <span className="w-px h-3 bg-white/20"></span>
-          <span className="text-xs text-white/60 font-mono">{formatElapsed(elapsed)}</span>
+          <span className="w-1 h-1 rounded-full bg-white/20"></span>
+          <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-white/80"><Users className="w-3.5 h-3.5" /> {viewerCount}</span>
+          <span className="w-1 h-1 rounded-full bg-white/20"></span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-white/60 font-mono">{formatElapsed(elapsed)}</span>
         </div>
       </div>
 
-      {/* TOP-RIGHT: Chat toggle + Fullscreen */}
-      <div className="absolute top-3 right-3 z-30 flex items-center gap-1.5">
+      <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
         {insideFullscreen && (
           <button onClick={() => setChatOpen(!chatOpen)}
-            className={`p-2 rounded-lg backdrop-blur-sm transition ${chatOpen ? "bg-blue-500/30 text-blue-300" : "bg-black/50 text-white/70 hover:text-white"}`}
+            className={clsx("w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-md border transition-colors shadow-lg", chatOpen ? "bg-brand-500/20 border-brand-500/30 text-brand-300" : "bg-surface-950/60 border-white/10 text-white/70 hover:text-white")}
             title="Toggle chat">
             <MessageSquare className="w-4 h-4" />
           </button>
         )}
         <button onClick={toggleFullscreen}
-          className="p-2 bg-black/50 backdrop-blur-sm rounded-lg text-white/70 hover:text-white transition"
+          className="w-10 h-10 flex items-center justify-center bg-surface-950/60 backdrop-blur-md border border-white/10 rounded-full text-white/70 hover:text-white hover:bg-surface-950/80 transition-colors shadow-lg"
           title="Fullscreen (F)">
           {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
         </button>
       </div>
 
-      {/* Fullscreen only: Glass chat overlay inside video */}
-      {insideFullscreen && chatOpen && (
-        <div className="absolute top-12 right-3 bottom-12 w-72 z-20 flex flex-col bg-black/40 backdrop-blur-md rounded-xl border border-white/10 overflow-hidden">
-          <LiveChat eventId={id} user={user} isOrganizer={isOrganizer} isFullscreen={true} />
-        </div>
-      )}
-
-      {/* BOTTOM CENTER: Controls */}
-      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10">
-        <button onClick={toggleAudio} className={`p-2 rounded-lg transition ${audioMuted ? "bg-red-500/20 text-red-400" : "text-white hover:bg-white/10"}`} title={audioMuted ? "Unmute" : "Mute"}>
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex items-center gap-2 bg-surface-950/80 backdrop-blur-xl px-4 py-2.5 rounded-2xl border border-white/10 shadow-2xl">
+        <button onClick={toggleAudio} className={clsx("w-10 h-10 flex items-center justify-center rounded-xl transition-colors", audioMuted ? "bg-red-500/20 text-red-400" : "text-white hover:bg-white/10")} title={audioMuted ? "Unmute" : "Mute"}>
           {audioMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
         </button>
-        <button onClick={toggleVideo} className={`p-2 rounded-lg transition ${videoMuted ? "bg-red-500/20 text-red-400" : "text-white hover:bg-white/10"}`} title={videoMuted ? "Camera on" : "Camera off"}>
+        <button onClick={toggleVideo} className={clsx("w-10 h-10 flex items-center justify-center rounded-xl transition-colors", videoMuted ? "bg-red-500/20 text-red-400" : "text-white hover:bg-white/10")} title={videoMuted ? "Camera on" : "Camera off"}>
           {videoMuted ? <VideoOff className="w-4 h-4" /> : <Video className="w-4 h-4" />}
         </button>
-        <button onClick={toggleScreenShare} className="p-2 rounded-lg text-white hover:bg-white/10 transition" title="Screen share">
+        <button onClick={toggleScreenShare} className="w-10 h-10 flex items-center justify-center rounded-xl text-white hover:bg-white/10 transition-colors" title="Screen share">
           <MonitorUp className="w-4 h-4" />
         </button>
-        <div className="w-px h-6 bg-white/20 mx-0.5"></div>
-        <button onClick={hangup} className="p-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition" title="Leave">
+        <div className="w-px h-6 bg-white/20 mx-1"></div>
+        <button onClick={hangup} className="w-10 h-10 flex items-center justify-center rounded-xl bg-red-600 text-white hover:bg-red-500 transition-colors shadow-glow" title="Leave">
           <PhoneOff className="w-4 h-4" />
         </button>
       </div>
 
-      {/* BOTTOM LEFT: Watermark */}
-      <div className="absolute bottom-3 left-3 z-10 flex items-center gap-1 text-white/15 text-[10px] font-semibold pointer-events-none">
-        <Calendar className="w-3 h-3" /> Evently
+      <div className="absolute bottom-4 left-6 z-10 flex items-center gap-1.5 text-white/20 text-[10px] font-bold uppercase tracking-widest pointer-events-none">
+        <Calendar className="w-3 h-3" /> Evently Broadcast
       </div>
     </>
   );
 
-  // Fullscreen: video fills screen, chat overlaps as glass
-  if (isFullscreen) {
-    return (
-      <div ref={fullscreenRef} className="fixed inset-0 z-[100] bg-black">
-        <div className="relative w-full h-full">
-          <div ref={jitsiContainerRef} className="absolute inset-0" />
-          <VideoOverlays insideFullscreen={true} />
-        </div>
-      </div>
-    );
-  }
-
-  // Normal: video left (max space), chat right (flush to edge)
   return (
-    <div ref={fullscreenRef} className="flex h-full">
-      {/* Video — takes all available space */}
-      <div className="flex-1 min-w-0 flex items-center p-3 pr-0">
-        <div className="relative bg-black rounded-l-xl overflow-hidden w-full" style={{ height: "0", paddingBottom: "56.25%" }}>
+    <div
+      ref={fullscreenRef}
+      className={clsx(
+        isFullscreen ? "fixed inset-0 z-[100] bg-surface-950" : "w-full h-[calc(100vh-8rem)]"
+      )}
+    >
+      <div className={clsx("flex gap-6 w-full h-full", isFullscreen ? "relative" : "")}>
+        
+        {/* Video Player */}
+        <div className={clsx(
+          "relative bg-surface-950 overflow-hidden shadow-2xl",
+          isFullscreen ? "absolute inset-0" : "flex-1 rounded-[2.5rem] ring-1 ring-border"
+        )}>
           <div ref={jitsiContainerRef} className="absolute inset-0" />
-          <VideoOverlays insideFullscreen={false} />
+          <VideoOverlays insideFullscreen={isFullscreen} />
         </div>
-      </div>
 
-      {/* Chat — always visible in normal mode, right edge */}
-      <div className="w-72 flex-shrink-0 bg-gray-900 flex flex-col border-l border-gray-800 py-3 pr-3">
-        <div className="flex-1 rounded-r-xl overflow-hidden border border-gray-700 border-l-0 flex flex-col">
-          <LiveChat eventId={id} user={user} isOrganizer={isOrganizer} isFullscreen={false} />
+        {/* Live Chat */}
+        <div className={clsx(
+          "flex flex-col bg-surface-50 dark:bg-surface-900 border border-border shadow-surface overflow-hidden transition-opacity duration-300",
+          isFullscreen ? "absolute top-6 right-6 bottom-6 w-80 z-20 bg-surface-950/80 backdrop-blur-xl border-white/10 rounded-3xl" : "w-80 lg:w-96 rounded-[2.5rem] shrink-0",
+          (!chatOpen && isFullscreen) && "opacity-0 pointer-events-none"
+        )}>
+          <LiveChat eventId={id} user={user} isOrganizer={isOrganizer} isFullscreen={isFullscreen} />
         </div>
+
       </div>
     </div>
   );

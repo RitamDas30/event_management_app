@@ -28,9 +28,9 @@ export default function AdminReports() {
       <div className="space-y-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-white rounded-xl border p-5 animate-pulse">
-              <div className="h-4 bg-gray-200 rounded w-24 mb-3"></div>
-              <div className="h-8 bg-gray-200 rounded w-16"></div>
+            <div key={i} className="bg-surface-50 dark:bg-surface-900 rounded-xl border p-5 animate-pulse">
+              <div className="h-4 bg-surface-200 dark:bg-surface-800 rounded w-24 mb-3"></div>
+              <div className="h-8 bg-surface-200 dark:bg-surface-800 rounded w-16"></div>
             </div>
           ))}
         </div>
@@ -38,7 +38,7 @@ export default function AdminReports() {
     );
   }
 
-  if (!stats) return <p className="text-center text-gray-500">Failed to load reports</p>;
+  if (!stats) return <p className="text-center text-surface-500">Failed to load reports</p>;
 
   const categoryData = Object.entries(stats.eventsByCategory || {}).map(([name, value]) => ({
     name,
@@ -51,30 +51,30 @@ export default function AdminReports() {
   }));
 
   const statCards = [
-    { title: "Total Users", value: stats.totalUsers, icon: Users, color: "bg-blue-50 text-blue-600" },
-    { title: "Total Events", value: stats.totalEvents, icon: CalendarDays, color: "bg-green-50 text-green-600" },
-    { title: "Total Registrations", value: stats.totalRegistrations, icon: Ticket, color: "bg-purple-50 text-purple-600" },
-    { title: "This Week", value: stats.recentRegistrations, icon: TrendingUp, color: "bg-amber-50 text-amber-600" },
+    { title: "Total Users", value: stats.totalUsers, icon: Users, color: "bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400" },
+    { title: "Total Events", value: stats.totalEvents, icon: CalendarDays, color: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
+    { title: "Total Registrations", value: stats.totalRegistrations, icon: Ticket, color: "bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400" },
+    { title: "This Week", value: stats.recentRegistrations, icon: TrendingUp, color: "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400" },
     { title: "Total Reviews", value: stats.totalReviews, icon: Star, color: "bg-pink-50 text-pink-600" },
   ];
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Platform Reports</h1>
+      <h1 className="text-2xl font-bold text-surface-950 dark:text-surface-50 mb-6">Platform Reports</h1>
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         {statCards.map((card) => {
           const Icon = card.icon;
           return (
-            <div key={card.title} className="bg-white rounded-xl border border-gray-200 p-5">
+            <div key={card.title} className="bg-surface-50 dark:bg-surface-900 rounded-xl border border-border p-5">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-gray-600">{card.title}</span>
+                <span className="text-sm font-medium text-surface-600 dark:text-surface-400">{card.title}</span>
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${card.color}`}>
                   <Icon className="w-4 h-4" />
                 </div>
               </div>
-              <p className="text-2xl font-bold text-gray-900">{card.value}</p>
+              <p className="text-2xl font-bold text-surface-950 dark:text-surface-50">{card.value}</p>
             </div>
           );
         })}
@@ -83,8 +83,8 @@ export default function AdminReports() {
       {/* Charts */}
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Users by Role */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Users by Role</h3>
+        <div className="bg-surface-50 dark:bg-surface-900 rounded-xl border border-border p-6">
+          <h3 className="text-lg font-semibold text-surface-950 dark:text-surface-50 mb-4">Users by Role</h3>
           {roleData.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={roleData}>
@@ -96,13 +96,13 @@ export default function AdminReports() {
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <p className="text-center text-gray-500 py-8">No data</p>
+            <p className="text-center text-surface-500 py-8">No data</p>
           )}
         </div>
 
         {/* Events by Category */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Events by Category</h3>
+        <div className="bg-surface-50 dark:bg-surface-900 rounded-xl border border-border p-6">
+          <h3 className="text-lg font-semibold text-surface-950 dark:text-surface-50 mb-4">Events by Category</h3>
           {categoryData.length > 0 ? (
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
@@ -124,7 +124,7 @@ export default function AdminReports() {
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <p className="text-center text-gray-500 py-8">No data</p>
+            <p className="text-center text-surface-500 py-8">No data</p>
           )}
         </div>
       </div>

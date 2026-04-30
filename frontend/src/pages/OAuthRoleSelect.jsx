@@ -59,15 +59,15 @@ export default function OAuthRoleSelect() {
 
   return (
     <div className="flex justify-center items-center min-h-[80vh] px-4">
-      <div className="bg-white p-8 shadow-lg rounded-2xl w-full max-w-lg border border-gray-100">
+      <div className="bg-surface-50 dark:bg-surface-900 p-8 shadow-lg rounded-2xl w-full max-w-lg border border-border">
         <div className="text-center mb-6">
-          <div className="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-            <span className="text-2xl font-bold text-blue-600">
+          <div className="w-14 h-14 bg-brand-100 dark:bg-brand-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+            <span className="text-2xl font-bold text-brand-600 dark:text-brand-400">
               {oauthData.name?.charAt(0).toUpperCase()}
             </span>
           </div>
-          <h2 className="text-xl font-bold text-gray-900">Welcome, {oauthData.name}!</h2>
-          <p className="text-sm text-gray-500 mt-1">
+          <h2 className="text-xl font-bold text-surface-950 dark:text-surface-50">Welcome, {oauthData.name}!</h2>
+          <p className="text-sm text-surface-500 mt-1">
             Choose how you'd like to use Evently
           </p>
         </div>
@@ -83,7 +83,7 @@ export default function OAuthRoleSelect() {
                 className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
                   isSelected
                     ? `border-${role.color}-500 bg-${role.color}-50`
-                    : "border-gray-200 hover:border-gray-300"
+                    : "border-border hover:border-border"
                 }`}
               >
                 <div className="flex items-start gap-3">
@@ -91,18 +91,18 @@ export default function OAuthRoleSelect() {
                     className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
                       isSelected
                         ? `bg-${role.color}-100 text-${role.color}-600`
-                        : "bg-gray-100 text-gray-500"
+                        : "bg-surface-100 dark:bg-surface-800 text-surface-500"
                     }`}
                   >
                     <Icon className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className={`font-semibold ${isSelected ? "text-gray-900" : "text-gray-700"}`}>
+                    <p className={`font-semibold ${isSelected ? "text-surface-950 dark:text-surface-50" : "text-surface-700 dark:text-surface-300"}`}>
                       {role.name}
                     </p>
-                    <p className="text-sm text-gray-500 mt-0.5">{role.description}</p>
+                    <p className="text-sm text-surface-500 mt-0.5">{role.description}</p>
                     {role.note && (
-                      <p className="text-xs text-amber-600 mt-1 font-medium">{role.note}</p>
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 font-medium">{role.note}</p>
                     )}
                   </div>
                 </div>
@@ -114,7 +114,7 @@ export default function OAuthRoleSelect() {
         <button
           onClick={handleSubmit}
           disabled={!selected || loading}
-          className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition disabled:bg-gray-300 disabled:cursor-not-allowed"
+          className="w-full bg-brand-600 text-white py-3 rounded-xl font-semibold hover:bg-brand-700 transition disabled:bg-gray-300 disabled:cursor-not-allowed"
         >
           {loading ? "Creating account..." : "Continue"}
         </button>

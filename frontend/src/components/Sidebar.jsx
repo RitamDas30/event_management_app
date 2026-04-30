@@ -1,59 +1,42 @@
 import { useState, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 import {
-  LayoutDashboard,
-  CalendarDays,
-  PlusCircle,
-  Users,
-  BarChart3,
-  Ticket,
-  Bookmark,
-  Bell,
-  Settings,
-  UserCircle,
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
-  Megaphone,
-  Shield,
-  FileText,
-  Tags,
-  ClipboardList,
-  Compass,
-  DollarSign,
-  Radio,
+  LayoutDashboard, CalendarDays, PlusCircle, Users, BarChart3,
+  Ticket, Bookmark, Bell, Settings, UserCircle, Calendar,
+  ChevronLeft, ChevronRight, Megaphone, Shield, FileText,
+  Tags, Compass, Radio
 } from "lucide-react";
+import clsx from "clsx";
 
 const studentLinks = [
   { name: "Dashboard", path: "/student/dashboard", icon: LayoutDashboard },
-  { name: "Explore Events", path: "/student/explore", icon: Compass },
-  { name: "My Events", path: "/student/my-events", icon: Ticket },
+  { name: "Explore", path: "/student/explore", icon: Compass },
+  { name: "My Tickets", path: "/student/my-events", icon: Ticket },
   { name: "Live Events", path: "/student/live", icon: Radio },
   { name: "Calendar", path: "/student/calendar", icon: CalendarDays },
-  { name: "Saved Events", path: "/student/saved", icon: Bookmark },
+  { name: "Saved", path: "/student/saved", icon: Bookmark },
   { name: "Notifications", path: "/student/notifications", icon: Bell },
-  { name: "Profile", path: "/student/profile", icon: UserCircle },
   { name: "Settings", path: "/student/settings", icon: Settings },
 ];
 
 const organizerLinks = [
-  { name: "Dashboard", path: "/organizer/dashboard", icon: LayoutDashboard },
+  { name: "Overview", path: "/organizer/dashboard", icon: LayoutDashboard },
   { name: "My Events", path: "/organizer/events", icon: CalendarDays, liveIndicator: true },
   { name: "Create Event", path: "/organizer/events/create", icon: PlusCircle },
-  { name: "Explore Events", path: "/organizer/explore", icon: Compass },
+  { name: "Explore", path: "/organizer/explore", icon: Compass },
   { name: "Analytics", path: "/organizer/analytics", icon: BarChart3 },
   { name: "Announcements", path: "/organizer/announcements", icon: Megaphone },
-  { name: "Profile", path: "/organizer/profile", icon: UserCircle },
   { name: "Settings", path: "/organizer/settings", icon: Settings },
 ];
 
 const adminLinks = [
   { name: "Overview", path: "/admin/dashboard", icon: LayoutDashboard },
-  { name: "Explore Events", path: "/admin/explore", icon: Compass },
-  { name: "Live Events", path: "/admin/live", icon: Radio },
-  { name: "User Management", path: "/admin/users", icon: Users },
+  { name: "Explore", path: "/admin/explore", icon: Compass },
+  { name: "Live Monitoring", path: "/admin/live", icon: Radio },
+  { name: "Users", path: "/admin/users", icon: Users },
   { name: "Event Moderation", path: "/admin/events", icon: Shield },
   { name: "Categories", path: "/admin/categories", icon: Tags },
   { name: "Reports", path: "/admin/reports", icon: BarChart3 },
@@ -67,17 +50,14 @@ export default function Sidebar({ collapsed, onToggle }) {
   const location = useLocation();
   const [hasLiveEvent, setHasLiveEvent] = useState(false);
 
-  // Check if organizer has any event that should be live now
   useEffect(() => {
     if (user?.role !== "organizer") return;
     const checkLive = async () => {
       try {
         const res = await api.get("/events");
         const now = new Date();
-        const mine = res.data.filter(
-          (e) => e.organizer?._id === user.id || e.organizer === user.id
-        );
-        const live = mine.some((e) => {
+        const mine = res.data.filter(e => e.organizer?._id === user.id || e.organizer === user.id);
+        const live = mine.some(e => {
           const isOnline = e.eventMode === "online" || e.eventMode === "hybrid";
           const earlyStart = new Date(new Date(e.startTime).getTime() - 15 * 60000);
           return isOnline && now >= earlyStart && now <= new Date(e.endTime);
@@ -90,89 +70,75 @@ export default function Sidebar({ collapsed, onToggle }) {
     return () => clearInterval(interval);
   }, [user]);
 
-  const getLinks = () => {
-    switch (user?.role) {
-      case "admin":
-        return adminLinks;
-      case "organizer":
-        return organizerLinks;
-      default:
-        return studentLinks;
-    }
-  };
-
-  const links = getLinks();
-
-  const getRoleLabel = () => {
-    switch (user?.role) {
-      case "admin":
-        return "Admin Panel";
-      case "organizer":
-        return "Organizer";
-      default:
-        return "Student";
-    }
-  };
-
-  const getRoleBadgeColor = () => {
-    switch (user?.role) {
-      case "admin":
-        return "bg-red-100 text-red-700";
-      case "organizer":
-        return "bg-purple-100 text-purple-700";
-      default:
-        return "bg-blue-100 text-blue-700";
-    }
+  const links = user?.role === "admin" ? adminLinks : user?.role === "organizer" ? organizerLinks : studentLinks;
+  
+  const RoleBadge = () => {
+    if (collapsed) return null;
+    const colors = {
+      admin: "text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20",
+      organizer: "text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-500/10 border-brand-200 dark:border-brand-500/20",
+      student: "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20"
+    };
+    const c = colors[user?.role] || colors.student;
+    
+    return (
+      <div className="px-4 py-4 mt-2">
+        <div className={clsx("px-3 py-1.5 rounded-md border text-[11px] font-semibold tracking-widest uppercase inline-flex items-center", c)}>
+          <span className={clsx("w-1.5 h-1.5 rounded-full mr-2", user?.role==="admin"?"bg-rose-500":user?.role==="organizer"?"bg-brand-500":"bg-emerald-500")} />
+          {user?.role || "Student"}
+        </div>
+      </div>
+    );
   };
 
   return (
     <aside
-      className={`fixed top-0 left-0 h-screen bg-white border-r border-gray-200 z-40 flex flex-col transition-all duration-300 ${
-        collapsed ? "w-[68px]" : "w-64"
-      }`}
+      className={clsx(
+        "h-screen bg-surface-50 dark:bg-surface-950 border-r border-border flex flex-col transition-all duration-300 z-50 shadow-[4px_0_24px_rgba(0,0,0,0.02)] dark:shadow-none",
+        collapsed ? "w-[72px]" : "w-64"
+      )}
     >
-      {/* Logo & Toggle */}
-      <div className="flex items-center justify-between px-4 h-16 border-b border-gray-200">
+      {/* Header */}
+      <div className={clsx("flex items-center h-16 border-b border-border transition-all", collapsed ? "justify-center" : "justify-between px-4")}>
         {!collapsed && (
-          <div className="flex items-center gap-2">
-            <Calendar className="w-6 h-6 text-blue-600 flex-shrink-0" />
-            <span className="text-lg font-bold text-gray-900">Evently</span>
+          <div className="flex items-center gap-2.5 px-1">
+            <div className="w-7 h-7 rounded-md bg-surface-950 dark:bg-surface-50 flex items-center justify-center">
+              <span className="font-semibold text-lg text-surface-50 dark:text-surface-950 leading-none mt-0.5">E</span>
+            </div>
+            <span className="font-medium tracking-tight text-surface-950 dark:text-surface-50">Evently</span>
           </div>
         )}
-        {collapsed && <Calendar className="w-6 h-6 text-blue-600 mx-auto" />}
+        {collapsed && (
+          <div className="w-7 h-7 rounded-md bg-surface-950 dark:bg-surface-50 flex items-center justify-center">
+            <span className="font-semibold text-lg text-surface-50 dark:text-surface-950 leading-none mt-0.5">E</span>
+          </div>
+        )}
         <button
           onClick={onToggle}
-          className={`p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors ${
-            collapsed ? "mx-auto mt-0" : ""
-          }`}
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {collapsed ? (
-            <ChevronRight className="w-4 h-4" />
-          ) : (
-            <ChevronLeft className="w-4 h-4" />
+          className={clsx(
+            "p-1.5 rounded-md text-surface-400 hover:text-surface-900 dark:hover:text-surface-50 hover:bg-surface-200 dark:hover:bg-surface-800 transition-colors",
+            collapsed && "absolute -right-3 top-16 bg-surface-50 dark:bg-surface-950 border border-border shadow-sm rounded-full w-6 h-6 flex items-center justify-center p-0"
           )}
+        >
+          {collapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-4 h-4" />}
         </button>
       </div>
 
-      {/* Role Badge */}
-      {!collapsed && (
-        <div className="px-4 py-3">
-          <span
-            className={`inline-block px-2.5 py-1 rounded-full text-xs font-semibold ${getRoleBadgeColor()}`}
-          >
-            {getRoleLabel()}
-          </span>
-        </div>
-      )}
+      <RoleBadge />
 
-      {/* Nav Links */}
-      <nav className="flex-1 overflow-y-auto px-3 py-2 space-y-1">
+      {/* Nav */}
+      <nav className={clsx("flex-1 overflow-y-auto py-2 space-y-0.5", collapsed ? "px-2 pt-6" : "px-3")}>
         {links.map((link) => {
           const Icon = link.icon;
-          const active =
-            location.pathname === link.path ||
-            (link.path !== "/explore" && location.pathname.startsWith(link.path + "/"));
+          const exact = location.pathname === link.path;
+          const prefix = link.path !== "/explore" && location.pathname.startsWith(link.path + "/");
+          const moreSpecific = links.some(
+            (o) =>
+              o.path !== link.path &&
+              o.path.startsWith(link.path + "/") &&
+              (location.pathname === o.path || location.pathname.startsWith(o.path + "/"))
+          );
+          const active = exact || (prefix && !moreSpecific);
           const showLiveDot = link.liveIndicator && hasLiveEvent;
 
           return (
@@ -180,49 +146,44 @@ export default function Sidebar({ collapsed, onToggle }) {
               key={link.path}
               to={link.path}
               title={collapsed ? link.name : undefined}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 group relative ${
-                active
-                  ? "bg-blue-50 text-blue-700"
-                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-              }`}
+              className={clsx(
+                "relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors group outline-none",
+                active ? "text-surface-950 dark:text-surface-50" : "text-surface-500 hover:text-surface-900 dark:text-surface-300 dark:hover:text-surface-50 hover:bg-surface-100 dark:hover:bg-surface-800/50"
+              )}
             >
-              <div className="relative flex-shrink-0">
-                <Icon
-                  className={`w-5 h-5 ${
-                    active ? "text-blue-600" : "text-gray-400 group-hover:text-gray-600"
-                  }`}
+              {active && (
+                <motion.div
+                  layoutId="sidebar-active"
+                  className="absolute inset-0 bg-surface-200 dark:bg-surface-800 rounded-lg -z-10"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                 />
-                {showLiveDot && (
-                  <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse border-2 border-white"></span>
-                )}
+              )}
+              {active && !collapsed && (
+                <motion.div layoutId="sidebar-indicator" className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-surface-950 dark:bg-surface-50 rounded-r-full" />
+              )}
+
+              <div className="relative flex-shrink-0">
+                <Icon className={clsx("w-4 h-4 transition-colors", active ? "text-surface-950 dark:text-surface-50" : "text-surface-400 group-hover:text-surface-600 dark:group-hover:text-surface-300")} />
+                {showLiveDot && <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse border border-surface-50 dark:border-surface-950" />}
               </div>
-              {!collapsed && (
-                <span className="flex-1">{link.name}</span>
-              )}
-              {!collapsed && showLiveDot && (
-                <span className="text-[10px] font-bold text-red-500 bg-red-50 px-1.5 py-0.5 rounded-full">LIVE</span>
-              )}
+              
+              {!collapsed && <span className="flex-1 truncate">{link.name}</span>}
+              {!collapsed && showLiveDot && <span className="text-[9px] font-bold text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-500/20 px-1.5 py-0.5 rounded uppercase tracking-wider">LIVE</span>}
             </NavLink>
           );
         })}
       </nav>
 
-      {/* User Info at Bottom */}
-      <div className="border-t border-gray-200 p-3">
-        <div
-          className={`flex items-center gap-3 px-2 py-2 rounded-lg ${
-            collapsed ? "justify-center" : ""
-          }`}
-        >
-          <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
+      {/* User */}
+      <div className={clsx("p-3 border-t border-border", collapsed ? "flex justify-center" : "")}>
+        <div className={clsx("flex items-center gap-3 rounded-xl transition-colors", !collapsed && "px-3 py-2 hover:bg-surface-100 dark:hover:bg-surface-800 cursor-pointer")}>
+          <div className="w-8 h-8 rounded-lg bg-surface-200 dark:bg-surface-800 text-surface-700 dark:text-surface-300 flex items-center justify-center text-sm font-semibold border border-border flex-shrink-0">
             {user?.name?.charAt(0).toUpperCase()}
           </div>
           {!collapsed && (
-            <div className="overflow-hidden">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                {user?.name}
-              </p>
-              <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+            <div className="overflow-hidden flex-1">
+              <p className="text-sm font-medium text-surface-950 dark:text-surface-50 truncate leading-none mb-1">{user?.name}</p>
+              <p className="text-xs text-surface-500 truncate leading-none">{user?.email}</p>
             </div>
           )}
         </div>

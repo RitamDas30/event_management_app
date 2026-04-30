@@ -55,12 +55,12 @@ export default function OAuthCallback({ provider }) {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <div className="bg-red-50 text-red-700 p-6 rounded-xl max-w-md text-center">
+        <div className="bg-red-50 text-rose-700 dark:text-rose-300 p-6 rounded-xl max-w-md text-center">
           <h2 className="text-lg font-bold mb-2">Authentication Failed</h2>
           <p className="text-sm">{error}</p>
           <button
             onClick={() => navigate("/login")}
-            className="mt-4 text-sm font-medium text-blue-600 hover:text-blue-700"
+            className="mt-4 text-sm font-medium text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:text-brand-300"
           >
             Back to Login
           </button>
@@ -72,7 +72,7 @@ export default function OAuthCallback({ provider }) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh]">
       <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-      <p className="text-gray-600">Authenticating with {provider}...</p>
+      <p className="text-surface-600 dark:text-surface-400">Authenticating with {provider}...</p>
     </div>
   );
 }

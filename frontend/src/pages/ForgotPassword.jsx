@@ -32,17 +32,17 @@ export default function ForgotPassword() {
 
   return (
     <div className="flex justify-center items-center min-h-[80vh]">
-      <div className="bg-white shadow-xl rounded-2xl p-8 w-full max-w-md border border-gray-100">
-        <h2 className="text-3xl font-bold mb-6 text-center text-gray-800">
+      <div className="bg-surface-50 dark:bg-surface-900 shadow-xl rounded-2xl p-8 w-full max-w-md border border-border">
+        <h2 className="text-3xl font-bold mb-6 text-center text-surface-800 dark:text-surface-100">
           Forgot Password
         </h2>
-        <p className="text-gray-600 mb-6 text-center">
+        <p className="text-surface-600 dark:text-surface-400 mb-6 text-center">
           Enter your email address and we'll send you a link to reset your password.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+            <label htmlFor="email" className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Email Address</label>
             <input
               type="email"
               id="email"
@@ -57,7 +57,7 @@ export default function ForgotPassword() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg mt-4 font-semibold hover:bg-blue-700 transition disabled:bg-gray-400"
+            className="w-full bg-brand-600 text-white py-3 rounded-lg mt-4 font-semibold hover:bg-brand-700 transition disabled:bg-gray-400"
           >
             {loading ? "Sending..." : "Send Reset Link"}
           </button>
@@ -65,7 +65,7 @@ export default function ForgotPassword() {
 
         <div className="text-center mt-6">
           {/* This link now works */}
-          <Link to="/login" className="text-sm text-blue-600 hover:underline">
+          <Link to="/login" className="text-sm text-brand-600 dark:text-brand-400 hover:underline">
             Back to Login
           </Link>
         </div>

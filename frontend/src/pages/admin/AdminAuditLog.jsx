@@ -17,9 +17,9 @@ const typeIcons = {
 };
 
 const typeColors = {
-  user: "bg-blue-50 text-blue-600",
-  event: "bg-purple-50 text-purple-600",
-  system: "bg-amber-50 text-amber-600",
+  user: "bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400",
+  event: "bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400",
+  system: "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400",
 };
 
 export default function AdminAuditLog() {
@@ -28,46 +28,46 @@ export default function AdminAuditLog() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Audit Log</h1>
-        <p className="text-gray-600 mt-1">Track admin actions across the platform</p>
+        <h1 className="text-2xl font-bold text-surface-950 dark:text-surface-50">Audit Log</h1>
+        <p className="text-surface-600 dark:text-surface-400 mt-1">Track admin actions across the platform</p>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="bg-surface-50 dark:bg-surface-900 rounded-xl border border-border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-surface-100 dark:bg-surface-900/50 border-b border-border">
               <tr>
-                <th className="text-left py-3 px-4 font-medium text-gray-600">Type</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600">Action</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600">Target</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600">Details</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600">Admin</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600">Time</th>
+                <th className="text-left py-3 px-4 font-medium text-surface-600 dark:text-surface-400">Type</th>
+                <th className="text-left py-3 px-4 font-medium text-surface-600 dark:text-surface-400">Action</th>
+                <th className="text-left py-3 px-4 font-medium text-surface-600 dark:text-surface-400">Target</th>
+                <th className="text-left py-3 px-4 font-medium text-surface-600 dark:text-surface-400">Details</th>
+                <th className="text-left py-3 px-4 font-medium text-surface-600 dark:text-surface-400">Admin</th>
+                <th className="text-left py-3 px-4 font-medium text-surface-600 dark:text-surface-400">Time</th>
               </tr>
             </thead>
             <tbody>
               {logs.map((log) => {
                 const Icon = typeIcons[log.type] || FileText;
-                const colorClass = typeColors[log.type] || "bg-gray-50 text-gray-600";
+                const colorClass = typeColors[log.type] || "bg-surface-100 dark:bg-surface-900/50 text-surface-600 dark:text-surface-400";
                 return (
-                  <tr key={log.id} className="border-b border-gray-50 hover:bg-gray-50">
+                  <tr key={log.id} className="border-b border-border hover:bg-surface-100 dark:bg-surface-900/50">
                     <td className="py-3 px-4">
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${colorClass}`}>
                         <Icon className="w-4 h-4" />
                       </div>
                     </td>
-                    <td className="py-3 px-4 font-medium text-gray-900">{log.action}</td>
-                    <td className="py-3 px-4 text-gray-700">{log.target}</td>
-                    <td className="py-3 px-4 text-gray-500 text-xs">{log.details}</td>
-                    <td className="py-3 px-4 text-gray-500">{log.admin}</td>
-                    <td className="py-3 px-4 text-gray-500 text-xs whitespace-nowrap">{new Date(log.timestamp).toLocaleString()}</td>
+                    <td className="py-3 px-4 font-medium text-surface-950 dark:text-surface-50">{log.action}</td>
+                    <td className="py-3 px-4 text-surface-700 dark:text-surface-300">{log.target}</td>
+                    <td className="py-3 px-4 text-surface-500 text-xs">{log.details}</td>
+                    <td className="py-3 px-4 text-surface-500">{log.admin}</td>
+                    <td className="py-3 px-4 text-surface-500 text-xs whitespace-nowrap">{new Date(log.timestamp).toLocaleString()}</td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
         </div>
-        <div className="px-4 py-3 border-t bg-gray-50 text-xs text-gray-500">
+        <div className="px-4 py-3 border-t bg-surface-100 dark:bg-surface-900/50 text-xs text-surface-500">
           Showing {logs.length} recent actions. Full audit log stored in database.
         </div>
       </div>

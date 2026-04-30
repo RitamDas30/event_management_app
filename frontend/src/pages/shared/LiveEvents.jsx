@@ -93,17 +93,17 @@ export default function LiveEvents() {
     const ended = isPast(event);
 
     return (
-      <div className={`bg-white rounded-xl border p-4 transition ${live ? "border-green-300 bg-green-50/30" : "border-gray-200"}`}>
+      <div className={`bg-surface-50 dark:bg-surface-900 rounded-xl border p-4 transition ${live ? "border-green-300 bg-emerald-50 dark:bg-emerald-500/10/30" : "border-border"}`}>
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               {live && (
-                <span className="flex items-center gap-1 text-xs font-semibold text-green-600 bg-green-100 px-2 py-0.5 rounded-full">
+                <span className="flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-500/20 px-2 py-0.5 rounded-full">
                   <Wifi className="w-3 h-3" /> LIVE
                 </span>
               )}
               <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                event.eventMode === "online" ? "bg-purple-50 text-purple-600" : "bg-blue-50 text-blue-600"
+                event.eventMode === "online" ? "bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400" : "bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400"
               }`}>
                 {event.eventMode === "online" ? "Online" : "Hybrid"}
               </span>
@@ -111,12 +111,12 @@ export default function LiveEvents() {
 
             <Link
               to={`${rolePrefix}/events/${event._id}`}
-              className="text-base font-semibold text-gray-900 hover:text-blue-600 transition-colors"
+              className="text-base font-semibold text-surface-950 dark:text-surface-50 hover:text-brand-600 dark:text-brand-400 transition-colors"
             >
               {event.title}
             </Link>
 
-            <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-gray-500">
+            <div className="flex flex-wrap items-center gap-3 mt-2 text-sm text-surface-500">
               <span className="flex items-center gap-1">
                 <Calendar className="w-3.5 h-3.5" />
                 {new Date(event.startTime).toLocaleDateString()}
@@ -146,7 +146,7 @@ export default function LiveEvents() {
             )}
 
             {showGoLive && !goLive && !ended && (
-              <div className="text-xs text-gray-500 text-right">
+              <div className="text-xs text-surface-500 text-right">
                 <Clock className="w-3.5 h-3.5 inline mr-1" />
                 Available 15m before start
               </div>
@@ -155,7 +155,7 @@ export default function LiveEvents() {
             {!showGoLive && (live || goLive) && (
               <Link
                 to={`${rolePrefix}/events/${event._id}/live`}
-                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-blue-700 transition"
+                className="flex items-center gap-2 bg-brand-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-brand-700 transition"
               >
                 <Play className="w-4 h-4" />
                 Join
@@ -167,7 +167,7 @@ export default function LiveEvents() {
                 href={event.streamConfig.recordingUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1 text-sm text-purple-600 hover:text-purple-700 font-medium"
+                className="flex items-center gap-1 text-sm text-violet-600 dark:text-violet-400 hover:text-violet-700 dark:text-violet-300 font-medium"
               >
                 <Video className="w-4 h-4" /> Recording
               </a>
@@ -182,9 +182,9 @@ export default function LiveEvents() {
     return (
       <div className="space-y-4">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="bg-white rounded-xl border p-5 animate-pulse">
-            <div className="h-5 bg-gray-200 rounded w-2/3 mb-3"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+          <div key={i} className="bg-surface-50 dark:bg-surface-900 rounded-xl border p-5 animate-pulse">
+            <div className="h-5 bg-surface-200 dark:bg-surface-800 rounded w-2/3 mb-3"></div>
+            <div className="h-4 bg-surface-200 dark:bg-surface-800 rounded w-1/3"></div>
           </div>
         ))}
       </div>
@@ -194,10 +194,10 @@ export default function LiveEvents() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-surface-950 dark:text-surface-50">
           {isOrganizer ? "Live & Streaming" : "Live Events"}
         </h1>
-        <p className="text-gray-600 mt-1">
+        <p className="text-surface-600 dark:text-surface-400 mt-1">
           {isOrganizer
             ? "Manage your online and hybrid events"
             : "Online events you can join"}
@@ -206,9 +206,9 @@ export default function LiveEvents() {
 
       {events.length === 0 ? (
         <div className="text-center py-20">
-          <VideoOff className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-700">No online events</h3>
-          <p className="text-gray-500 mt-2">
+          <VideoOff className="w-16 h-16 text-surface-300 dark:text-surface-700 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-surface-700 dark:text-surface-300">No online events</h3>
+          <p className="text-surface-500 mt-2">
             {isOrganizer
               ? "Create an event with Online or Hybrid mode to use streaming"
               : "No online events available right now"}
@@ -216,7 +216,7 @@ export default function LiveEvents() {
           {isOrganizer && (
             <Link
               to="/organizer/events/create"
-              className="mt-4 inline-block text-sm font-medium text-blue-600"
+              className="mt-4 inline-block text-sm font-medium text-brand-600 dark:text-brand-400"
             >
               Create Event
             </Link>
@@ -227,7 +227,7 @@ export default function LiveEvents() {
           {/* Live Now */}
           {liveNow.length > 0 && (
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-surface-950 dark:text-surface-50 mb-3 flex items-center gap-2">
                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                 Live Now
               </h2>
@@ -242,7 +242,7 @@ export default function LiveEvents() {
           {/* Upcoming */}
           {upcoming.length > 0 && (
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">Upcoming</h2>
+              <h2 className="text-lg font-semibold text-surface-950 dark:text-surface-50 mb-3">Upcoming</h2>
               <div className="space-y-3">
                 {upcoming.map((e) => (
                   <EventCard key={e._id} event={e} showGoLive={isOrganizer} />
@@ -254,7 +254,7 @@ export default function LiveEvents() {
           {/* Past (with recordings) */}
           {past.length > 0 && (
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">Past Events</h2>
+              <h2 className="text-lg font-semibold text-surface-950 dark:text-surface-50 mb-3">Past Events</h2>
               <div className="space-y-3">
                 {past.map((e) => (
                   <EventCard key={e._id} event={e} showGoLive={false} />

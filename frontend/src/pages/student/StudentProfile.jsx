@@ -1,23 +1,17 @@
 import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../api/axios";
 import toast from "react-hot-toast";
-import { UserCircle, Save, Plus, X } from "lucide-react";
+import { Save, ArrowRight, UserCircle } from "lucide-react";
+import clsx from "clsx";
 
-const availableInterests = [
-  "Technical", "Cultural", "Sports", "Academic", "Social",
-  "Workshops", "Hackathons", "Music", "Art", "Networking",
-];
+const availableInterests = ["Technical", "Cultural", "Sports", "Academic", "Social", "Workshops", "Hackathons", "Music", "Art", "Networking"];
 
 export default function StudentProfile() {
   const { user, login } = useAuth();
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({
-    name: "",
-    bio: "",
-    interests: [],
-    socialLinks: { website: "", github: "", linkedin: "", twitter: "" },
-  });
+  const [form, setForm] = useState({ name: "", bio: "", interests: [], socialLinks: { website: "", github: "", linkedin: "", twitter: "" } });
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -25,19 +19,10 @@ export default function StudentProfile() {
         const res = await api.get("/auth/me");
         const u = res.data;
         setForm({
-          name: u.name || "",
-          bio: u.bio || "",
-          interests: u.interests || [],
-          socialLinks: {
-            website: u.socialLinks?.website || "",
-            github: u.socialLinks?.github || "",
-            linkedin: u.socialLinks?.linkedin || "",
-            twitter: u.socialLinks?.twitter || "",
-          },
+          name: u.name || "", bio: u.bio || "", interests: u.interests || [],
+          socialLinks: { website: u.socialLinks?.website || "", github: u.socialLinks?.github || "", linkedin: u.socialLinks?.linkedin || "", twitter: u.socialLinks?.twitter || "" },
         });
-      } catch (err) {
-        console.error(err);
-      }
+      } catch (err) {}
     };
     fetchProfile();
   }, []);
@@ -47,132 +32,87 @@ export default function StudentProfile() {
     setLoading(true);
     try {
       const res = await api.put("/users/profile", form);
-      // Update auth context with new user data
-      const token = localStorage.getItem("token");
-      login(
-        { ...user, name: res.data.user.name, bio: res.data.user.bio, interests: res.data.user.interests, socialLinks: res.data.user.socialLinks },
-        token
-      );
-      toast.success("Profile updated successfully!");
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to update profile");
-    } finally {
-      setLoading(false);
-    }
+      login({ ...user, ...res.data.user }, localStorage.getItem("token"));
+      toast.success("Profile updated successfully.");
+    } catch (err) { toast.error(err.response?.data?.message || "Failed to update profile"); } finally { setLoading(false); }
   };
 
   const toggleInterest = (interest) => {
-    setForm((prev) => ({
-      ...prev,
-      interests: prev.interests.includes(interest)
-        ? prev.interests.filter((i) => i !== interest)
-        : [...prev.interests, interest],
-    }));
+    setForm(p => ({ ...p, interests: p.interests.includes(interest) ? p.interests.filter(i => i !== interest) : [...p.interests, interest] }));
   };
 
   return (
-    <div className="max-w-2xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Edit Profile</h1>
+    <div className="w-full max-w-3xl">
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-10">
+        <h1 className="text-3xl font-semibold text-surface-950 dark:text-surface-50 mb-2">Profile</h1>
+        <p className="text-surface-500">Manage your public persona and interests.</p>
+      </motion.div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Avatar Preview */}
-        <div className="flex items-center gap-4">
-          <div className="w-20 h-20 rounded-full bg-blue-600 text-white flex items-center justify-center text-3xl font-bold">
+      <motion.form initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} onSubmit={handleSubmit} className="bg-surface-50 dark:bg-surface-900 border border-border rounded-[2.5rem] p-8 sm:p-12 shadow-surface space-y-10">
+        
+        {/* Avatar */}
+        <div className="flex items-center gap-6">
+          <div className="w-24 h-24 rounded-2xl bg-surface-200 dark:bg-surface-800 text-surface-900 dark:text-surface-50 flex items-center justify-center font-semibold text-4xl border border-border shadow-sm">
             {form.name?.charAt(0).toUpperCase() || "?"}
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-900">{form.name || "Your Name"}</p>
-            <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
+            <h3 className="text-xl font-medium text-surface-950 dark:text-surface-50">{form.name || "Your Name"}</h3>
+            <p className="text-sm font-semibold uppercase tracking-widest text-brand-600 dark:text-brand-400 mt-1">{user?.role}</p>
           </div>
         </div>
 
-        {/* Name */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-          <input
-            type="text"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            required
-            className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none"
-          />
-        </div>
-
-        {/* Bio */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
-          <textarea
-            value={form.bio}
-            onChange={(e) => setForm({ ...form, bio: e.target.value })}
-            rows={3}
-            maxLength={500}
-            placeholder="Tell us about yourself..."
-            className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none resize-none"
-          />
-          <p className="text-xs text-gray-400 mt-1">{form.bio.length}/500</p>
+        {/* Basic Info */}
+        <div className="grid gap-6 sm:grid-cols-2 border-t border-border pt-10">
+          <div className="space-y-2 sm:col-span-2">
+            <label className="block text-sm font-medium text-surface-950 dark:text-surface-50">Full Name</label>
+            <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required className="w-full px-5 py-3.5 bg-surface-100 dark:bg-surface-950 border border-transparent rounded-xl text-sm focus:border-brand-500 focus:bg-surface-50 dark:focus:bg-surface-900 outline-none transition-all placeholder:text-surface-400" />
+          </div>
+          <div className="space-y-2 sm:col-span-2">
+            <div className="flex items-center justify-between">
+              <label className="block text-sm font-medium text-surface-950 dark:text-surface-50">Biography</label>
+              <span className="text-xs font-medium text-surface-400">{form.bio.length}/500</span>
+            </div>
+            <textarea value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} rows={4} maxLength={500} placeholder="A brief overview of who you are..." className="w-full px-5 py-3.5 bg-surface-100 dark:bg-surface-950 border border-transparent rounded-xl text-sm focus:border-brand-500 focus:bg-surface-50 dark:focus:bg-surface-900 outline-none resize-none transition-all placeholder:text-surface-400" />
+          </div>
         </div>
 
         {/* Interests */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Interests</label>
-          <div className="flex flex-wrap gap-2">
-            {availableInterests.map((interest) => (
-              <button
-                key={interest}
-                type="button"
-                onClick={() => toggleInterest(interest)}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                  form.interests.includes(interest)
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
-              >
-                {form.interests.includes(interest) && <span className="mr-1">&#10003;</span>}
-                {interest}
-              </button>
-            ))}
+        <div className="border-t border-border pt-10">
+          <label className="block text-sm font-medium text-surface-950 dark:text-surface-50 mb-4">Interests & Tags</label>
+          <div className="flex flex-wrap gap-2.5">
+            {availableInterests.map((interest) => {
+              const active = form.interests.includes(interest);
+              return (
+                <button key={interest} type="button" onClick={() => toggleInterest(interest)} className={clsx("px-4 py-2 rounded-full text-sm font-medium transition-all border", active ? "bg-surface-950 text-surface-50 dark:bg-surface-50 dark:text-surface-950 border-transparent shadow-sm" : "bg-transparent text-surface-600 dark:text-surface-400 border-border hover:border-surface-400")}>
+                  {interest}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Social Links */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Social Links</label>
-          <div className="space-y-3">
+        {/* Links */}
+        <div className="border-t border-border pt-10">
+          <label className="block text-sm font-medium text-surface-950 dark:text-surface-50 mb-6">Digital Presence</label>
+          <div className="grid gap-4 sm:grid-cols-2">
             {[
-              { key: "website", label: "Website", placeholder: "https://yoursite.com" },
-              { key: "github", label: "GitHub", placeholder: "https://github.com/username" },
-              { key: "linkedin", label: "LinkedIn", placeholder: "https://linkedin.com/in/username" },
-              { key: "twitter", label: "Twitter/X", placeholder: "https://x.com/username" },
-            ].map((field) => (
-              <div key={field.key} className="flex items-center gap-3">
-                <span className="text-sm font-medium text-gray-500 w-20">{field.label}</span>
-                <input
-                  type="url"
-                  value={form.socialLinks[field.key]}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      socialLinks: { ...form.socialLinks, [field.key]: e.target.value },
-                    })
-                  }
-                  placeholder={field.placeholder}
-                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none"
-                />
+              { key: "website", label: "Personal Site", p: "https://" }, { key: "github", label: "GitHub", p: "github.com/" },
+              { key: "linkedin", label: "LinkedIn", p: "linkedin.com/in/" }, { key: "twitter", label: "X / Twitter", p: "x.com/" }
+            ].map((f) => (
+              <div key={f.key} className="space-y-2">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-surface-500">{f.label}</label>
+                <input type="url" value={form.socialLinks[f.key]} onChange={(e) => setForm({ ...form, socialLinks: { ...form.socialLinks, [f.key]: e.target.value } })} placeholder={f.p} className="w-full px-5 py-3 bg-surface-100 dark:bg-surface-950 border border-transparent rounded-xl text-sm focus:border-brand-500 focus:bg-surface-50 dark:focus:bg-surface-900 outline-none transition-all placeholder:text-surface-400" />
               </div>
             ))}
           </div>
         </div>
 
-        {/* Submit */}
-        <button
-          type="submit"
-          disabled={loading}
-          className="flex items-center gap-2 bg-blue-600 text-white font-semibold px-6 py-2.5 rounded-xl hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-        >
-          <Save className="w-4 h-4" />
-          {loading ? "Saving..." : "Save Changes"}
-        </button>
-      </form>
+        <div className="border-t border-border pt-8 flex justify-end">
+          <button type="submit" disabled={loading} className="group inline-flex items-center justify-center gap-2 bg-brand-600 text-white hover:bg-brand-500 px-8 py-3.5 rounded-full font-medium transition-all hover:scale-[1.02] active:scale-95 shadow-glow disabled:opacity-50">
+            {loading ? "Saving..." : <>Save Profile <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></>}
+          </button>
+        </div>
+      </motion.form>
     </div>
   );
 }

@@ -58,22 +58,22 @@ export default function OrganizerAnnouncements() {
 
   return (
     <div className="max-w-3xl">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Announcements</h1>
+      <h1 className="text-2xl font-bold text-surface-950 dark:text-surface-50 mb-6">Announcements</h1>
 
       {/* Send Form */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <Megaphone className="w-5 h-5 text-blue-600" />
+      <div className="bg-surface-50 dark:bg-surface-900 rounded-xl border border-border p-6 mb-8">
+        <h2 className="text-lg font-semibold text-surface-950 dark:text-surface-50 mb-4 flex items-center gap-2">
+          <Megaphone className="w-5 h-5 text-brand-600 dark:text-brand-400" />
           Send Announcement
         </h2>
         <form onSubmit={handleSend} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Select Event</label>
+            <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Select Event</label>
             <select
               value={selectedEvent}
               onChange={(e) => setSelectedEvent(e.target.value)}
               required
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:border-blue-400 focus:outline-none bg-white"
+              className="w-full px-4 py-2.5 bg-surface-50 dark:bg-surface-900 border border-border rounded-lg text-sm text-surface-950 dark:text-surface-50 placeholder-surface-400 dark:placeholder-surface-500 focus:border-brand-500/50 focus:outline-none bg-surface-50 dark:bg-surface-900"
             >
               <option value="">Choose an event...</option>
               {events.map((event) => (
@@ -84,31 +84,31 @@ export default function OrganizerAnnouncements() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+            <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Subject</label>
             <input
               type="text"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               placeholder="e.g., Venue Change, Schedule Update"
               required
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:border-blue-400 focus:outline-none"
+              className="w-full px-4 py-2.5 bg-surface-50 dark:bg-surface-900 border border-border rounded-lg text-sm text-surface-950 dark:text-surface-50 placeholder-surface-400 dark:placeholder-surface-500 focus:border-brand-500/50 focus:outline-none"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+            <label className="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Message</label>
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Write your announcement..."
               rows={4}
               required
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:border-blue-400 focus:outline-none resize-none"
+              className="w-full px-4 py-2.5 bg-surface-50 dark:bg-surface-900 border border-border rounded-lg text-sm text-surface-950 dark:text-surface-50 placeholder-surface-400 dark:placeholder-surface-500 focus:border-brand-500/50 focus:outline-none resize-none"
             />
           </div>
           <button
             type="submit"
             disabled={sending}
-            className="flex items-center gap-2 bg-blue-600 text-white font-semibold px-5 py-2.5 rounded-xl hover:bg-blue-700 transition disabled:bg-gray-400"
+            className="flex items-center gap-2 bg-brand-600 text-white font-semibold px-5 py-2.5 rounded-xl hover:bg-brand-700 transition disabled:bg-gray-400"
           >
             <Send className="w-4 h-4" />
             {sending ? "Sending..." : "Send to All Attendees"}
@@ -119,16 +119,16 @@ export default function OrganizerAnnouncements() {
       {/* Sent History */}
       {sentHistory.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Sent Announcements</h2>
+          <h2 className="text-lg font-semibold text-surface-950 dark:text-surface-50 mb-4">Sent Announcements</h2>
           <div className="space-y-3">
             {sentHistory.map((item) => (
-              <div key={item.id} className="bg-white rounded-xl border border-gray-200 p-4">
+              <div key={item.id} className="bg-surface-50 dark:bg-surface-900 rounded-xl border border-border p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold text-gray-900">{item.subject}</h3>
-                  <span className="text-xs text-gray-500">{new Date(item.sentAt).toLocaleString()}</span>
+                  <h3 className="font-semibold text-surface-950 dark:text-surface-50">{item.subject}</h3>
+                  <span className="text-xs text-surface-500">{new Date(item.sentAt).toLocaleString()}</span>
                 </div>
-                <p className="text-sm text-gray-600 mb-2">{item.message}</p>
-                <div className="flex items-center gap-4 text-xs text-gray-500">
+                <p className="text-sm text-surface-600 dark:text-surface-400 mb-2">{item.message}</p>
+                <div className="flex items-center gap-4 text-xs text-surface-500">
                   <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {item.eventTitle}</span>
                   <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {item.recipients} recipients</span>
                 </div>

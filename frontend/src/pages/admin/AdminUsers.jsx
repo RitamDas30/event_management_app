@@ -4,9 +4,9 @@ import toast from "react-hot-toast";
 import { Search, Users, Shield, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 
 const roleBadge = {
-  admin: "bg-red-100 text-red-700",
-  organizer: "bg-purple-100 text-purple-700",
-  student: "bg-blue-100 text-blue-700",
+  admin: "bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300",
+  organizer: "bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300",
+  student: "bg-brand-100 dark:bg-brand-500/20 text-brand-700 dark:text-brand-300",
 };
 
 export default function AdminUsers() {
@@ -65,27 +65,27 @@ export default function AdminUsers() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
-          <p className="text-sm text-gray-600 mt-1">{total} total users</p>
+          <h1 className="text-2xl font-bold text-surface-950 dark:text-surface-50">User Management</h1>
+          <p className="text-sm text-surface-600 dark:text-surface-400 mt-1">{total} total users</p>
         </div>
       </div>
 
       {/* Search & Filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400 dark:text-surface-500" />
           <input
             type="text"
             placeholder="Search by name or email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:border-blue-400 focus:outline-none"
+            className="w-full pl-10 pr-4 py-2.5 bg-surface-50 dark:bg-surface-900 border border-border rounded-lg text-sm text-surface-950 dark:text-surface-50 placeholder-surface-400 dark:placeholder-surface-500 focus:border-brand-500/50 focus:outline-none"
           />
         </div>
         <select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value)}
-          className="px-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-white"
+          className="px-4 py-2.5 bg-surface-50 dark:bg-surface-900 border border-border rounded-lg text-sm text-surface-950 dark:text-surface-50 placeholder-surface-400 dark:placeholder-surface-500 bg-surface-50 dark:bg-surface-900"
         >
           <option value="">All Roles</option>
           <option value="student">Students</option>
@@ -95,37 +95,37 @@ export default function AdminUsers() {
       </div>
 
       {/* Users Table */}
-      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      <div className="bg-surface-50 dark:bg-surface-900 border border-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-surface-100 dark:bg-surface-900/50 border-b border-border">
               <tr>
-                <th className="text-left py-3 px-4 font-medium text-gray-600">User</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600">Email</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600">Role</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600">Joined</th>
-                <th className="text-right py-3 px-4 font-medium text-gray-600">Actions</th>
+                <th className="text-left py-3 px-4 font-medium text-surface-600 dark:text-surface-400">User</th>
+                <th className="text-left py-3 px-4 font-medium text-surface-600 dark:text-surface-400">Email</th>
+                <th className="text-left py-3 px-4 font-medium text-surface-600 dark:text-surface-400">Role</th>
+                <th className="text-left py-3 px-4 font-medium text-surface-600 dark:text-surface-400">Joined</th>
+                <th className="text-right py-3 px-4 font-medium text-surface-600 dark:text-surface-400">Actions</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="border-b border-gray-100">
-                    <td colSpan={5} className="py-4 px-4"><div className="h-4 bg-gray-100 rounded animate-pulse"></div></td>
+                  <tr key={i} className="border-b border-border">
+                    <td colSpan={5} className="py-4 px-4"><div className="h-4 bg-surface-100 dark:bg-surface-800 rounded animate-pulse"></div></td>
                   </tr>
                 ))
               ) : users.length > 0 ? (
                 users.map((u) => (
-                  <tr key={u._id} className="border-b border-gray-50 hover:bg-gray-50">
+                  <tr key={u._id} className="border-b border-border hover:bg-surface-100 dark:bg-surface-900/50">
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-semibold">
+                        <div className="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-500/20 text-brand-600 dark:text-brand-400 flex items-center justify-center text-sm font-semibold">
                           {u.name?.charAt(0).toUpperCase()}
                         </div>
-                        <span className="font-medium text-gray-900">{u.name}</span>
+                        <span className="font-medium text-surface-950 dark:text-surface-50">{u.name}</span>
                       </div>
                     </td>
-                    <td className="py-3 px-4 text-gray-600">{u.email}</td>
+                    <td className="py-3 px-4 text-surface-600 dark:text-surface-400">{u.email}</td>
                     <td className="py-3 px-4">
                       <select
                         value={u.role}
@@ -137,11 +137,11 @@ export default function AdminUsers() {
                         <option value="admin">Admin</option>
                       </select>
                     </td>
-                    <td className="py-3 px-4 text-gray-500">{new Date(u.createdAt).toLocaleDateString()}</td>
+                    <td className="py-3 px-4 text-surface-500">{new Date(u.createdAt).toLocaleDateString()}</td>
                     <td className="py-3 px-4 text-right">
                       <button
                         onClick={() => handleDelete(u._id, u.name)}
-                        className="p-1.5 text-gray-400 hover:text-red-600 transition-colors"
+                        className="p-1.5 text-surface-400 dark:text-surface-500 hover:text-rose-600 dark:text-rose-400 transition-colors"
                         title="Delete user"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -151,7 +151,7 @@ export default function AdminUsers() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="py-12 text-center text-gray-500">No users found</td>
+                  <td colSpan={5} className="py-12 text-center text-surface-500">No users found</td>
                 </tr>
               )}
             </tbody>
@@ -160,19 +160,19 @@ export default function AdminUsers() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-border">
             <button
               onClick={() => fetchUsers(page - 1)}
               disabled={page <= 1}
-              className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-50"
+              className="flex items-center gap-1 text-sm text-surface-600 dark:text-surface-400 hover:text-surface-950 dark:text-surface-50 disabled:opacity-50"
             >
               <ChevronLeft className="w-4 h-4" /> Previous
             </button>
-            <span className="text-sm text-gray-600">Page {page} of {totalPages}</span>
+            <span className="text-sm text-surface-600 dark:text-surface-400">Page {page} of {totalPages}</span>
             <button
               onClick={() => fetchUsers(page + 1)}
               disabled={page >= totalPages}
-              className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-50"
+              className="flex items-center gap-1 text-sm text-surface-600 dark:text-surface-400 hover:text-surface-950 dark:text-surface-50 disabled:opacity-50"
             >
               Next <ChevronRight className="w-4 h-4" />
             </button>

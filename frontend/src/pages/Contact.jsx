@@ -1,6 +1,9 @@
 import { useState } from "react";
-import { Mail, MapPin, Phone, Send } from "lucide-react";
+import { Mail, MapPin, Phone, ArrowRight } from "lucide-react";
+import { motion } from "framer-motion";
 import toast from "react-hot-toast";
+
+const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } } };
 
 export default function Contact() {
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
@@ -9,108 +12,106 @@ export default function Contact() {
   const handleSubmit = (e) => {
     e.preventDefault();
     setSending(true);
-    // Simulate form submission
     setTimeout(() => {
-      toast.success("Message sent! We'll get back to you soon.");
+      toast.success("Message received. We will respond shortly.");
       setForm({ name: "", email: "", subject: "", message: "" });
       setSending(false);
     }, 1000);
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4">Contact Us</h1>
-        <p className="text-gray-600 max-w-lg mx-auto">
-          Have questions or feedback? We'd love to hear from you.
+    <div className="max-w-6xl mx-auto px-6 lg:px-12 py-24 lg:py-32">
+      
+      <motion.div initial="hidden" animate="visible" variants={fadeUp} className="text-center mb-20">
+        <h1 className="font-semibold text-5xl lg:text-6xl text-surface-950 dark:text-surface-50 mb-6 tracking-tight">Initiate contact.</h1>
+        <p className="text-lg text-surface-500 max-w-xl mx-auto text-balance">
+          Whether you have a question, require assistance, or wish to collaborate, our team is ready to listen.
         </p>
-      </div>
+      </motion.div>
 
-      <div className="grid lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
-        {/* Contact Info */}
-        <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <Mail className="w-6 h-6 text-blue-600 mb-3" />
-            <h3 className="font-semibold text-gray-900 mb-1">Email</h3>
-            <p className="text-sm text-gray-600">support@evently.app</p>
+      <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 items-start">
+        
+        {/* Contact Info Sidebar */}
+        <motion.div initial="hidden" animate="visible" variants={fadeUp} className="lg:col-span-4 space-y-6">
+          <div className="bg-surface-50 dark:bg-surface-900 rounded-[2rem] border border-border p-8 hover:shadow-surface transition-shadow">
+            <div className="w-12 h-12 rounded-xl bg-surface-100 dark:bg-surface-800 border border-border flex items-center justify-center mb-6">
+              <Mail className="w-5 h-5 text-brand-600 dark:text-brand-400" />
+            </div>
+            <h3 className="text-lg font-medium text-surface-950 dark:text-surface-50 mb-1">Direct Line</h3>
+            <p className="text-surface-500 text-sm">support@evently.app</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <MapPin className="w-6 h-6 text-blue-600 mb-3" />
-            <h3 className="font-semibold text-gray-900 mb-1">Location</h3>
-            <p className="text-sm text-gray-600">Built for Campus Communities Worldwide</p>
+          
+          <div className="bg-surface-50 dark:bg-surface-900 rounded-[2rem] border border-border p-8 hover:shadow-surface transition-shadow">
+            <div className="w-12 h-12 rounded-xl bg-surface-100 dark:bg-surface-800 border border-border flex items-center justify-center mb-6">
+              <MapPin className="w-5 h-5 text-brand-600 dark:text-brand-400" />
+            </div>
+            <h3 className="text-lg font-medium text-surface-950 dark:text-surface-50 mb-1">Headquarters</h3>
+            <p className="text-surface-500 text-sm">San Francisco, CA<br/>Global Remote Team</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <Phone className="w-6 h-6 text-blue-600 mb-3" />
-            <h3 className="font-semibold text-gray-900 mb-1">Support Hours</h3>
-            <p className="text-sm text-gray-600">Mon - Fri, 9:00 AM - 6:00 PM IST</p>
+          
+          <div className="bg-surface-50 dark:bg-surface-900 rounded-[2rem] border border-border p-8 hover:shadow-surface transition-shadow">
+            <div className="w-12 h-12 rounded-xl bg-surface-100 dark:bg-surface-800 border border-border flex items-center justify-center mb-6">
+              <Phone className="w-5 h-5 text-brand-600 dark:text-brand-400" />
+            </div>
+            <h3 className="text-lg font-medium text-surface-950 dark:text-surface-50 mb-1">Operating Hours</h3>
+            <p className="text-surface-500 text-sm">Mon - Fri, 9:00 AM - 6:00 PM PST</p>
           </div>
-        </div>
+        </motion.div>
 
         {/* Contact Form */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6 sm:p-8">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+        <motion.div initial="hidden" animate="visible" variants={fadeUp} className="lg:col-span-8 bg-surface-50 dark:bg-surface-900 rounded-[2.5rem] border border-border p-8 sm:p-12 shadow-surface relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-brand-500/10 rounded-full blur-3xl pointer-events-none" />
+          
+          <div className="mb-10 relative z-10">
+            <h2 className="text-2xl font-semibold text-surface-950 dark:text-surface-50">Send a dispatch</h2>
+            <p className="text-surface-500 mt-2 text-sm">We aim to respond to all inquiries within 24 hours.</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
+            <div className="grid sm:grid-cols-2 gap-6">
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-surface-700 dark:text-surface-300">Full Name</label>
                 <input
-                  type="text"
-                  required
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none"
-                  placeholder="Your name"
+                  type="text" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className="w-full px-4 py-3 bg-surface-100 dark:bg-surface-950 border border-border text-surface-900 dark:text-white rounded-xl text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition-all"
+                  placeholder="Jane Doe"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <div className="space-y-1.5">
+                <label className="block text-sm font-medium text-surface-700 dark:text-surface-300">Email Address</label>
                 <input
-                  type="email"
-                  required
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none"
-                  placeholder="your@email.com"
+                  type="email" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  className="w-full px-4 py-3 bg-surface-100 dark:bg-surface-950 border border-border text-surface-900 dark:text-white rounded-xl text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition-all"
+                  placeholder="jane@example.com"
                 />
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+            
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-surface-700 dark:text-surface-300">Subject</label>
               <input
-                type="text"
-                required
-                value={form.subject}
-                onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none"
-                placeholder="How can we help?"
+                type="text" required value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })}
+                className="w-full px-4 py-3 bg-surface-100 dark:bg-surface-950 border border-border text-surface-900 dark:text-white rounded-xl text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none transition-all"
+                placeholder="How can we assist?"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+            
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-surface-700 dark:text-surface-300">Message</label>
               <textarea
-                required
-                rows={5}
-                value={form.message}
-                onChange={(e) => setForm({ ...form, message: e.target.value })}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:border-blue-400 focus:ring-2 focus:ring-blue-100 focus:outline-none resize-none"
-                placeholder="Tell us more..."
+                required rows={6} value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })}
+                className="w-full px-4 py-3 bg-surface-100 dark:bg-surface-950 border border-border text-surface-900 dark:text-white rounded-xl text-sm focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 outline-none resize-none transition-all"
+                placeholder="Detail your inquiry..."
               />
             </div>
-            <button
-              type="submit"
-              disabled={sending}
-              className="flex items-center justify-center gap-2 w-full bg-blue-600 text-white font-semibold py-3 rounded-xl hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
-            >
-              {sending ? (
-                "Sending..."
-              ) : (
-                <>
-                  <Send className="w-4 h-4" />
-                  Send Message
-                </>
-              )}
-            </button>
+            
+            <div className="pt-2">
+              <button type="submit" disabled={sending} className="group inline-flex items-center justify-center gap-2 bg-surface-950 text-surface-50 dark:bg-surface-50 dark:text-surface-950 hover:bg-surface-800 dark:hover:bg-surface-200 px-8 py-4 rounded-full font-medium transition-all hover:scale-[1.02] active:scale-95 shadow-sm disabled:opacity-50">
+                {sending ? "Transmitting..." : <>Transmit Message <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" /></>}
+              </button>
+            </div>
           </form>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

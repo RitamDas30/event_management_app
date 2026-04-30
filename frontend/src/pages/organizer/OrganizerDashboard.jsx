@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../api/axios";
 import {
@@ -12,6 +13,14 @@ import {
   TrendingUp,
   Eye,
 } from "lucide-react";
+import { Card, CardHeader, CardTitle } from "../../components/ui/Card";
+import StatCard from "../../components/ui/StatCard";
+import Badge from "../../components/ui/Badge";
+import EmptyState from "../../components/ui/EmptyState";
+import Button from "../../components/ui/Button";
+
+const fadeUp = { hidden: { opacity: 0, y: 15 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4 } } };
+const stagger = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1 } } };
 
 export default function OrganizerDashboard() {
   const { user } = useAuth();
@@ -37,191 +46,155 @@ export default function OrganizerDashboard() {
 
   const upcomingEvents = events.filter((e) => new Date(e.startTime) > new Date());
   const totalSeats = events.reduce((sum, e) => sum + e.capacity, 0);
-  const totalBooked = events.reduce((sum, e) => sum + (e.capacity - e.seatsAvailable), 0);
+  const totalBooked = events.reduce(
+    (sum, e) => sum + (e.capacity - e.seatsAvailable),
+    0
+  );
 
   const statCards = [
-    {
-      title: "Total Events",
-      value: events.length,
-      icon: CalendarDays,
-      color: "bg-blue-50 text-blue-600",
-    },
-    {
-      title: "Upcoming",
-      value: upcomingEvents.length,
-      icon: Calendar,
-      color: "bg-green-50 text-green-600",
-    },
-    {
-      title: "Total Registrations",
-      value: totalBooked,
-      icon: Users,
-      color: "bg-purple-50 text-purple-600",
-    },
+    { title: "Total Events", value: events.length, icon: CalendarDays, accent: "brand", link: "/organizer/events" },
+    { title: "Upcoming", value: upcomingEvents.length, icon: Calendar, accent: "emerald", link: "/organizer/events" },
+    { title: "Total Registrations", value: totalBooked, icon: Users, accent: "violet", link: "/organizer/analytics" },
     {
       title: "Fill Rate",
       value: totalSeats > 0 ? `${Math.round((totalBooked / totalSeats) * 100)}%` : "0%",
       icon: TrendingUp,
-      color: "bg-amber-50 text-amber-600",
+      accent: "amber",
+      link: "/organizer/analytics",
     },
   ];
 
+  const quickActions = [
+    { title: "Create Event", desc: "Start a new event", icon: PlusCircle, to: "/organizer/events/create", accent: "brand" },
+    { title: "View Events", desc: "Manage existing events", icon: Eye, to: "/organizer/events", accent: "emerald" },
+    { title: "Analytics", desc: "View performance data", icon: BarChart3, to: "/organizer/analytics", accent: "violet" },
+  ];
+
+  const accentBg = {
+    brand: "bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400",
+    emerald: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+    violet: "bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400",
+  };
+
   return (
-    <div>
-      {/* Welcome */}
-      <div className="flex items-center justify-between mb-8">
+    <div className="w-full">
+      {/* Header */}
+      <motion.div initial="hidden" animate="visible" variants={fadeUp} className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-10">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Welcome, {user?.name?.split(" ")[0]}!
+          <h1 className="text-3xl font-semibold text-surface-950 dark:text-surface-50 mb-2">
+            Welcome, {user?.name?.split(" ")[0] || "Organizer"}
           </h1>
-          <p className="text-gray-600 mt-1">Manage your events and track performance</p>
+          <p className="text-surface-500">Manage your events and track performance.</p>
         </div>
-        <Link
-          to="/organizer/events/create"
-          className="hidden sm:inline-flex items-center gap-2 bg-blue-600 text-white font-semibold px-5 py-2.5 rounded-xl hover:bg-blue-700 transition-colors shadow-sm"
-        >
+        <Button as={Link} to="/organizer/events/create" variant="primary" size="md">
           <PlusCircle className="w-4 h-4" />
           Create Event
-        </Link>
-      </div>
+        </Button>
+      </motion.div>
 
       {/* Stats */}
-      {loading ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-white rounded-xl border border-gray-200 p-5 animate-pulse">
-              <div className="h-4 bg-gray-200 rounded w-24 mb-3"></div>
-              <div className="h-8 bg-gray-200 rounded w-12"></div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {statCards.map((card) => {
-            const Icon = card.icon;
-            return (
-              <div
-                key={card.title}
-                className="bg-white rounded-xl border border-gray-200 p-5"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-gray-600">{card.title}</span>
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${card.color}`}>
-                    <Icon className="w-4 h-4" />
-                  </div>
-                </div>
-                <p className="text-2xl font-bold text-gray-900">{card.value}</p>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      <motion.div initial="hidden" animate="visible" variants={stagger} className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+        {loading
+          ? [1, 2, 3, 4].map((i) => (
+              <motion.div key={i} variants={fadeUp}>
+                <StatCard loading />
+              </motion.div>
+            ))
+          : statCards.map((card) => (
+              <motion.div key={card.title} variants={fadeUp}>
+                <StatCard {...card} />
+              </motion.div>
+            ))}
+      </motion.div>
 
       {/* Quick Actions */}
-      <div className="grid sm:grid-cols-3 gap-4 mb-8">
-        <Link
-          to="/organizer/events/create"
-          className="flex items-center gap-3 bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-all hover:-translate-y-0.5"
-        >
-          <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-            <PlusCircle className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-gray-900">Create Event</p>
-            <p className="text-xs text-gray-500">Start a new event</p>
-          </div>
-        </Link>
-        <Link
-          to="/organizer/events"
-          className="flex items-center gap-3 bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-all hover:-translate-y-0.5"
-        >
-          <div className="w-10 h-10 rounded-lg bg-green-50 text-green-600 flex items-center justify-center">
-            <Eye className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-gray-900">View Events</p>
-            <p className="text-xs text-gray-500">Manage existing events</p>
-          </div>
-        </Link>
-        <Link
-          to="/organizer/analytics"
-          className="flex items-center gap-3 bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-all hover:-translate-y-0.5"
-        >
-          <div className="w-10 h-10 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
-            <BarChart3 className="w-5 h-5" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-gray-900">Analytics</p>
-            <p className="text-xs text-gray-500">View performance data</p>
-          </div>
-        </Link>
-      </div>
+      <motion.div initial="hidden" animate="visible" variants={stagger} className="grid sm:grid-cols-3 gap-4 mb-10">
+        {quickActions.map((action) => {
+          const Icon = action.icon;
+          return (
+            <motion.div key={action.title} variants={fadeUp}>
+              <Card as={Link} to={action.to} hover className="flex items-center gap-4 p-5">
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${accentBg[action.accent]}`}>
+                  <Icon className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-surface-950 dark:text-surface-50">{action.title}</p>
+                  <p className="text-xs text-surface-500 mt-0.5">{action.desc}</p>
+                </div>
+              </Card>
+            </motion.div>
+          );
+        })}
+      </motion.div>
 
       {/* Recent Events */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Recent Events</h2>
-          <Link
-            to="/organizer/events"
-            className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
-          >
-            View all <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-
-        {loading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 bg-gray-100 rounded-lg animate-pulse"></div>
-            ))}
-          </div>
-        ) : events.length > 0 ? (
-          <div className="space-y-3">
-            {events.slice(0, 5).map((event) => (
-              <Link
-                key={event._id}
-                to={`/events/${event._id}`}
-                className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <div className="w-12 h-12 rounded-lg bg-blue-100 text-blue-600 flex flex-col items-center justify-center text-xs font-semibold">
-                  <span>
-                    {new Date(event.startTime).toLocaleDateString(undefined, { day: "numeric" })}
-                  </span>
-                  <span className="text-[10px] uppercase">
-                    {new Date(event.startTime).toLocaleDateString(undefined, { month: "short" })}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{event.title}</p>
-                  <p className="text-xs text-gray-500">
-                    {event.capacity - event.seatsAvailable}/{event.capacity} registered
-                  </p>
-                </div>
-                <span
-                  className={`text-xs font-medium px-2 py-1 rounded-full ${
-                    new Date(event.startTime) > new Date()
-                      ? "text-green-600 bg-green-50"
-                      : "text-gray-600 bg-gray-100"
-                  }`}
-                >
-                  {new Date(event.startTime) > new Date() ? "Upcoming" : "Past"}
-                </span>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <Calendar className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm text-gray-500">No events yet</p>
+      <motion.div initial="hidden" animate="visible" variants={fadeUp}>
+        <Card className="p-6 sm:p-8">
+          <CardHeader>
+            <CardTitle>Recent Events</CardTitle>
             <Link
-              to="/organizer/events/create"
-              className="mt-2 inline-block text-sm text-blue-600 hover:text-blue-700 font-medium"
+              to="/organizer/events"
+              className="text-sm font-medium text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 flex items-center gap-1 group"
             >
-              Create your first event
+              View all
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
-          </div>
-        )}
-      </div>
+          </CardHeader>
+
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-16 bg-surface-100 dark:bg-surface-800 rounded-xl animate-pulse" />
+              ))}
+            </div>
+          ) : events.length > 0 ? (
+            <div className="space-y-3">
+              {events.slice(0, 5).map((event) => {
+                const isUpcoming = new Date(event.startTime) > new Date();
+                const eventDate = new Date(event.startTime);
+                return (
+                  <Link
+                    key={event._id}
+                    to={`/organizer/events/${event._id}`}
+                    className="group flex items-center gap-4 p-4 rounded-xl border border-border bg-surface-50 dark:bg-surface-950 hover:border-brand-500/30 dark:hover:border-brand-400/30 transition-colors"
+                  >
+                    <div className="w-14 h-14 rounded-xl bg-surface-100 dark:bg-surface-800 border border-border flex flex-col items-center justify-center text-center flex-shrink-0">
+                      <span className="text-[10px] font-medium uppercase tracking-widest text-brand-600 dark:text-brand-400 leading-none mb-1">
+                        {eventDate.toLocaleDateString(undefined, { month: "short" })}
+                      </span>
+                      <span className="text-lg font-bold text-surface-950 dark:text-surface-50 leading-none">
+                        {eventDate.getDate()}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-base font-medium text-surface-950 dark:text-surface-50 truncate group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+                        {event.title}
+                      </p>
+                      <p className="text-xs text-surface-500 mt-0.5">
+                        {event.capacity - event.seatsAvailable}/{event.capacity} registered
+                      </p>
+                    </div>
+                    <Badge tone={isUpcoming ? "success" : "neutral"}>
+                      {isUpcoming ? "Upcoming" : "Past"}
+                    </Badge>
+                  </Link>
+                );
+              })}
+            </div>
+          ) : (
+            <EmptyState
+              icon={Calendar}
+              title="No events yet"
+              description="Create your first event to start tracking registrations."
+              action={
+                <Button as={Link} to="/organizer/events/create" variant="primary" size="md">
+                  Create your first event
+                </Button>
+              }
+            />
+          )}
+        </Card>
+      </motion.div>
     </div>
   );
 }

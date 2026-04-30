@@ -1,15 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../api/axios";
-import {
-  CalendarDays,
-  Ticket,
-  Clock,
-  ArrowRight,
-  Calendar,
-  TrendingUp,
-} from "lucide-react";
+import { CalendarDays, Ticket, Clock, ArrowRight, TrendingUp, Search } from "lucide-react";
+
+const fadeUp = { hidden: { opacity: 0, y: 15 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4 } } };
+const stagger = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1 } } };
 
 export default function StudentDashboard() {
   const { user } = useAuth();
@@ -32,140 +29,140 @@ export default function StudentDashboard() {
 
   const activeRegs = registrations.filter((r) => r.status === "registered");
   const waitlisted = registrations.filter((r) => r.status === "waitlisted");
-  const upcomingEvents = activeRegs.filter(
-    (r) => r.event && new Date(r.event.startTime) > new Date()
-  );
+  const upcomingEvents = activeRegs.filter((r) => r.event && new Date(r.event.startTime) > new Date()).sort((a, b) => new Date(a.event.startTime) - new Date(b.event.startTime));
+  const pastEvents = activeRegs.filter((r) => r.event && new Date(r.event.startTime) <= new Date());
 
-  const statCards = [
-    {
-      title: "Registered Events",
-      value: activeRegs.length,
-      icon: Ticket,
-      color: "bg-blue-50 text-blue-600",
-      link: "/student/registrations",
-    },
-    {
-      title: "Upcoming",
-      value: upcomingEvents.length,
-      icon: CalendarDays,
-      color: "bg-green-50 text-green-600",
-      link: "/student/calendar",
-    },
-    {
-      title: "Waitlisted",
-      value: waitlisted.length,
-      icon: Clock,
-      color: "bg-amber-50 text-amber-600",
-      link: "/student/registrations",
-    },
-    {
-      title: "Total Attended",
-      value: activeRegs.length - upcomingEvents.length,
-      icon: TrendingUp,
-      color: "bg-purple-50 text-purple-600",
-      link: "/student/registrations",
-    },
+  const stats = [
+    { title: "Confirmed Tickets", value: activeRegs.length, icon: Ticket, link: "/student/my-events" },
+    { title: "Upcoming Events", value: upcomingEvents.length, icon: CalendarDays, link: "/student/calendar" },
+    { title: "Waitlisted", value: waitlisted.length, icon: Clock, link: "/student/my-events" },
+    { title: "Events Attended", value: pastEvents.length, icon: TrendingUp, link: "/student/my-events" },
   ];
 
   return (
-    <div>
-      {/* Welcome */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Welcome back, {user?.name?.split(" ")[0]}!
+    <div className="w-full">
+      {/* Header */}
+      <motion.div initial="hidden" animate="visible" variants={fadeUp} className="mb-10">
+        <h1 className="text-3xl font-semibold text-surface-950 dark:text-surface-50 mb-2">
+          Dashboard
         </h1>
-        <p className="text-gray-600 mt-1">Here's what's happening with your events</p>
-      </div>
+        <p className="text-surface-500">Welcome back, {user?.name?.split(" ")[0]}. Here's your event itinerary.</p>
+      </motion.div>
 
-      {/* Stat Cards */}
-      {loading ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-white rounded-xl border border-gray-200 p-5 animate-pulse">
-              <div className="h-4 bg-gray-200 rounded w-24 mb-3"></div>
-              <div className="h-8 bg-gray-200 rounded w-12"></div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {statCards.map((card) => {
-            const Icon = card.icon;
-            return (
-              <Link
-                key={card.title}
-                to={card.link}
-                className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-all hover:-translate-y-0.5"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-gray-600">{card.title}</span>
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${card.color}`}>
-                    <Icon className="w-4 h-4" />
-                  </div>
-                </div>
-                <p className="text-2xl font-bold text-gray-900">{card.value}</p>
-              </Link>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Upcoming Events */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Upcoming Events</h2>
-          <Link
-            to="/student/registrations"
-            className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
-          >
-            View all <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-
+      {/* Stats Grid */}
+      <motion.div initial="hidden" animate="visible" variants={stagger} className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-10">
         {loading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 bg-gray-100 rounded-lg animate-pulse"></div>
-            ))}
-          </div>
-        ) : upcomingEvents.length > 0 ? (
-          <div className="space-y-3">
-            {upcomingEvents.slice(0, 5).map((reg) => (
-              <Link
-                key={reg._id}
-                to={`/events/${reg.event._id}`}
-                className="flex items-center gap-4 p-3 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <div className="w-12 h-12 rounded-lg bg-blue-100 text-blue-600 flex flex-col items-center justify-center text-xs font-semibold">
-                  <span>
-                    {new Date(reg.event.startTime).toLocaleDateString(undefined, { day: "numeric" })}
-                  </span>
-                  <span className="text-[10px] uppercase">
-                    {new Date(reg.event.startTime).toLocaleDateString(undefined, { month: "short" })}
-                  </span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{reg.event.title}</p>
-                  <p className="text-xs text-gray-500">{reg.event.venueName}</p>
-                </div>
-                <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">
-                  Confirmed
-                </span>
-              </Link>
-            ))}
-          </div>
+          [1, 2, 3, 4].map((i) => (
+            <div key={i} className="bg-surface-50 dark:bg-surface-900 border border-border rounded-2xl p-6 h-32 animate-pulse" />
+          ))
         ) : (
-          <div className="text-center py-8">
-            <Calendar className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm text-gray-500">No upcoming events</p>
-            <Link
-              to="/explore"
-              className="mt-2 inline-block text-sm text-blue-600 hover:text-blue-700 font-medium"
-            >
-              Browse events
+          stats.map((stat, idx) => {
+            const Icon = stat.icon;
+            return (
+              <motion.div key={idx} variants={fadeUp}>
+                <Link to={stat.link} className="block bg-surface-50 dark:bg-surface-900 border border-border rounded-2xl p-6 hover:shadow-surface hover:-translate-y-1 transition-all group">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-sm font-medium text-surface-500 group-hover:text-surface-900 dark:group-hover:text-surface-50 transition-colors">{stat.title}</span>
+                    <Icon className="w-4 h-4 text-surface-400 group-hover:text-brand-500 transition-colors" />
+                  </div>
+                  <p className="text-3xl font-semibold text-surface-950 dark:text-surface-50">{stat.value}</p>
+                </Link>
+              </motion.div>
+            );
+          })
+        )}
+      </motion.div>
+
+      {/* Main Content Area */}
+      <div className="grid lg:grid-cols-3 gap-8">
+        
+        {/* Upcoming Schedule */}
+        <motion.div initial="hidden" animate="visible" variants={fadeUp} className="lg:col-span-2">
+          <div className="bg-surface-50 dark:bg-surface-900 border border-border rounded-3xl p-6 sm:p-8">
+            <div className="flex items-center justify-between mb-6 border-b border-border pb-4">
+              <h2 className="text-lg font-medium text-surface-950 dark:text-surface-50">Upcoming Schedule</h2>
+              <Link to="/student/my-events" className="text-sm font-medium text-brand-600 dark:text-brand-400 hover:text-brand-700 flex items-center gap-1 group">
+                All Tickets <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+
+            {loading ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map(i => <div key={i} className="h-20 bg-surface-100 dark:bg-surface-800 rounded-2xl animate-pulse" />)}
+              </div>
+            ) : upcomingEvents.length > 0 ? (
+              <div className="space-y-3">
+                {upcomingEvents.slice(0, 5).map((reg) => {
+                  const eventDate = new Date(reg.event.startTime);
+                  const isOnline = reg.event.eventMode === "online" || reg.event.eventMode === "hybrid";
+                  
+                  return (
+                    <Link key={reg._id} to={`/events/${reg.event._id}`} className="group flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-2xl border border-border bg-surface-50 dark:bg-surface-950 hover:border-brand-500/30 transition-colors">
+                      <div className="w-14 h-14 rounded-xl bg-surface-100 dark:bg-surface-800 border border-border flex flex-col items-center justify-center text-center flex-shrink-0 group-hover:bg-brand-50 dark:group-hover:bg-brand-500/10 group-hover:border-brand-200 dark:group-hover:border-brand-500/20 transition-colors">
+                        <span className="text-[10px] font-medium uppercase tracking-widest text-brand-600 dark:text-brand-400 leading-none mb-1">
+                          {eventDate.toLocaleDateString(undefined, { month: "short" })}
+                        </span>
+                        <span className="text-lg font-bold text-surface-950 dark:text-surface-50 leading-none">
+                          {eventDate.getDate()}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-base font-medium text-surface-950 dark:text-surface-50 truncate group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">{reg.event.title}</h4>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs text-surface-500">{eventDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                          <span className="w-1 h-1 rounded-full bg-surface-300 dark:bg-surface-700" />
+                          <span className="text-xs text-surface-500 truncate max-w-[200px]">{reg.event.venueName}</span>
+                        </div>
+                      </div>
+                      <div className="hidden sm:block">
+                        <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 text-xs font-medium rounded-full border border-emerald-200 dark:border-emerald-500/20">Confirmed</span>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-12 px-6 bg-surface-100/50 dark:bg-surface-950/50 rounded-2xl border border-dashed border-border">
+                <Search className="w-8 h-8 text-surface-400 mx-auto mb-3" />
+                <p className="text-surface-900 dark:text-surface-50 font-medium mb-1">Schedule is clear</p>
+                <p className="text-sm text-surface-500 mb-4">You have no upcoming events registered.</p>
+                <Link to="/explore" className="inline-flex items-center justify-center gap-2 bg-surface-950 text-surface-50 dark:bg-surface-50 dark:text-surface-950 px-5 py-2.5 rounded-full text-sm font-medium hover:scale-105 transition-transform shadow-sm">
+                  Discover Events
+                </Link>
+              </div>
+            )}
+          </div>
+        </motion.div>
+
+        {/* Quick Actions / Recent Activity side panel */}
+        <motion.div initial="hidden" animate="visible" variants={fadeUp} className="lg:col-span-1 space-y-8">
+          
+          <div className="bg-brand-600 rounded-3xl p-8 text-white relative overflow-hidden shadow-glow">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+            <h3 className="font-semibold text-2xl mb-2 relative z-10">Discover</h3>
+            <p className="text-brand-100 text-sm mb-6 relative z-10 text-balance">Expand your horizons. Find technical workshops, cultural fests, and more.</p>
+            <Link to="/explore" className="inline-flex items-center justify-center gap-2 bg-white text-brand-700 w-full py-3 rounded-xl text-sm font-semibold hover:bg-brand-50 transition-colors relative z-10 shadow-sm">
+              Browse Catalog
             </Link>
           </div>
-        )}
+
+          <div className="bg-surface-50 dark:bg-surface-900 border border-border rounded-3xl p-6">
+            <h3 className="text-sm font-semibold uppercase tracking-wider text-surface-500 mb-4">Waitlist Status</h3>
+            {waitlisted.length > 0 ? (
+              <div className="space-y-3">
+                {waitlisted.slice(0,3).map(w => (
+                  <div key={w._id} className="flex items-center justify-between text-sm p-3 bg-surface-100 dark:bg-surface-950 border border-border rounded-xl">
+                    <span className="truncate flex-1 font-medium text-surface-900 dark:text-surface-100">{w.event?.title || "Unknown Event"}</span>
+                    <span className="text-amber-600 dark:text-amber-400 font-semibold text-xs bg-amber-50 dark:bg-amber-500/10 px-2 py-1 rounded">Pending</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-surface-500 text-center py-4">No active waitlists.</p>
+            )}
+          </div>
+
+        </motion.div>
       </div>
     </div>
   );

@@ -10,8 +10,8 @@ export default function Navbar() {
 
   // Helper function to apply active link styling
   const isActive = (path) => location.pathname === path 
-    ? 'text-blue-600 font-semibold border-b-2 border-blue-600' 
-    : 'text-gray-700 font-medium';
+    ? 'text-brand-600 dark:text-brand-400 font-semibold border-b-2 border-blue-600' 
+    : 'text-surface-700 dark:text-surface-300 font-medium';
 
   const closeMenu = () => setIsOpen(false);
 
@@ -24,7 +24,7 @@ export default function Navbar() {
       // 1. ADMIN PANEL (Highest priority link, exclusive to Admin)
       if (role === 'admin') {
           links.push(
-              <Link key="admin-panel" to="/admin-panel" className={`${baseClass} text-red-600 hover:text-red-800 ${isActive('/admin-panel')}`} onClick={closeMenu}>
+              <Link key="admin-panel" to="/admin-panel" className={`${baseClass} text-rose-600 dark:text-rose-400 hover:text-red-800 ${isActive('/admin-panel')}`} onClick={closeMenu}>
                   Admin Panel
               </Link>
           );
@@ -33,17 +33,17 @@ export default function Navbar() {
       // 2. ORGANIZER LINKS (Only visible if role is Organizer)
       if (role === 'organizer') {
           links.push(
-              <Link key="dashboard" to="/dashboard" className={`${baseClass} hover:text-blue-600 ${isActive('/dashboard')}`} onClick={closeMenu}>Dashboard</Link>,
-              <Link key="create" to="/create-event" className={`${baseClass} hover:text-blue-600 ${isActive('/create-event')}`} onClick={closeMenu}>Create Event</Link>,
-              <Link key="analytics" to="/analytics" className={`${baseClass} hover:text-blue-600 ${isActive('/analytics')}`} onClick={closeMenu}>Analytics</Link>
+              <Link key="dashboard" to="/dashboard" className={`${baseClass} hover:text-brand-600 dark:text-brand-400 ${isActive('/dashboard')}`} onClick={closeMenu}>Dashboard</Link>,
+              <Link key="create" to="/create-event" className={`${baseClass} hover:text-brand-600 dark:text-brand-400 ${isActive('/create-event')}`} onClick={closeMenu}>Create Event</Link>,
+              <Link key="analytics" to="/analytics" className={`${baseClass} hover:text-brand-600 dark:text-brand-400 ${isActive('/analytics')}`} onClick={closeMenu}>Analytics</Link>
           );
       }
       
       // 3. STUDENT LINKS (Default access links for general users)
       if (role === 'student') {
           links.push(
-              <Link key="registrations" to="/my-registrations" className={`${baseClass} hover:text-blue-600 ${isActive('/my-registrations')}`} onClick={closeMenu}>My Registrations</Link>,
-              <Link key="calendar" to="/calendar" className={`${baseClass} hover:text-blue-600 ${isActive('/calendar')}`} onClick={closeMenu}>Calendar</Link>
+              <Link key="registrations" to="/my-registrations" className={`${baseClass} hover:text-brand-600 dark:text-brand-400 ${isActive('/my-registrations')}`} onClick={closeMenu}>My Registrations</Link>,
+              <Link key="calendar" to="/calendar" className={`${baseClass} hover:text-brand-600 dark:text-brand-400 ${isActive('/calendar')}`} onClick={closeMenu}>Calendar</Link>
           );
       }
 
@@ -60,10 +60,10 @@ export default function Navbar() {
           </button>
       ) : (
           <>
-              <Link to="/login" className={`text-sm font-medium hover:text-blue-600 ${isMobile ? 'text-base' : ''}`} onClick={closeMenu}>Login</Link>
+              <Link to="/login" className={`text-sm font-medium hover:text-brand-600 dark:text-brand-400 ${isMobile ? 'text-base' : ''}`} onClick={closeMenu}>Login</Link>
               <Link 
                   to="/register" 
-                  className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition"
+                  className="bg-brand-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-brand-700 transition"
                   onClick={closeMenu}
               >
                   Register
@@ -73,27 +73,27 @@ export default function Navbar() {
   );
 
   return (
-    <nav className="bg-white shadow-md p-4 sticky top-0 z-50">
+    <nav className="bg-surface-50 dark:bg-surface-900 shadow-md p-4 sticky top-0 z-50">
       <div className="max-w-6xl mx-auto flex justify-between items-center">
         
         {/* Logo/Brand */}
         <Link 
           to="/" 
-          className="text-xl font-bold text-blue-600 hover:text-blue-800 transition duration-150"
+          className="text-xl font-bold text-brand-600 dark:text-brand-400 hover:text-blue-800 transition duration-150"
           onClick={closeMenu}
         >
           Evently
         </Link>
         
         {/* --- Desktop Links --- */}
-        <div className="hidden md:flex gap-6 items-center text-gray-700">
+        <div className="hidden md:flex gap-6 items-center text-surface-700 dark:text-surface-300">
           {renderLoggedInLinks()}
           {renderAuthButton()}
         </div>
 
         {/* --- Hamburger Button (Mobile) --- */}
         <div className="md:hidden">
-          <button onClick={() => setIsOpen(!isOpen)} className="text-gray-700 hover:text-blue-600">
+          <button onClick={() => setIsOpen(!isOpen)} className="text-surface-700 dark:text-surface-300 hover:text-brand-600 dark:text-brand-400">
             {isOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
